@@ -87,7 +87,8 @@ def __downloadtemplate_auth(url, auth_user, auth_pass):
 def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
     """
     Input: a RA, Dec of interest, a size for the image in pixels (1 pix ==
-    0.25" in PS1), and the filter(s) (g, r, i, z, y) desired
+    0.25" in PS1), the filter(s) (g, r, i, z, y) desired, and output name(s)
+    for the downloaded template(s)
     
     Downloads the relevant PS1 template image(s) at the input RA, Dec. 
     
@@ -98,10 +99,11 @@ def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
               "DEC = -30.0. Exiting.")
         return
     
-    if output:
+    if (output and (type(output) != str)): # if output list too short or long
         if len(filt) != len(output):
             print("\nPlease provide a number of output filenames to match "+
-                  "the number of requested template filters.")
+                  "the number of requested template filters. Exiting.")
+            return
             
             
     import query_PS1 # script for using PS1's cutout service
@@ -122,7 +124,59 @@ def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
     return tmps
 
 
-def download_CFIS_template(ra, dec, size=3200, filt="ur", 
+def download_DECaLS_template(ra, dec, size=400, pixscale=0.262, filt="grz", 
+                             output=None):
+    """
+    Input: a RA, Dec of interest, a size for the image in pixels, the scale of 
+    the image in arcseconds per pixel, the filters to use (files are always 
+    downloaded separately when multiple filters are provided; options are 
+    (g, r, z)) and output name(s) for the downloaded template(s)
+    
+    Downloads the relevant DECaLS template image(s) at the input RA, Dec. 
+    
+    Output: HDU object(s) for the downloaded template image(s) 
+    """
+    
+    # verify the input filters 
+    filt_upd = ""
+    for f in filt:
+        if f in "grz":
+            filt_upd += f
+        else: 
+            print("\nDECaLS does not contain the "+f+" band, so this band "+
+                  "will be ignored.")    
+    
+    # verify other input s
+    if size > 512: # if requested image size too big
+        print("\nThe maximum image size is 512 pix. The output image "+
+              "will have these dimensions.")
+        size = 512
+    if (output and (type(output) != str)): # if output list too short or long
+        if len(filt_upd) != len(output):
+            print("\nPlease provide a list of output filenames to match "+
+                  "the number of valid requested template filters. Exiting.")
+            return
+    if (output and (type(output) == str) and (len(filt_upd)>1)): 
+        # if only one output string is given and multiple filters are requested
+        print("\nPlease provide a list of output filenames to match "+
+              "the number of valid requested template filters. Exiting.")
+        return
+        
+       
+    import query_DECaLS # script for using DECaLS's cutout service
+    # get the url
+    url = query_DECaLS.geturl(ra, dec, size, pixscale, filters=filt_upd)
+    
+    # download the template and tell the user
+    tmps = __downloadtemplate(url, output) # download template 
+    size_arcmin  = size*pixscale/60.0
+    print("\nDownloaded square DECaLS cutout image(s) in the "+filt_upd+
+          " band(s), centered on RA, Dec = %.3f, %.3f "%(ra, dec)+" with"+
+          " sides of length %.2f'"%size_arcmin+"\n")
+    return tmps
+
+
+def download_CFIS_template(ra, dec, size=1600, filt="ur", 
                            auth_user="nvieira97", auth_pass="iwtg2s"):
     """
     Input: a RA, Dec of interest, a size for the image in pixels (1 pix ==

@@ -9,7 +9,7 @@ Created on Mon Aug 12 17:56:17 2019
 import requests
 from lxml import html
 
-def geturl(ra,dec,size=3200,filters="ur"):
+def geturl(ra,dec,size=1600,filters="ur"):
     """
     Input: a RA, Dec of interest, a size for the cutout image in pixels (1 
     pixel == 0.185" in CFIS), and filter(s) (u, r) for the image 
