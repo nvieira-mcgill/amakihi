@@ -364,24 +364,31 @@ def crop_frac(source_file, frac_hori=[0,1], frac_vert=[0,1], write=True,
 ###############################################################################
 #### BACKGROUND SUBTRACTION ####
     
-def bkgsub(im_file, mask_file=None, plot_bkg=False, scale_bkg=None, plot=False,
-           scale=None, write=True, output=None):
+def bkgsub(im_file, mask_file=None, crreject=False, plot_bkg=False, 
+           scale_bkg=None, plot=False, scale=None, write=True, output=None):
     """
     Input: any image of interest, a bad pixels mask (optional; default None),
-    a bool indicating whether to plot the background (optional; default False),
+    bool indicating whether to do reject cosmic rays (optional; default False)
+    bool indicating whether to plot the background (optional; default False),
     a scale to apply to the background (optional; default None (linear); 
     options are ("log" and asinh"), the same bools for the backround-subtracted
     image, a bool indicating whether to write the background-subtracted image 
     (optional; default True) and a name for the output background-subtracted 
     image in a FITS file (optional; default set below)
+    
+    Performs background subtraction and cosmic ray rejection on the input 
+    image. 
+    
     Output: the background-subtracted image data in a fits HDU 
     """
     
     from astropy.stats import SigmaClip
     from photutils import Background2D, MedianBackground, make_source_mask
+    import astroscrappy
     
     image_data = fits.getdata(im_file)
     
+    ### SOURCE DETECTION ###
     # use image segmentation to find sources above SNR=3 and mask them 
     # for background estimation
     if mask_file: # load a bad pixel mask if one is present 
@@ -396,12 +403,13 @@ def bkgsub(im_file, mask_file=None, plot_bkg=False, scale_bkg=None, plot=False,
                                    dilate_size=15)
         final_mask = source_mask
     
+    ### BACKGROUND SUBTRACTION ###
     # estimate the background
     sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
     bkg_estimator = MedianBackground()
     
     try: # try using photutils
-        bkg = Background2D(image_data, (2,2), filter_size=(2, 2), 
+        bkg = Background2D(image_data, (5,5), filter_size=(5,5), 
                            sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, 
                            mask=final_mask)
         bkg_img = bkg.background
@@ -412,19 +420,50 @@ def bkgsub(im_file, mask_file=None, plot_bkg=False, scale_bkg=None, plot=False,
         mean, median, std = sigma_clipped_stats(image_data, mask=final_mask)
         bkg_img.fill(median)
     
-    bkgsub_img = image_data - bkg_img # subtract the background from the input 
+    bkgsub_img = image_data - bkg_img # subtract the background from the input
     
-    # mask bad pixels, if needed 
-    if mask_file:
-        bkg_img_masked = np.ma.masked_where(bp_mask, bkg_img)
-        bkg_img = np.ma.filled(bkg_img_masked, 0)
+    
+    ### COSMIC RAY REJECTION (OPTIONAL) ###
+    # very large rejection sigma --> only reject most obvious cosmic rays 
+    # objlim and sigclip determine this sigma 
+    if crreject: # perform cosmic ray rejection
+        gain = fits.getheader(im_file)["GAIN"]
+        rdnoise = fits.getheader(im_file)["RDNOISE"]
+        if mask_file: # if bp mask provided, pass to cosmic ray rejection
+            crmask, crclean = astroscrappy.detect_cosmics(bkgsub_img, bp_mask, 
+                                                          gain=gain,
+                                                          readnoise=rdnoise,
+                                                          objlim=12,
+                                                          sigclip=12,
+                                                          sigfrac=0.9)
+            bp_mask = np.logical_or(bp_mask, crmask)
+        else: 
+            crmask, crclean = astroscrappy.detect_cosmics(bkgsub_img,
+                                                          gain=gain,
+                                                          readnoise=rdnoise,
+                                                          objlim=12,
+                                                          sigclip=12,
+                                                          sigfrac=0.9)
+            bp_mask = crmask
         
+        # mask cosmic rays and/or bad pixels
+        bkg_img_masked = np.ma.masked_where(bp_mask, bkg_img)
+        bkg_img = np.ma.filled(bkg_img_masked, 0)   
         bkgsub_img_masked = np.ma.masked_where(bp_mask, bkgsub_img)
         bkgsub_img = np.ma.filled(bkgsub_img_masked, 0)
-    else: 
-        bkg_img_masked = bkg_img
-        bkgsub_img_masked = bkgsub_img
     
+    else: # mask bad pixels only 
+        if mask_file: # if bad pixel map provided 
+            bkg_img_masked = np.ma.masked_where(bp_mask, bkg_img)
+            bkg_img = np.ma.filled(bkg_img_masked, 0)
+            
+            bkgsub_img_masked = np.ma.masked_where(bp_mask, bkgsub_img)
+            bkgsub_img = np.ma.filled(bkgsub_img_masked, 0)
+        else: 
+            bkg_img_masked = bkg_img
+            bkgsub_img_masked = bkgsub_img
+    
+    ### PLOTTING (OPTIONAL) ###
     # plot the background, if desired
     if plot_bkg: 
         plt.figure(figsize=(14,13))
@@ -663,9 +702,22 @@ def image_align_fine(source_file, template_file, mask_file=None,
     if source.shape != template.shape:
         ypad = (template.shape[1] - source.shape[1])
         xpad = (template.shape[0] - source.shape[0])
-        source = np.pad(source, [(xpad//2,xpad-xpad//2), 
-                                 (ypad//2,ypad-ypad//2)], 
-                                 mode="constant", constant_values=0)
+        print("xpad == "+str(xpad))
+        print("ypad == "+str(ypad))
+        
+        if xpad > 0:
+            source = np.pad(source, [(0,xpad), (0,0)], mode="constant", 
+                                     constant_values=0)
+        elif xpad < 0: 
+            template = np.pad(template, [(0,abs(xpad)), (0,0)], 
+                                         mode="constant", constant_values=0)
+        if ypad > 0:
+            source = np.pad(source, [(0,0), (0,ypad)], 
+                                     mode="constant", constant_values=0)
+        elif ypad < 0:
+            template = np.pad(template, [(0,0), (0,abs(ypad))], 
+                                         mode="constant", constant_values=0)
+            
     if mask_file: # if a mask is provided
         mask = fits.getdata(mask_file)
         source = np.ma.masked_where(mask, source)
@@ -1011,11 +1063,12 @@ def hotpants(source_file, template_file, mask_file=None, iu=65535, tu=65535,
         plt.ylabel("Dec (J2000)", fontsize=16)
         plt.title("hotpants image difference", fontsize=15)
         plt.savefig("hotpants_sub_"+scale+".png", bbox_inches="tight")
+        plt.show()
         
     return sub
 
 ###############################################################################
-#### MISC. PLOTTING ####
+#### MISCELLANEOUS PLOTTING ####
     
 def make_image(im_file, mask_file=None, scale=None, title=None, output=None):
     """
@@ -1075,6 +1128,7 @@ def make_image(im_file, mask_file=None, scale=None, title=None, output=None):
 
     plt.title(title, fontsize=15)
     plt.savefig(output, bbox_inches="tight")
+
         
         
     
