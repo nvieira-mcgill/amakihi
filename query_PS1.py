@@ -68,10 +68,13 @@ def geturl(ra, dec, size=2400, output_size=None, filters="grizy", format="jpg",
             url = url + "&{}={}".format(param,table['filename'][i])
     else:
         urlbase = url + "&red="
-        url = []
+        urls = []
         for filename in table['filename']:
-            url.append(urlbase+filename)
-    return url
+            urls.append(urlbase+filename)
+        
+    if len(urls) == 1:
+        urls = urls[0]
+    return urls
     
 
         
