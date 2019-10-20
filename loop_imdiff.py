@@ -30,12 +30,30 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 ### ARGUMENTS #############################################################
 ## NOTE: csv must be a text csv
-CSV = "GW190814_50_GLADE.csv" # text csv of RAs, DECs, Ranks 
+#CSV = "GW190814_50_GLADE.csv" 
+CSV = "AT2019candidatesCFHT.csv" 
+
 ## directories
-#BASEDIR = "/media/nvieira/OS/Users/nviei/Documents/Storage/"
-#SCI_DIR = BASEDIR+"isci_50region" # science
-#TMP_DIR = BASEDIR+"itmp_50region" # template 
-#WORKDIR = BASEDIR+"workdir" # working directory
+BASEDIR = "/media/nvieira/OS/Users/nviei/Documents/Storage/"
+SCI_DIR = BASEDIR+"isci_transient" # science
+TMP_DIR = BASEDIR+"itmp_transient" # template
+SCI_NOTMP_DIR = BASEDIR+"isci_transient_notmp" # sci files w/o CFHT template
+TOPWORKDIR = BASEDIR+"topworkdir/" # top working directory 
+WORKDIR = TOPWORKDIR+"workdir" # working directory
+PLOTDIR = TOPWORKDIR+"plotdir" # plotting directory 
+CANDIDATEDIR = TOPWORKDIR+"candidatedir" # plots of potential transients 
+CROPALDIR = TOPWORKDIR+"cropaldir" # cropped and aligned images
+BKGSUBDIR = TOPWORKDIR+"bkgsubdir" # cropped, aligned, background-subtracted
+SATMASKDIR = TOPWORKDIR+"satmaskdir" # saturation masks
+SUBDIR = TOPWORKDIR+"subdir" # difference images
+SUBMASKDIR = TOPWORKDIR+"submaskdir" # hotpants subtraction mask
+PSFDIR = TOPWORKDIR+"psfdir" # ePSFs (proper image subtraction)
+PROPSUBDIR = TOPWORKDIR+"propersubdir" # proper image subtractions
+# or, if directories are 1:1 and just working in cwd 
+#BASEDIR = os.getcwd()+"/"
+#SCI_DIR = BASEDIR+"isci" 
+#TMP_DIR = BASEDIR+"itmp" 
+#WORKDIR = BASEDIR+"workdir"
 #PLOTDIR = BASEDIR+"plotdir" # plotting directory 
 #CROPALDIR = BASEDIR+"cropaldir" # cropped and aligned images
 #BKGSUBDIR = BASEDIR+"bkgsubdir" # cropped, aligned, background-subtracted
@@ -44,61 +62,52 @@ CSV = "GW190814_50_GLADE.csv" # text csv of RAs, DECs, Ranks
 #SUBMASKDIR = BASEDIR+"submaskdir" # hotpants subtraction mask
 #PSFDIR = BASEDIR+"psfdir" # ePSFs (proper image subtraction)
 #PROPSUBDIR = BASEDIR+"propersubdir" # proper image subtractions
-# or, if directories are 1:1 and just working in cwd 
-BASEDIR = os.getcwd()+"/"
-SCI_DIR = BASEDIR+"isci" 
-TMP_DIR = BASEDIR+"itmp" 
-WORKDIR = BASEDIR+"workdir"
-PLOTDIR = BASEDIR+"plotdir" # plotting directory 
-CROPALDIR = BASEDIR+"cropaldir" # cropped and aligned images
-BKGSUBDIR = BASEDIR+"bkgsubdir" # cropped, aligned, background-subtracted
-SATMASKDIR = BASEDIR+"satmaskdir" # saturation masks
-SUBDIR = BASEDIR+"subdir" # difference images
-SUBMASKDIR = BASEDIR+"submaskdir" # hotpants subtraction mask
-PSFDIR = BASEDIR+"psfdir" # ePSFs (proper image subtraction)
-PROPSUBDIR = BASEDIR+"propersubdir" # proper image subtractions
 
 ## RA, DEC determination
-RANKS = False # use the .csv to obtain Ranks
-TARGET_CROP = False # use the .csv to obtain RAs, DECs for every Rank 
+RANKS = False # use the .csv to obtain RANKS
+TRANSIENTS = True # use the .csv to obtain TRANSIENT NAMES
+TARGET_CROP = True # use the rank/transient .csv to set crop
 OCTANT_CROP = False # crop according to which octant contains some target
-MANUAL = True # manually supply a RA, DEC below 
+MANUAL = False # manually supply a RA, DEC below 
+
 ## which subtraction to use 
-PROPERSUB = True # use proper image subtraction (if False, use hotpants)
-## other 
+PROPERSUB = False # use proper image subtraction (if False, use hotpants)
+
+## general subtraction arguments
+TMP_CFHT = True # are templates also from CFHT?
 CROPMIN = 1000 # minimum pixel dimensions of cropped image 
 ALIGNSIGMA = 5.0 # sigma for source detection with image_align
+SEPLIM = 5.0 # maximum allowed separation between TOI and transients 
+TRANSIENTSIGMA = 3.0 # subtraction image transient detection sigma 
+
+## proper image subtraction arguments 
 SIGMA = 8.0 # sigma for source detection when building ePSF, if applicable 
 PSFSIGMA = 5.0 # estimated PSF width for astrometry.net 
 ALIM = 1500 # maximum allowed area in pix**2 for astrometry.net
 NTHREADS = 8 # number of threads to use in FFTs
  
 ## clean up directories
-#run("rm -rf "+SCI_DIR+"/*crop* ", shell=True)
-#run("rm -rf "+TMP_DIR+"/*crop* ", shell=True) 
-#run("rm -rf "+SCI_DIR+"/*.png ", shell=True)
-#run("rm -rf "+TMP_DIR+"/*.png ", shell=True)
-#run("rm -rf "+WORKDIR+"/*.fits ", shell=True)
-#run("rm -rf "+WORKDIR+"/*.txt ", shell=True)
-#run("rm -rf "+WORKDIR+"/*.png ", shell=True)
-#run("rm -rf "+WORKDIR+"/*conv ", shell=True)
-#run("rm -rf "+WORKDIR+"/*.all ", shell=True)
-#run("rm -rf "+WORKDIR+"/*.skipped ", shell=True)
-#run("rm -rf "+SATMASKDIR+"/*.fits ", shell=True)
+run("rm -rf "+SCI_DIR+"/*crop* ", shell=True)
+run("rm -rf "+TMP_DIR+"/*crop* ", shell=True) 
+run("rm -rf "+SCI_DIR+"/*.png ", shell=True)
+run("rm -rf "+TMP_DIR+"/*.png ", shell=True)
+run("rm -rf "+WORKDIR+"/*.fits ", shell=True)
+run("rm -rf "+WORKDIR+"/*.txt ", shell=True)
+run("rm -rf "+WORKDIR+"/*.png ", shell=True)
+run("rm -rf "+WORKDIR+"/*conv ", shell=True)
+run("rm -rf "+WORKDIR+"/*.all ", shell=True)
+run("rm -rf "+SATMASKDIR+"/*.fits ", shell=True)
 #run("rm -rf "+PLOTDIR+"/*.png ", shell=True)
 #run("rm -rf "+PSFDIR+"/*.fits ", shell=True)
 #run("rm -rf "+PROPSUBDIR+"/*.fits ", shell=True)
 
 ### LOAD IN DATA #########################################################
 df = pd.read_csv(CSV) # get coordinates 
-ranks = df["Rank"] # get ranks for each object 
-
 cwd = os.getcwd() # get science/template filenames 
-sci_files = sorted(glob.glob(SCI_DIR+"/*.fits"))#[10:13]
-# NOTE: 14-18 == rank04 (incl. i1)
-#       10:13 == rank04 otherwise 
+sci_files = sorted(glob.glob(SCI_DIR+"/*.fits"))
 
 if RANKS: # if using rankXX.fits files
+    ranks = df["Rank"] # get ranks for each object 
     tmp_files = []
     for s in sci_files:
         s = s.replace(".fits","")
@@ -106,7 +115,17 @@ if RANKS: # if using rankXX.fits files
             s = s[:-1]
         topfile = re.sub(".*/", "", s) # from /a/b/c, extract c
         tmp_files.append(TMP_DIR+"/"+topfile+"final.fits")
-else: # if looping over many images of some object with manually input coords
+        
+elif TRANSIENTS:
+    names = df["ID"]
+    tmp_files = []
+    for s in sci_files:
+        s = s.replace(".fits", "")[:-8]
+        topfile = re.sub(".*/", "", s) # from /a/b/c, extract c
+        tmp_files.append(TMP_DIR+"/"+topfile+"template.fits")
+    
+    
+else: # if looping over many images of some object with MANUALLY input coords
     tmp_files = sorted(glob.glob(TMP_DIR+"/*.fits")) # dirs must be 1:1
     # check if there is a corresponding template for every science image 
     if len(sci_files) != len(tmp_files):
@@ -118,11 +137,36 @@ else: # if looping over many images of some object with manually input coords
 nfiles = len(sci_files)
 for i in range(nfiles):
     start = timer()
-    # open the files 
-    sci = fits.getdata(sci_files[i])
-    sci_hdr = fits.getheader(sci_files[i])
-    tmp = fits.getdata(tmp_files[i])
-    tmp_hdr = fits.getheader(tmp_files[i])
+    
+    try: # load in data and header from SCIENCE files
+        sci = fits.getdata(sci_files[i])
+        sci_hdr = fits.getheader(sci_files[i])
+    except FileNotFoundError:
+        print("Did not find the requested science files. Skipping.")
+        continue
+    
+    try: # load in data and header from TEMPLATE files 
+        tmp = fits.getdata(tmp_files[i])
+        tmp_hdr = fits.getheader(tmp_files[i])
+    except FileNotFoundError: # template not found --> look for similar files
+        if RANKS and ("_50_" in CSV):
+            rank_sci = re.sub(".*/", "",sci_files[i])[4:6] # determine rank 
+            tmp_files[i] = glob.glob(TMP_DIR+"/"+rank_sci)[0] # update
+        elif RANKS and ("_90_" in CSV):
+            rank_sci = re.sub(".*/", "",sci_files[i])[6:8] # determine rank 
+            tmp_files[i] = glob.glob(TMP_DIR+"/"+rank_sci)[0] # update
+        elif TRANSIENTS:
+            name_sci = re.sub(".*/", "",sci_files[i])[:7] # determine name
+            tmp_files[i] = glob.glob(TMP_DIR+"/"+name_sci)[0] # update
+        try:
+            tmp = fits.getdata(tmp_files[i])
+            tmp_hdr = fits.getheader(tmp_files[i])
+        except FileNotFoundError:
+            print("Did not find a corresponding template for the science "+
+                  "file. Moving the science file to a separate directory "+
+                  " and skipping to the next science file.")
+            run("mv "+sci_files[i]+" "+SCI_NOTMP_DIR, shell=True)
+            continue
 
     source_file, template_file = sci_files[i], tmp_files[i]
     print("\n*******************************************************")
@@ -132,16 +176,37 @@ for i in range(nfiles):
     print("template file: "+re.sub(".*/", "",template_file)+"\n")
 
     ### DETERMINE RA, DEC OF SOURCE OF INTEREST ########################### 
-    if RANKS: # use csv to get RA, Dec for each ranked object 
+    if RANKS and ("_50_" in CSV): # use csv to get RA, Dec for each rank 
         rank_sci = re.sub(".*/", "",sci_files[i])[4:6] # determine rank 
         rank_tmp = re.sub(".*/", "",tmp_files[i])[4:6]
         if int(rank_sci) != int(rank_tmp): 
             print("The images being compared are not of the same field. "+
                   "Exiting.")
-            sys.exit()
-        
+            sys.exit()      
         ra = float((df.loc[df["Rank"] == int(rank_sci)])["RAJ2000"])
         dec = float((df.loc[df["Rank"] == int(rank_sci)])["DEJ2000"])
+        
+    if RANKS and ("_90_" in CSV): # use csv to get RA, Dec for each rank 
+        rank_sci = re.sub(".*/", "",sci_files[i])[6:8] # determine rank 
+        rank_tmp = re.sub(".*/", "",tmp_files[i])[6:8]
+        if int(rank_sci) != int(rank_tmp): 
+            print("The images being compared are not of the same field. "+
+                  "Exiting.")
+            sys.exit()      
+        ra = float((df.loc[df["Rank"] == int(rank_sci)])["RAJ2000"])
+        dec = float((df.loc[df["Rank"] == int(rank_sci)])["DEJ2000"])
+    
+    
+    elif TRANSIENTS: # use csv to get RA, Dec for each transient ID 
+        name_sci = re.sub(".*/", "",sci_files[i])[:7] # determine name
+        name_tmp = re.sub(".*/", "",tmp_files[i])[:7]
+        if name_sci != name_tmp: 
+            print("The images being compared are not of the same field. "+
+                  "Exiting.")
+            sys.exit()
+            
+        ra = float((df.loc[df["ID"] == name_sci])["RA"])
+        dec = float((df.loc[df["ID"] == name_sci])["DEC"])
         
     elif MANUAL: # or just manually supply an RA, Dec
         # current values are for AT02019ntp
@@ -195,9 +260,6 @@ for i in range(nfiles):
                 ra_crop = float(crop_center[0])
                 dec_crop = float(crop_center[1])
                 size = float(max(half_hdu.data.shape)) # size
-        
-            ra = float((df.loc[df["Rank"] == int(rank_sci)])["RAJ2000"])
-            dec = float((df.loc[df["Rank"] == int(rank_sci)])["DEJ2000"])
             
         else: # size is sufficiently large 
             ra_crop = ra
@@ -215,7 +277,8 @@ for i in range(nfiles):
         
         ra_crop = float(crop_center[0])
         dec_crop = float(crop_center[1])
-        size = float(min(oct_hdu.data.shape)) # size        
+        size = float(min(oct_hdu.data.shape)) # size  
+        
     else: 
         # grab a square of the image in the top half, bottom half, or middle
         # based on where source is found 
@@ -239,7 +302,7 @@ for i in range(nfiles):
     print("DEC_CROP = %.5f"%dec_crop)
     print("SIZE = "+str(size)+" pix\n")
     amakihi.crop_WCS(source_file, ra_crop, dec_crop, size)
-    if RANKS: # both science and template are from CFHT
+    if TMP_CFHT: # both science and template are from CFHT
         amakihi.crop_WCS(template_file, ra_crop, dec_crop, size)
     else: # template from PS1/DECaLS, which has pixels twice as large
         amakihi.crop_WCS(template_file, ra_crop, dec_crop, size/2.0)        
@@ -250,7 +313,7 @@ for i in range(nfiles):
     # align with astroalign and then use image_registration for fine alignment 
     # if not possible, use image_registration only 
     print("*******************************************************")
-    print("Image alignment...")#\n")
+    print("Image alignment...")
     print("*******************************************************")
     ret = amakihi.image_align(source_file, template_file, 
                               thresh_sigma=ALIGNSIGMA)
@@ -259,7 +322,7 @@ for i in range(nfiles):
         # align them with image_registration
         ret = amakihi.image_align_fine(source_file, template_file)
         if ret == None: # if image_registration fails too
-            sys.exit() # can't do anything 
+            continue # can't do anything 
         else: # if image_registration succeeds
             source_file = source_file.replace(".fits", "_align.fits")
             mask_file = source_file.replace(".fits", "_mask.fits")
@@ -276,10 +339,10 @@ for i in range(nfiles):
         
     ### BACKGROUND SUBTRACTION ###########################################
     print("*******************************************************")
-    print("Background subtraction...")#\n")
+    print("Background subtraction...")
     print("*******************************************************\n")
     amakihi.bkgsub(source_file, crreject=False, bkg_filt=(1,1))
-    if RANKS: # both science and template are from CFHT
+    if TMP_CFHT: # both science and template are from CFHT
         amakihi.bkgsub(template_file, crreject=False, bkg_filt=(1,1))
     else:
         amakihi.bkgsub(template_file, crreject=False, bkg_filt=(1,1))
@@ -287,15 +350,11 @@ for i in range(nfiles):
     template_file = template_file.replace(".fits", "_bkgsub.fits")
     source_bkgsub = source_file # cropped, aligned, bkg-subtracted
     template_bkgsub = template_file # cropped, aligned, bkg-subtracted
-    
-    ### GET SUBSTAMPS X, Y FOR GOOD SOURCES ##############################
-    ## not sure if this is working right now 
-    #ret = amakihi.get_substamps(source_file, template_file, mask_file)
-    #substamps_file = source_file.replace(".fits", "_substamps.txt")
+
     
     ### BUILDING A MASK OF SATURATED STARS ###############################
     print("*******************************************************")
-    print("Building a mask of saturated stars...")#\n")
+    print("Building a mask of saturated stars...")
     print("*******************************************************\n")
     amakihi.saturation_mask(source_file, mask_file=None, dilation_its=7,
                             ra_safe=ra, dec_safe=dec, rad_safe=10.0, 
@@ -305,7 +364,7 @@ for i in range(nfiles):
     
     ### MAKE AN IMAGE WITH THE SATURATION MASK APPLIED ###################
     print("*******************************************************")
-    print("Plotting the aligned, background-subtracted image...")#\n")
+    print("Plotting the aligned, background-subtracted image...")
     print("*******************************************************\n") 
     amakihi.make_image(source_bkgsub, mask_file=mask_file, scale="asinh",
                        cmap="viridis", target=[ra,dec])
@@ -313,7 +372,7 @@ for i in range(nfiles):
     ### PROPER IMAGE SUBTRACTION #########################################
     if PROPERSUB:
         print("*******************************************************")
-        print("Building ePSF for both science and reference image... ")#\n")
+        print("Building ePSF for both science and reference image... ")
         print("*******************************************************\n")
         amakihi.build_ePSF(source_bkgsub, sigma=SIGMA, psfsigma=PSFSIGMA,
                            alim=ALIM, plot=True)
@@ -323,7 +382,7 @@ for i in range(nfiles):
         pr_file = template_bkgsub.replace(".fits", "_ePSF.fits")
     
         print("*******************************************************")
-        print("Performing proper image subtraction...")#\n")
+        print("Performing proper image subtraction...")
         print("*******************************************************")
         d, s = amakihi.proper_subtraction(new_file=source_file, 
                                           ref_file=template_file, 
@@ -365,7 +424,8 @@ for i in range(nfiles):
                                                   crosshair_sub="#fe01b1",
                                                   toi=[ra,dec],
                                                   toi_sep_min=0.0,
-                                                  toi_sep_max=100.0)
+                                                  toi_sep_max=SEPLIM,
+                                                  sigma=TRANSIENTSIGMA)
             run("cp "+source_crop+" "+CROPALDIR, shell=True) # crop
             run("cp "+template_crop+" "+CROPALDIR, shell=True) 
             run("cp "+source_bkgsub+" "+BKGSUBDIR, shell=True) # +align, bgsub
@@ -379,9 +439,9 @@ for i in range(nfiles):
     ### IMAGE DIFFERENCING WITH HOTPANTS #################################
     else: 
         print("*******************************************************")
-        print("Performing image subtraction with hotpants...")#\n")
+        print("Performing image subtraction with hotpants...")
         print("*******************************************************")
-        if RANKS: # both science and template are from CFHT
+        if TMP_CFHT: # both science and template are from CFHT
             ret = amakihi.hotpants(source_file, template_file, mask_file, 
                                    iu=50000, il=-100.0, tu=50000, tl=-100.0,
                                    ng="3 6 2.5 4 5.0 2 10.0", 
@@ -408,7 +468,8 @@ for i in range(nfiles):
                                                     crosshair_sub="#fe01b1",
                                                     toi=[ra,dec],
                                                     toi_sep_min=0.0,
-                                                    toi_sep_max=100.0)
+                                                    toi_sep_max=SEPLIM,
+                                                    sigma=TRANSIENTSIGMA)
             run("cp "+source_crop+" "+CROPALDIR, shell=True) # crop
             run("cp "+template_crop+" "+CROPALDIR, shell=True) 
             run("cp "+source_bkgsub+" "+BKGSUBDIR, shell=True) # +align, bgsub
@@ -420,6 +481,7 @@ for i in range(nfiles):
     # finally, move everything 
     run("mv "+SCI_DIR+"/*crop* "+WORKDIR, shell=True)
     run("mv "+TMP_DIR+"/*crop* "+WORKDIR, shell=True)
+    run("mv "+WORKDIR+"/*candidate*.png "+CANDIDATEDIR, shell=True)
     run("mv "+WORKDIR+"/*.png "+PLOTDIR, shell=True)
     
     end = timer()

@@ -420,7 +420,7 @@ def crop_WCS(source_file, ra, dec, size, write=True, output=None):
 def crop_frac(source_file, frac_hori=[0,1], frac_vert=[0,1], write=True, 
              output=None):
     """
-    Input: a right ascension, the horizontal fraction of the fits file's 
+    Input: the horizontal fraction of the fits file's 
     image to crop (default [0,1], which does not crop), the vertical fraction 
     (default [0,1]), a bool indicating whether to save write the output .fits 
     file (optional; default True) and a name for the output fits file 
@@ -1296,48 +1296,58 @@ def saturation_mask(image_file, mask_file=None, sat_ADU=40000,
     segm = detect_sources(data, threshold, npixels=sat_area_min)
     labels = segm.labels 
     cat = source_properties(data, segm) 
-    tbl = cat.to_table() # catalogue of sources as a table    
-    # restrict based on area and maximum pixel ADU
-    mask = tbl["area"].value <= sat_area_max # must have less than this area
-    sat_labels = labels[mask]
-    tbl = tbl[mask]
-    mask = tbl["max_value"] >= sat_ADU # max value must exceed this ADU
-    sat_labels = sat_labels[mask]
-    tbl = tbl[mask]    
-    # eliminate sources within the "safe zone"
-    if (ra_safe and dec_safe and rad_safe):
-        # get coordinates
-        w = wcs.WCS(hdr)
-        tbl["ra"], tbl["dec"] = w.all_pix2world(tbl["xcentroid"],
-                                                tbl["ycentroid"], 1) 
-        safe_coord = SkyCoord(ra_safe*u.deg, dec_safe*u.deg, frame="icrs")
-        source_coords = SkyCoord(tbl["ra"]*u.deg, tbl["dec"]*u.deg, 
-                                 frame="icrs")
-        sep = safe_coord.separation(source_coords).arcsecond # separations 
-        tbl["sep"] = sep # add a column for separation from safe zone centre
-        mask = tbl["sep"] > rad_safe # only select sources outside this radius
+    if len(cat) != 0:
+        tbl = cat.to_table() # catalogue of sources as a table    
+        # restrict based on area and maximum pixel ADU
+        mask = tbl["area"].value <= sat_area_max # must have less than this area
+        sat_labels = labels[mask]
+        tbl = tbl[mask]
+        mask = tbl["max_value"] >= sat_ADU # max value must exceed this ADU
         sat_labels = sat_labels[mask]
-        tbl = tbl[mask]       
-    # keep only the remaining saturated sources
-    segm.keep_labels(sat_labels)
-    
-    # build the mask
-    newmask = segm.data_ma
-    if mask_file: # combine with another mask 
-        mask = fits.getdata(mask_file)
-        newmask = np.logical_or(mask, newmask)            
-    newmask[newmask >= 1] = 1 # masked pixels are labeled with 1
-    newmask = newmask.filled(0) # unmasked labeled with 0    
-    
-    # use binary dilation to fill holes in mask, esp. near diffraction spikes
-    newmask = (binary_dilation(newmask, iterations=dilation_its)).astype(float)
-    # use gaussian blurring to smooth out the mask 
-    newmask = gaussian_filter(newmask, sigma=blursigma, mode="constant", 
-                              cval=0.0)
-    newmask[newmask > 0] = 1
-    
-    hdr = fits.getheader(image_file)
-    mask_hdu = fits.PrimaryHDU(data=newmask.astype(int), header=hdr)
+        tbl = tbl[mask]    
+        # eliminate sources within the "safe zone"
+        if (ra_safe and dec_safe and rad_safe):
+            # get coordinates
+            w = wcs.WCS(hdr)
+            tbl["ra"], tbl["dec"] = w.all_pix2world(tbl["xcentroid"],
+                                                    tbl["ycentroid"], 1) 
+            safe_coord = SkyCoord(ra_safe*u.deg, dec_safe*u.deg, frame="icrs")
+            source_coords = SkyCoord(tbl["ra"]*u.deg, tbl["dec"]*u.deg, 
+                                     frame="icrs")
+            sep = safe_coord.separation(source_coords).arcsecond # separations 
+            tbl["sep"] = sep # add a column for sep from safe zone centre
+            mask = tbl["sep"] > rad_safe # only select sources outside this rad
+            sat_labels = sat_labels[mask]
+            tbl = tbl[mask]       
+        # keep only the remaining saturated sources
+        segm.keep_labels(sat_labels)
+        
+        # build the mask
+        newmask = segm.data_ma
+        if mask_file: # combine with another mask 
+            mask = fits.getdata(mask_file)
+            newmask = np.logical_or(mask, newmask)            
+        newmask[newmask >= 1] = 1 # masked pixels are labeled with 1
+        newmask = newmask.filled(0) # unmasked labeled with 0    
+        
+        # use binary dilation to fill holes, esp. near diffraction spikes
+        newmask = (binary_dilation(newmask, 
+                                   iterations=dilation_its)).astype(float)
+        # use gaussian blurring to smooth out the mask 
+        newmask = gaussian_filter(newmask, sigma=blursigma, mode="constant", 
+                                  cval=0.0)
+        newmask[newmask > 0] = 1
+        
+        hdr = fits.getheader(image_file)
+        mask_hdu = fits.PrimaryHDU(data=newmask.astype(int), header=hdr)
+    else: # no masking needed 
+        hdr = fits.getheader(image_file)
+        newmask = np.zeros(shape=data.shape)
+        if mask_file:
+            mask = fits.getdata(mask_file)
+            newmask[mask] = 1.0
+        mask_hdu = fits.PrimaryHDU(data=newmask, header=hdr)
+        tbl = Table() # empty table
     
     if plot:
         plt.figure(figsize=(14,13))
@@ -1474,10 +1484,7 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
              tg=None, tr=None, ng=None, rkernel=None, convi=False, convt=False, 
              bgo=0, ko=1, output=None, maskout=None, convout=None, kerout=None, 
              v=1, plot=True, scale=None, target=None, target_small=None):
-    """   
-    WIP:
-        - Path to hotpants
-    
+    """       
     hotpants args: 
         - the science image 
         - the template to match to
@@ -1662,8 +1669,10 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
     ## misc
     #hp_options += " -fi 0.0" # fill value for bad pixels 
     hp_options += " -v "+str(v) # verbosity 
-    
-    run("~/hotpants/hotpants"+hp_options, shell=True) # call hotpants
+
+    ## BANDAID FIX: can't locate hotpants at the moment 
+    #run("~/hotpants/hotpants"+hp_options, shell=True) # call hotpants
+    run("hotpants"+hp_options, shell=True) # call hotpants
     
     # if file successfully produced and non-empty
     outfile = re.sub(".*/", "", output) # for a file /a/b/c, extract the "c"
@@ -2059,11 +2068,13 @@ def __flux_ratio(new_file, ref_file, sigma=8.0, psfsigma=5.0, alim=1000,
     
     ## setup: get WCS coords for all sources 
     ## use astrometry.net to find the sources 
-    ## BANDAID FIX: can't locate image2xy at the moment 
     # -b --> no background-subtraction, -O --> overwrite, -p _ --> signficance,
     # -w --> estimated PSF width, -m 1000 --> max object size is 1000 pix**2
     options = " -b -O -p "+str(sigma)+" -w "+str(psfsigma)+" -m "+str(alim)+" "
-    run("/usr/local/astrometry/bin/image2xy"+options+new_file, shell=True)
+    
+    ## BANDAID FIX: can't locate image2xy at the moment 
+    #run("/usr/local/astrometry/bin/image2xy"+options+new_file, shell=True)
+    run("image2xy"+options+new_file, shell=True)    
     new_sources_file = new_file.replace(".fits", ".xy.fits")
     new_sources = fits.getdata(new_sources_file)
     run("rm "+new_sources_file, shell=True) # this file is not needed
@@ -2101,7 +2112,9 @@ def __flux_ratio(new_file, ref_file, sigma=8.0, psfsigma=5.0, alim=1000,
         new = new[mask]
     
     ## repeat all of the above for the reference image     
-    run("/usr/local/astrometry/bin/image2xy"+options+ref_file, shell=True)
+    ## BANDAID FIX: can't locate image2xy at the moment 
+    #run("/usr/local/astrometry/bin/image2xy"+options+new_file, shell=True)
+    run("image2xy"+options+new_file, shell=True) 
     ref_sources_file = ref_file.replace(".fits", ".xy.fits")
     ref_sources = fits.getdata(ref_sources_file)
     run("rm "+ref_sources_file, shell=True) # this file is not needed
@@ -2514,10 +2527,7 @@ def __plot_num_denom(filename, quant, data, term, scale=None, nthreads=4):
 
 def build_ePSF(image_file, sigma=8.0, psfsigma=5.0, alim=1000, 
                write=True, output=None, plot=False, output_plot=None):
-    """    
-    WIP:
-        - Path to astrometry.net 
-    
+    """         
     Input: 
         - filename for a **BACKGROUND-SUBTRACTED** image
         - sigma to use in source detection with astrometry.net (optional; 
@@ -2557,11 +2567,13 @@ def build_ePSF(image_file, sigma=8.0, psfsigma=5.0, alim=1000,
     
     # setup: get WCS coords for all sources 
     # use astrometry.net to find the sources 
-    # BANDAID FIX: can't locate image2xy at the moment 
     # -b --> no background-subtraction, -O --> overwrite, -p _ --> signficance,
     # -w --> estimated PSF width, -m 600 --> max object size is 600
     options = " -b -O -p "+str(sigma)+" -w "+str(psfsigma)+" -m "+str(alim)+" "
-    run("/usr/local/astrometry/bin/image2xy"+options+image_file, shell=True)
+    
+    ## BANDAID FIX: can't locate image2xy at the moment 
+    #run("/usr/local/astrometry/bin/image2xy"+options+image_file, shell=True)
+    run("image2xy"+options+image_file, shell=True) 
     image_sources_file = image_file.replace(".fits", ".xy.fits")
     image_sources = fits.getdata(image_sources_file)
     run("rm "+image_sources_file, shell=True) # this file is not needed
@@ -3464,15 +3476,20 @@ def transient_stamp(im_file, target, size=200.0, scale=None, cmap="magma",
                     label=None, crosshair="#fe019a", title=None, 
                     output=None, toi=None):
     """
-    Inputs: any image of interest, the [ra, dec] of a candidate transient 
-    source, the size of the zoomed-in region around the transient to plot in 
-    pixels (optional; default 200.0), the scale to apply to the image 
-    (optional; default None (linear); options are "linear", "log", "asinh", the 
-    colourmap to use for the image (optional; default is "magma"), the label to 
-    apply to the colourbar (optional; defaults set below), the colour for the 
-    crosshairs (optional; default is ~ hot pink), a title for the image 
-    (optional; defaults set below), a name for the output file (optional; 
-    defaults set below)
+    Inputs: 
+        - image of interest
+        - [ra, dec] of a candidate transient source
+        - size of the zoomed-in region around the transient to plot in pixels 
+          (optional; default 200.0)
+        - scale to apply to the image (optional; default None (linear); options 
+          are "linear", "log", "asinh")
+        - colourmap to use for the image (optional; default is "magma")
+        - label to apply to the colourbar (optional; defaults set below)
+        - colour for the crosshairs (optional; default is ~ hot pink)
+        - title for the image (optional; defaults set below)
+        - name for the output file (optional; defaults set below)
+        - [ra, dec] of some other source of interest (optional; default None)
+        
     Output: None
     """
     
@@ -3531,9 +3548,10 @@ def transient_stamp(im_file, target, size=200.0, scale=None, cmap="magma",
     plt.ylabel("Dec (J2000)", fontsize=16)
     
     if not(title):
-        title = im_file.replace(".fits"," data")
+        topfile = re.sub(".*/", "", im_file)
+        title = topfile.replace(".fits"," data (stamp)")
     if not(output):
-        output = im_file.replace(".fits","_"+scale+".png")
+        output = im_file.replace(".fits","_stamp_"+scale+".png")
 
     plt.gca().plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
            transform=plt.gca().get_transform('icrs'), linewidth=2, 
