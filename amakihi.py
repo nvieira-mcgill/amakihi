@@ -38,10 +38,29 @@ SECTIONS:
     - Image differencing/transient detection with Proper Image Subtraction
     - Miscellaneous plotting
     - Functions I directly took from elsewhere (with references)
+    
+GENERAL DEPENDENCIES NOT INCLUDED ON THIS SOFTWARE'S GITHUB:
+    - astropy (used extensively)
+    - photutils (used extensively)
+    - image_registration (used in image_align_fine())
+
+HOTPANTS-SPECIFIC:
+    - hotpants (essential for image subtraction via hotpants)
+    
+PROPER IMAGE SUBTRACTION-SPECIFIC:
+    - pyfftw (used extensively to speed up FFTs)
+    - skimage (bad pixel filling during proper image subtraction)
+    - astrometry.net (used extensively for source detection in various steps 
+      of proper image subtraction)
+    
+LESS ESSENTIAL DEPENDENCIES:
+    - astroscrappy (OPTIONAL cosmic ray rejection during background removal)
+    - astroplan (airmass determination during proper subtraction)
 """
 
 
 import os
+import sys
 from subprocess import run
 import numpy as np
 import numpy.ma as ma
@@ -73,6 +92,11 @@ from scipy.ndimage import binary_dilation, gaussian_filter
 import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
+
+# if hotpants cannot be called directly from the command line, the path to the
+# executable can be put modified with the function hotpants_path() below
+# by default, set to None --> assume can be called directly from the cmd line
+HOTPANTS_PATH = None
 
 ##############################################################################
 #### DOWNLOADING TEMPLATES ####
@@ -156,7 +180,7 @@ def __downloadtemplate_auth(url, survey, pixscale, auth_user, auth_pass):
 def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
     """
     Input: a RA, Dec of interest, a size for the image in pixels (1 pix ==
-    0.25" in PS1), the filter(s) (g, r, i, z, y) desired, and output name(s)
+    0.258" in PS1), the filter(s) (g, r, i, z, y) desired, and output name(s)
     for the downloaded template(s)
     
     Downloads the relevant PS1 template image(s) at the input RA, Dec. 
@@ -197,12 +221,14 @@ def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
 def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz", 
                              output=None):
     """
-    Input: a RA, Dec of interest, a size for the image in pixels, the scale of 
+    Input: a RA, Dec of interest, a size for the image in pixels*, the scale of 
     the image in arcseconds per pixel, the filters to use (files are always 
     downloaded separately when multiple filters are provided; options are 
     (g, r, z)) and output name(s) for the downloaded template(s)
     
     Downloads the relevant DECaLS template image(s) at the input RA, Dec. 
+    
+    * size must be an int. If it is a float, it will be converted.
     
     Output: HDU object(s) for the downloaded template image(s) 
     """
@@ -215,6 +241,9 @@ def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz",
         else: 
             print("\nDECaLS does not contain the "+f+" band, so this band "+
                   "will be ignored.")    
+    
+    if len(filt_upd) == 0:
+        return
     
     # verify other input s
     if size > 512: # if requested image size too big
@@ -231,7 +260,9 @@ def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz",
         print("\nPlease provide a list of output filenames to match "+
               "the number of valid requested template filters. Exiting.")
         return
-        
+    
+    # ensure size is an int
+    size = int(size)
        
     import query_DECaLS # script for using DECaLS's cutout service
     # get the url
@@ -627,17 +658,20 @@ def bkgsub(im_file, mask_file=None, bkg_box=(5,5), bkg_filt=(5,5),
         bp_mask = fits.getdata(mask_file)
         bp_mask = bp_mask.astype(bool)
         source_mask = make_source_mask(image_data, snr=3, npixels=5, 
-                                   dilate_size=15, mask=bp_mask)
+                                       dilate_size=15, mask=bp_mask)
         # combine the bad pixel mask and source mask 
-        final_mask = np.logical_or(bp_mask,source_mask)
+        final_mask = np.logical_or(bp_mask, source_mask)
     else: 
         source_mask = make_source_mask(image_data, snr=3, npixels=5, 
-                                   dilate_size=15)
-        final_mask = source_mask
+                                       dilate_size=15)
+        final_mask = source_mask    
     
     ### BACKGROUND SUBTRACTION ###
     # estimate the background
-    sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+    try:
+        sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+    except TypeError: # for older versions of astropy, "maxiters" was "iters"
+        sigma_clip = SigmaClip(sigma=3, iters=5)
     bkg_estimator = MedianBackground()
     
     try: # try using photutils
@@ -792,23 +826,35 @@ def bkgsub(im_file, mask_file=None, bkg_box=(5,5), bkg_filt=(5,5),
 ###############################################################################
 #### IMAGE REGISTRATION (ALIGNMENT) ####
 
-def image_align(source_file, template_file, thresh_sigma=3.0,
+def image_align(source_file, template_file, mask_file=None, 
+                astrometry=False, astrom_sigma=8.0, psf_sigma=5.0,
+                thresh_sigma=3.0,
                 plot=False, scale=None, write=True, output_im=None, 
                 output_mask=None):
-    """
-    WIP:
-        - Masked pixels are not taken into account by some of the transform
-          functions in astroalign
+    """    
+    Input: 
+        - science image (source) to register
+        - template image (target) to match source to
+        - mask file for the SOURCE image (optional; default None)
+        - use astrometry.net for source detection and provide astroalign with a
+          list of x, y coordinates if True, use simple image segmentation to 
+          detect sources if False (optional; default False)
+        - sigma threshold for astrometry.net source detection (optional; 
+          default 8.0; only relevant if astrometry=True)
+        - the sigma of the Gaussian PSF of the source/template (optional; 
+          default 5.0 which sets the width to 5.0 for both; can pass a list to
+          specify a different width for source and template)
+        - sigma threshold for source detection (optional; default 3.0; only 
+          relevant if astrometry=False)
+        - whether to plot the matched image data (optional; default False)
+        - scale to apply to the plot (optional; default None (linear); options 
+          are "linear", "log", "asinh")
+        - whether to write the output .fits to files (optional; default True) 
+        - names for the output aligned image and image mask (both optional; 
+          defaults set below)
     
-    Input: the science image (the source), the template to match to, a sigma 
-    threshold for source detection (optional; default 3.0), a bool indicating 
-    whether to plot the matched image data (optional; default False), a scale 
-    to apply to the plot (optional; default None (linear); options are 
-    "linear", "log", "asinh"), whether to write the output .fits to files 
-    (optional; default True) and names for the output aligned image and 
-    image mask (both optional; defaults set below)
-    
-    Calls on astroalign to align the source image with the target to allow for 
+    Optionally uses astrometry.net to get x, y coords for all sources. Then 
+    calls on astroalign to align the source image with the target to allow for 
     proper image subtraction. Also finds a mask of out of bounds pixels to 
     ignore during subtraction.
     
@@ -825,37 +871,157 @@ def image_align(source_file, template_file, thresh_sigma=3.0,
     source = fits.getdata(source_file)
     template = fits.getdata(template_file)
     template_header = fits.getheader(template_file)
+
+    # build up masks, apply them
+    mask = (source == 0) # zeros in source
+    if mask_file: # if a mask is provided
+        mask = np.logical_or(mask, fits.getdata(mask_file))
+    source = np.ma.masked_where(mask, source)  
     
-    # mask nans (not sure if this does anything)
-    mask = np.isnan(template)
-    template = np.ma.masked_where(mask, template)
+    nansmask = np.isnan(template) # nans in template 
+    template = np.ma.masked_where(nansmask, template)
     
-    try: 
-        img_aligned, footprint = aa.register(source, template, 
-                                             thresh=thresh_sigma)
-    except aa.MaxIterError: # if cannot match images 
-        #print(source)
-        source = np.flip(source, axis=0)
-        source = np.flip(source, axis=1)
-        print("\nMax iterations exceeded; flipping the image...")
-        try:
-            img_aligned, footprint = aa.register(source, template, 
-                                                 thresh=thresh_sigma)
-        except aa.MaxIterError:
-            print("\nMax iterations exceeded while trying to find acceptable "+
-                  "transformation. Exiting.\n")
+    ### OPTION 1: use astrometry.net to find the sources, find the transform, 
+    ### and then apply the transform
+    if astrometry:  
+        # check if the input astrometry sigma is a list or single value 
+        if not(type(astrom_sigma) in [float,int]):
+            source_sig = astrom_sigma[0]
+            tmp_sig = astrom_sigma[1]
+        else:
+            source_sig = astrom_sigma
+            tmp_sig = astrom_sigma
+        # check if the input astrometry sigma is a list or single value 
+        if not(type(psf_sigma) in [float,int]):
+            source_psf = psf_sigma[0]
+            tmp_psf = psf_sigma[1]
+        else:
+            source_psf = psf_sigma
+            tmp_psf = psf_sigma
+            
+        # -O --> overwrite, -p --> source significance 
+        # -w --> estimated PSF width (pixels)
+        # -m 1000 --> max object size is 1000 pix**2
+        # find control points in source image 
+        options = " -O -p "+str(source_sig)+" -m 1000 -w "+str(source_psf)+" "  
+        run("image2xy"+options+source_file, shell=True)    
+        source_list_file = source_file.replace(".fits", ".xy.fits")
+        source_list = Table.read(source_list_file)
+        if len(source_list) == 0: # if no sources found 
+            print("\nNo sources found with astrometry.net in the source "+
+                  "image, so image alignment cannot be obtained. Exiting.")
             return
-    except aa.TooFewStarsError:
-        print("\nReference stars in source/template image are less than the "+
-              "minimum value (3). Exiting.")
-        return
+        # pick 50 sources below the 95% flux percentile
+        source_list.sort('FLUX') # sort by flux
+        source_list.reverse() # biggest to smallest
+        start = int(0.05*len(source_list))
+        end = min((len(source_list)-1), (start+50))
+        source_list = source_list[start:end]   
+        source_list.pprint() # debugging
+        print("\n")
+        source_list = np.array([[source_list['X'][i], 
+                                 source_list['Y'][i]] for i in 
+                               range(len(source_list['X']))]) 
+            
+        # find control points in template image
+        options = " -O -p "+str(tmp_sig)+" -m 1000 -w "+str(tmp_psf)+" "   
+        run("image2xy"+options+template_file, shell=True)    
+        template_list_file = template_file.replace(".fits", ".xy.fits")        
+        template_list = Table.read(template_list_file)
+        if len(template_list) == 0: # if no sources found 
+            print("\nNo sources found with astrometry.net in the template "+
+                  "image, so image alignment cannot be obtained. Exiting.")
+            return
+        # pick 50 sources below the 95% flux percentile
+        template_list.sort('FLUX') # sort by flux 
+        template_list.reverse() # biggest to smallest
+        start = int(0.05*len(template_list))
+        end = min((len(template_list)-1), (start+50))
+        template_list = template_list[start:end]  
+        template_list.pprint()
+        template_list = np.array([[template_list['X'][i], 
+                                   template_list['Y'][i]] for i in 
+                                 range(len(template_list['X']))])   
+       
+        run("rm "+source_list_file, shell=True) # these files are not needed
+        run("rm "+template_list_file, shell=True) 
+
+        try: 
+            # find the transform using the control points
+            tform, __ = aa.find_transform(source_list, template_list)
+            # apply the transform
+            img_aligned, footprint = aa.apply_transform(tform, source,
+                                                        template,
+                                                        propagate_mask=True)
+        except aa.MaxIterError: # if cannot match images, try flipping 
+            print("\nMax iterations exceeded; flipping the image...")
+            xsize = fits.getdata(source_file).shape[1]
+            ysize = fits.getdata(source_file).shape[0]
+            source_list = [[xsize,ysize]-coords for coords in 
+                           source_list.copy()]
+            source = np.flip(source, axis=0)
+            source = np.flip(source, axis=1)
+                
+            try:
+                tform, __ = aa.find_transform(source_list, template_list)
+                print(tform)
+                img_aligned, footprint = aa.apply_transform(tform, source,
+                                                            template,
+                                                           propagate_mask=True)
+            except aa.MaxIterError: # still too many iterations 
+                print("\nMax iterations exceeded while trying to find "+
+                      "acceptable transformation. Exiting.\n")
+                return
+            
+        except aa.TooFewStarsError: # not enough stars in source/template
+            print("\nReference stars in source/template image are less than "+
+                  "the minimum value (3). Exiting.")
+            return
+        
+        except Exception: # any other exceptions
+            e = sys.exc_info()
+            print("\nWhile calling astroalign, some error other than "+
+                  "MaxIterError or TooFewStarsError was raised: "+
+                  "\n"+str(e[0])+"\n"+str(e[1]))
+            return
     
-    except Exception:
-        print("\nSome error other than MaxIterError or TooFewStarsError was "+
-              "raised. Exiting.")
-        return
-    
-    # build the mask 
+    ### OPTION 2: use image segmentation to find sources in the source and 
+    ### template, find the transformation using these sources as control 
+    ### points, and apply the transformation to the source image 
+    else: 
+        try: 
+            # find control points using image segmentation, find the transform,
+            # and apply the transform
+            img_aligned, footprint = aa.register(source, template,
+                                                 propagate_mask=True,
+                                                 thresh=thresh_sigma)
+        except aa.MaxIterError: # if cannot match images, try flipping 
+            print("\nMax iterations exceeded; flipping the image...")
+            source = np.flip(source, axis=0)
+            source = np.flip(source, axis=1)
+                
+            try:
+                img_aligned, footprint = aa.register(source, template, 
+                                                     propagate_mask=True,
+                                                     thresh=thresh_sigma)
+            except aa.MaxIterError: # still too many iterations 
+                print("\nMax iterations exceeded while trying to find "+
+                      "acceptable transformation. Exiting.\n")
+                return
+            
+        except aa.TooFewStarsError: # not enough stars in source/template
+            print("\nReference stars in source/template image are less than "+
+                  "the minimum value (3). Exiting.")
+            return
+        
+        except Exception: # any other exceptions
+            e = sys.exc_info()
+            print("\nWhile calling astroalign, some error other than "+
+                  "MaxIterError or TooFewStarsError was raised: "+
+                  "\n"+str(e[0])+"\n"+str(e[1]))
+            return
+        
+    # build the new mask 
     # mask pixels==0 from the original source image and mask the footprint of
     # the image registration
     bool_img_aligned = np.logical_not(img_aligned.astype(bool))
@@ -926,17 +1092,20 @@ def image_align(source_file, template_file, thresh_sigma=3.0,
 
 
 def image_align_fine(source_file, template_file, mask_file=None, 
-                    flip=False, plot=False, scale=None, write=True, 
+                    flip=False, maxoffset=30.0, plot=False, scale=None, 
+                    write=True, 
                     output_im=None, output_mask=None):
     """
     Input: the science image (the source), the template to match to, a mask of
     bad pixels to ignore (optional; default None), a bool indicating whether to 
     flip (invert along x AND y) the image before trying to align (optional; 
-    default False), a bool indicating whether to plot the matched image data 
-    (optional; default False), a scale to apply to the plot (optional; default 
-    None (linear); options are "linear", "log", "asinh"), whether to write 
-    output .fits to files (optional; default True) and names for the output 
-    aligned image and image mask (both optional; defaults set below)
+    default False), the maximum allowed offset before deciding 
+    that the alignment is not accurate (optional; default 30.0 pix), a bool 
+    indicating whether to plot the matched image data (optional; default 
+    False), a scale to apply to the plot (optional; default None (linear); 
+    options are "linear", "log", "asinh"), whether to write output .fits to 
+    files (optional; default True) and names for the output aligned image and 
+    image mask (both optional; defaults set below)
     
     Calls on image_registration to align the source image with the target to 
     allow for proper image subtraction. Also finds a mask of out of bounds 
@@ -945,7 +1114,8 @@ def image_align_fine(source_file, template_file, mask_file=None,
     Output: the aligned image data and a pixel mask
     """
     if flip:
-        source = np.flip(fits.getdata(source_file))
+        source = np.flip(fits.getdata(source_file), axis=0)
+        source = np.flip(source, axis=1)
     else: 
         source = fits.getdata(source_file)
     template = fits.getdata(template_file)
@@ -957,36 +1127,51 @@ def image_align_fine(source_file, template_file, mask_file=None,
     from image_registration import chi2_shift
     from scipy import ndimage
     
-    # pad the source array so that it has the same shape as the template
+    # pad/crop the source array so that it has the same shape as the template
     # template must be larger than source
     if source.shape != template.shape:
-        ypad = (template.shape[1] - source.shape[1])
-        xpad = (template.shape[0] - source.shape[0])
-        print("\nXPAD == "+str(xpad))
-        print("YPAD == "+str(ypad)+"\n")
+        xpad = (template.shape[1] - source.shape[1])
+        ypad = (template.shape[0] - source.shape[0])
+
         
         if xpad > 0:
-            source = np.pad(source, [(0,xpad), (0,0)], mode="constant", 
+            print("\nXPAD = "+str(xpad)+
+                  " --> padding source")
+            source = np.pad(source, [(0,0), (0,xpad)], mode="constant", 
                                      constant_values=0)
         elif xpad < 0: 
-            template = np.pad(template, [(0,abs(xpad)), (0,0)], 
-                                         mode="constant", constant_values=0)
-        if ypad > 0:
-            source = np.pad(source, [(0,0), (0,ypad)], 
-                                     mode="constant", constant_values=0)
-        elif ypad < 0:
-            template = np.pad(template, [(0,0), (0,abs(ypad))], 
-                                         mode="constant", constant_values=0)
+            print("\nXPAD = "+str(xpad)+
+                  " --> cropping source")
+            source = source[:, :xpad]
+        else: 
+            print("\nXPAD = "+str(xpad)+
+                  " --> no padding/cropping source")
             
+        if ypad > 0:
+            print("YPAD = "+str(ypad)+
+                  " --> padding source\n")
+            source = np.pad(source, [(0,ypad), (0,0)], mode="constant", 
+                                     constant_values=0)
+            
+        elif ypad < 0:
+            print("YPAD = "+str(ypad)+
+                  " --> cropping source\n")
+            source = source[:ypad, :]
+        else: 
+            print("YPAD = "+str(ypad)+
+                  " --> no padding/cropping source")
+
+    # build up a mask
+    zeromask = (source == 0) # zeros in source
+    nansmask = np.isnan(template) # nans in template 
+    mask = np.logical_or(zeromask, nansmask)
+    
     if mask_file: # if a mask is provided
-        mask = fits.getdata(mask_file)
-        source = np.ma.masked_where(mask, source)
-        masknans = np.isnan(template)
-        template_mask = np.logical_or(mask, masknans)
-        template = np.ma.masked_where(template_mask, template)
-    else: # else, just mask nans in the template 
-        masknans = np.isnan(template)
-        template = np.ma.masked_where(masknans, template)
+        mask = np.logical_or(mask, fits.getdata(mask_file))
+    
+    # apply the mask
+    source = np.ma.masked_where(mask, source)
+    template = np.ma.masked_where(mask, template)
         
     # compute the required shift
     xoff, yoff, exoff, eyoff = chi2_shift(template, source, err=None, 
@@ -994,17 +1179,18 @@ def image_align_fine(source_file, template_file, mask_file=None,
                                           upsample_factor="auto",
                                           boundary="constant")
     
-    if not(abs(xoff) < 20.0 and abs(yoff) < 20.0): # offsets should be very small  
-        print("\nOffsets are both larger than 20.0 pix. Flipping the image "+
-              "and trying again.\n") 
-        source = np.flip(source) # try flipping the image 
+    if not(abs(xoff) < maxoffset and abs(yoff) < maxoffset): # offsets should be small  
+        print("\nEither the X or Y offset is larger than "+str(maxoffset)+" "+
+              "pix. Flipping the image and trying again...") 
+        source = np.flip(source, axis=0) # try flipping the image
+        source = np.flip(source, axis=1)
         xoff, yoff, exoff, eyoff = chi2_shift(template, source, err=None, 
                                               return_error=True, 
                                               upsample_factor="auto",
                                               boundary="constant")
-        if not(abs(xoff) < 20.0 and abs(yoff) < 20.0):
-            print("\nAfter flipping, offsets are still both larger than 20.0 "+
-                  "pix. Could not compute the fine alignment offset. Exiting.")
+        if not(abs(xoff) < maxoffset and abs(yoff) < maxoffset):
+            print("\nAfter flipping, either the X or Y offset is still "+
+                  "larger than "+str(maxoffset)+" pix. Exiting.")
             return 
         
     # shift
@@ -1018,8 +1204,7 @@ def image_align_fine(source_file, template_file, mask_file=None,
     print("\nX OFFSET = "+str(xoff)+"+/-"+str(exoff))
     print("Y OFFSET = "+str(yoff)+"+/-"+str(eyoff)+"\n")
 
-    # plot, if desired
-    if plot: 
+    if plot: # plot, if desired
         plt.figure(figsize=(14,13))
         # show WCS
         template_header = fits.getheader(template_file) # image header       
@@ -1075,90 +1260,6 @@ def image_align_fine(source_file, template_file, mask_file=None,
             output_im = source_file.replace(".fits", "_align.fits")
         if not (output_mask): 
             output_mask = source_file.replace(".fits", "_align_mask.fits")
-            
-        align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
-        mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
-    
-    return align_hdu, mask_hdu
-
-
-def image_align_manual(source_file, template_file, mask_file, xoff, yoff,
-                       plot=False, scale=None, write=True, output_im=None, 
-                       output_mask=None):
-    """
-    WIP. NOT RELIABLE.
-    Write description later.
-    """
-    
-    from scipy import ndimage
-    
-    source = fits.getdata(source_file)
-    mask = fits.getdata(mask_file)
-    source = np.ma.masked_where(mask, source)
-    
-    # shift the image by the input xoff, yoff 
-    img_aligned = ndimage.shift(source, [yoff, xoff], order=3, 
-                                mode='constant', cval=0.0, prefilter=True)
-    mask = np.logical_or((img_aligned == 0), mask)
-    
-    
-    # plot, if desired
-    if plot: 
-        plt.figure(figsize=(14,13))
-        # show WCS
-        template_header = fits.getheader(template_file) # image header       
-        w = wcs.WCS(template_header)
-        ax = plt.subplot(projection=w) 
-        ax.coords["ra"].set_ticklabel(size=15)
-        ax.coords["dec"].set_ticklabel(size=15)
-        
-        img_aligned_masked = np.ma.masked_where(mask, img_aligned)
-        img_aligned = np.ma.filled(img_aligned_masked, 0)
-        
-        if not scale: # if no scale to apply 
-            scale = "linear"
-            plt.imshow(img_aligned, cmap='magma', aspect=1, 
-                       interpolation='nearest', origin='lower')
-            cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-            cb.set_label(label="ADU", fontsize=16)
-            
-        elif scale == "log": # if we want to apply a log scale 
-            img_aligned_log = np.log10(img_aligned)
-            lognorm = simple_norm(img_aligned_log, "log", percent=99.0)
-            plt.imshow(img_aligned_log, cmap='magma', aspect=1, norm=lognorm,
-                       interpolation='nearest', origin='lower')
-            cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-            cb.set_label(label=r"$\log(ADU)$", fontsize=16)
-            
-        elif scale == "asinh":  # asinh scale
-            img_aligned_asinh = np.arcsinh(img_aligned)
-            asinhnorm = simple_norm(img_aligned_asinh, "asinh")
-            plt.imshow(img_aligned_asinh, cmap="viridis", aspect=1, 
-                       norm=asinhnorm, interpolation="nearest", origin="lower")
-            cb = plt.colorbar(orientation="vertical", fraction=0.046, pad=0.08)
-            cb.set_label(label=r"$\arcsinh{(ADU)}$", fontsize=16)
-            
-        plt.xlabel("RA (J2000)", fontsize=16)
-        plt.ylabel("Dec (J2000)", fontsize=16)
-        plt.title("Registered image via manual alignment", fontsize=15)
-        plt.savefig("manual_align_image_"+scale+".png", bbox_inches="tight")
-    
-    # set header for new aligned fits file 
-    hdr = fits.getheader(source_file)
-    w = wcs.WCS(template_header)
-    
-    if not("SIP" in template_header["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
-        __remove_SIP(hdr)
-    hdr.update((w.to_fits(relax=True))[0].header)
-    
-    mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
-    align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
-    
-    if write: # if we want to write the aligned fits file and the mask 
-        if not(output_im): # if no output name given, set default
-            output_im = source_file.replace(".fits", "_manalign.fits")
-        if not (output_mask): 
-            output_mask = source_file.replace(".fits", "_manalign_mask.fits")
             
         align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
         mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
@@ -1281,7 +1382,10 @@ def saturation_mask(image_file, mask_file=None, sat_ADU=40000,
         rough_mask = source_mask
     
     # estimate the background
-    sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+    try:
+        sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+    except TypeError: # for older versions of astropy, "maxiters" was "iters"
+        sigma_clip = SigmaClip(sigma=3, iters=5)
     bkg_estimator = MedianBackground()
     
     bkg = Background2D(data, (10,10), filter_size=(5,5), 
@@ -1374,6 +1478,15 @@ def saturation_mask(image_file, mask_file=None, sat_ADU=40000,
 ###############################################################################
 #### IMAGE DIFFERENCING WITH HOTPANTS ####
 
+def hotpants_path(path):
+    """
+    Input: a path to the hotpants executable
+    Output: None
+    """
+    global HOTPANTS_PATH
+    HOTPANTS_PATH = path
+
+
 def get_substamps(source_file, template_file, mask_file=None, sigma=3.0, 
                   elongation_max=3.0, area_max=50.0, output=None):
     """
@@ -1424,7 +1537,10 @@ def get_substamps(source_file, template_file, mask_file=None, sigma=3.0,
             final_mask = source_mask
         
         # estimate the background
-        sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+        try:
+            sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+        except TypeError: # older versions of astropy, "maxiters" was "iters"
+            sigma_clip = SigmaClip(sigma=3, iters=5)
         bkg_estimator = MedianBackground()
         
         bkg = Background2D(image_data, (10,10), filter_size=(5,5), 
@@ -1482,7 +1598,8 @@ def get_substamps(source_file, template_file, mask_file=None, sigma=3.0,
 def hotpants(source_file, template_file, mask_file=None, substamps_file=None, 
              iu=None, tu=None, il=None, tl=None, gd=None, ig=None, ir=None, 
              tg=None, tr=None, ng=None, rkernel=None, convi=False, convt=False, 
-             bgo=0, ko=1, output=None, maskout=None, convout=None, kerout=None, 
+             bgo=0, ko=1, output=None, mask_write=False, conv_write=False, 
+             kern_write=False, maskout=None, convout=None, kerout=None, 
              v=1, plot=True, scale=None, target=None, target_small=None):
     """       
     hotpants args: 
@@ -1511,9 +1628,15 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
         - spatial background variation order (optional; default 0)
         - spatial kernel variation order (optional; default 1)
         - name for the output subtracted image (optional; default set below)
-        - name for the output bad pixel mask (optional; default set below)
-        - name for the output convolved image (optional; default set below)
-        - name for the output kernel (optional; default set below)
+        - whether to output the bad pixel mask (optional; default False)
+        - whether to output the convolved image (optional; default False)
+        - whether to output the kernel image (optional; default False)
+        - name for the output bad pixel mask (optional; default set below; only
+          relevant if mask_write=True)
+        - name for the output convolved image (optional; default set below; 
+          only relevant if conv_write=True)
+        - name for the output kernel (optional; default set below; only 
+          relevant if kern_write=True)
         - verbosity (optional; default 1; options are 0 - 2 where 0 is least
           verbose)
         
@@ -1551,11 +1674,23 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
         
     ### INPUTS/OUTPUTS FOR HOTPANTS #######################################   
     ## Input/output files and masks
+    
     hp_options = " -inim "+source_file+" -tmplim "+template_file
     hp_options += " -outim "+output # output subtracted file
-    hp_options += " -omi "+maskout # output bad pixel mask
-    hp_options += " -oci "+convout # output convoluted file
-    hp_options += " -oki "+kerout # output kernel file
+    
+    if mask_write:
+        if not(maskout):
+            maskout = source_file.replace(".fits", "_submask.fits")
+        hp_options += " -omi "+maskout # output bad pixel mask        
+    if conv_write:
+        if not(convout):
+            convout = source_file.replace(".fits", "_conv.fits")        
+        hp_options += " -oci "+convout # output convoluted file       
+    if kern_write:
+        if not(kerout):
+            kerout = source_file.replace(".fits", "_kernel.fits")
+        hp_options += " -oki "+kerout # output kernel file
+        
     if mask_file: # if a mask is supplied
             mask = fits.getdata(mask_file)
             hp_options += " -tmi "+mask_file # mask for template 
@@ -1608,8 +1743,12 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
                                        dilate_size=15)
             final_mask = source_mask    
         # estimate the background as just the median 
-        mean, median, std = sigma_clipped_stats(tmp_data, mask=final_mask,
-                                                maxiters=2)
+        try: 
+            mean, median, std = sigma_clipped_stats(tmp_data, mask=final_mask,
+                                                    maxiters=2)
+        except TypeError: # older versions of astropy, "maxiters" was "iters"
+            mean, median, std = sigma_clipped_stats(tmp_data, mask=final_mask, 
+                                                    iters=5)
         #  set the lower upper/lower thresholds to bkg_median +/- 5*bkg_rms
         hp_options += " -tu "+str(median+10*std)
         hp_options += " -tl "+str(median-10*std)
@@ -1671,8 +1810,10 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
     hp_options += " -v "+str(v) # verbosity 
 
     ## BANDAID FIX: can't locate hotpants at the moment 
-    #run("~/hotpants/hotpants"+hp_options, shell=True) # call hotpants
-    run("hotpants"+hp_options, shell=True) # call hotpants
+    if HOTPANTS_PATH:
+        run(HOTPANTS_PATH+hp_options, shell=True) # call hotpants
+    else:
+        run("hotpants"+hp_options, shell=True) # call hotpants
     
     # if file successfully produced and non-empty
     outfile = re.sub(".*/", "", output) # for a file /a/b/c, extract the "c"
@@ -1697,8 +1838,11 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
     try:
         mean_diff = float(sub_header["DMEAN00"]) # mean of diff img good pixels
         std_diff = float(sub_header["DSIGE00"]) # stdev of diff img good pixels
-        print("\nMEAN OF DIFFERENCE IMAGE: %.2f ± %.2f \n"%(
-                mean_diff, std_diff))
+        try: # weird error on irulan when running qsub
+            print("\nMEAN OF DIFFERENCE IMAGE: %.2f ± %.2f \n"%(
+                    mean_diff, std_diff))
+        except UnicodeEncodeError:
+            pass
     except KeyError:
         print("\nCould not find DMEAN00 and DSIGE00 (mean and standard dev. "+
               "of difference image good pixels) headers in difference image.")
@@ -1765,12 +1909,16 @@ def hotpants(source_file, template_file, mask_file=None, substamps_file=None,
 
 
 def transient_detect_hotpants(sub_file, og_file, sigma=5, pixelmin=5, 
-                              elongation_lim=2.0, plots=True, 
+                              elongation_lim=2.0, 
+                              toi=None, toi_sep_min=None, toi_sep_max=None,
+                              write=True, output=None, 
+                              plots=["full", "zoom og", "zoom diff"], 
                               sub_scale=None, og_scale=None, 
-                              stampsize=200.0, crosshair_og="#fe019a",
-                              crosshair_sub="#5d06e9",
-                              toi=None, toi_sep_min=None, toi_sep_max=None):
-    """    
+                              stampsize=200.0, 
+                              crosshair_og="#fe019a", crosshair_sub="#5d06e9",
+                              full_out=None, zoom_og_out=None, 
+                              zoom_diff_out=None):
+    """        
     Inputs:
         - subtracted image file
         - original science image file (can be background subtracted or not)
@@ -1779,12 +1927,26 @@ def transient_detect_hotpants(sub_file, og_file, sigma=5, pixelmin=5,
         - minimum number of pixels to count as a source (optional; default 5)
         - maximum allowed elongation for sources found by image segmentation 
           (optional; default 2.0)
-        - whether to plot the candidate transient sources with a crosshair 
-          denoting their positions over all of the following:
-              (1) the subtracted image ** 
-              (2) "postage stamp" of the original unsubtracted image 
-              (3) postage stamp of the subtracted image 
-              (optional; default True)
+        - [ra,dec] for some target of interest (e.g., a candidate host galaxy)
+          such that the distance to this target will be computed for every 
+          candidate transient (optional; default None)
+        - minimum separation between the target of interest and the transient
+          (optional; default None; only relevant if TOI is supplied)
+        - maximum separation between the target of interest and the transient 
+          (optional; default None, only relevant if TOI is supplied)
+          
+        writing and plotting:
+        - whether to write the source table (optional; default True)
+        - name for the output source table (optional; default set below; only 
+          relevant if write=True)
+        - an array of which plots to produce, where valid options are:
+              (1) "full" - the full-frame subtracted image
+              (2) "zoom og" - postage stamp of the original unsubtracted image 
+              (3) "zoom diff" - postage stamp of the subtracted image 
+              (optional; default is ["full", "zoom og", "zoom diff"]) 
+              
+        the following are relevant only if plots are requested (i.e., array 
+        'plots' is non-empty):     
         - scale to apply to the difference images (optional; default "asinh"; 
           options are "linear", "log", "asinh")
         - scale to apply to the original unsubtracted image (optional; default
@@ -1794,13 +1956,12 @@ def transient_detect_hotpants(sub_file, og_file, sigma=5, pixelmin=5,
           default hot pink)
         - colour for crosshair on transient in subtraction images (optional;
           default purple-blue)
-        - [ra,dec] for some target of interest (e.g., a candidate host galaxy)
-          such that the distance to this target will be computed for every 
-          candidate transient (optional; default None)
-        - minimum separation between the target of interest and the transient
-          (optional; default None; only relevant if TOI is supplied)
-        - maximum separation between the target of interest and the transient 
-          (optional; default None, only relevant if TOI is supplied)
+        - name for the full frame plot (optional; default set below; only 
+          relevant if "full" in array 'plots')
+        - name for the zoomed in, unsubtracted plot (optional; default set 
+          below, only relevant if "zoom og" in array 'plots')
+        - name for the zoomed in, subtracted plot (optional; default set 
+          below, only relevant if "zoom diff" in array 'plots')
     
     Looks for sources with flux > sigma*std, where std is the standard 
     deviation of the good pixels in the subtracted image. Sources must also be 
@@ -1809,8 +1970,6 @@ def transient_detect_hotpants(sub_file, og_file, sigma=5, pixelmin=5,
     sources. For each candidate transient source, optionally plots the full 
     subtracted image and "postage stamps" of the transient on the original 
     science image and subtracted image. 
-    
-    ** Currently disabled 
     
     Output: a table of sources with their properties (coordinates, area, 
     elongation, separation from a target of interest (if relevant), etc.)
@@ -1853,50 +2012,120 @@ def transient_detect_hotpants(sub_file, og_file, sigma=5, pixelmin=5,
         mask = tbl["sep"] > toi_sep_min
         tbl = tbl[mask]        
     
+    if len(tbl) == 0:
+        print("\nAfter filtering sources, no viable transient candidates "+
+              "remain. No table will be written.")
+        return
+        
     # sort by flux and print out number of sources found 
     tbl.sort("source_sum")  
     tbl.reverse()
     print("\n"+str(len(tbl))+" candidate(s) found.")
     
-    if plots: # plot crosshairs at locations of transients 
-        targets = [tbl["ra"].data, tbl["dec"].data]
-        ntargets = len(targets[0])
-        for i in range(ntargets):
-            # set titles
-            title = "difference image: candidate "+str(i)
-            title_og = "original image: candidate "+str(i)
-            # set output filenames
-            output = sub_file.replace(".fits", "_candidate"+str(i)+".png")
-            output_og = og_file.replace(".fits", 
-                                          "_zoomed_candidate"+str(i)+".png")
-            output_zoom = sub_file.replace(".fits", 
-                                          "_zoomed_candidate"+str(i)+".png")
-            
-            # crosshair on full-frame difference image 
+    if write:
+        if not(output):
+            output = og_file.replace(".fits", "_candidates.fits")
+        tbl.write(output, overwrite=True, format="ascii")
+    
+    # plot as desired
+    transient_plot(sub_file, og_file, tbl, toi, plots, sub_scale, og_scale, 
+                   stampsize, crosshair_og, crosshair_sub, 
+                   full_out, zoom_og_out, zoom_diff_out)
+    return tbl
+
+
+def transient_plot(sub_file, og_file, tbl, toi=None, 
+                   plots=["full", "zoom og", "zoom diff"], 
+                   sub_scale=None, og_scale=None, 
+                   stampsize=200.0, 
+                   crosshair_og="#fe019a", crosshair_sub="#5d06e9", 
+
+                   full_out=None, zoom_og_out=None, zoom_diff_out=None):
+    """
+    Inputs:
+        general:
+        - subtracted image file
+        - original science image file (can be background subtracted or not)
+        - a table with at least the columns "ra", "dec" of candidate transient 
+          sources found by either transient_detect_hotpants(), 
+          transient_detect_proper(), or some other method 
+        - [ra,dec] for some target of interest (e.g., a candidate host galaxy)
+          such that a crosshair is also plotted at its location (optional; 
+          default None)
+        
+        plotting specifics:
+        - an array of which plots to produce, where valid options are:
+              (1) "full" - the full-frame subtracted image
+              (2) "zoom og" - postage stamp of the original unsubtracted image 
+              (3) "zoom diff" - postage stamp of the subtracted image 
+              (optional; default is ["full", "zoom og", "zoom diff"])           
+        - scale to apply to the difference images (optional; default "asinh"; 
+          options are "linear", "log", "asinh")
+        - scale to apply to the original unsubtracted image (optional; default
+          "asinh"; options are "linear", "log", "asinh")
+        - size of the transient stamp in pixels (optional; default 200.0)
+        - colour for crosshair on transient in original images (optional; 
+          default hot pink)
+        - colour for crosshair on transient in subtraction images (optional;
+          default purple-blue)
+        - name for the full frame plot (optional; default set below; only 
+          relevant if "full" in array 'plots')
+        - name for the zoomed in, unsubtracted plot (optional; default set 
+          below, only relevant if "zoom og" in array 'plots')
+        - name for the zoomed in, subtracted plot (optional; default set 
+          below, only relevant if "zoom diff" in array 'plots')        
+        
+    Output: None
+    """
+    
+    targets = [tbl["ra"].data, tbl["dec"].data]
+    
+    if not(plots): # if no plots requested
+        return
+    
+    ntargets = len(targets[0])
+    for n in range(ntargets):
+        # set titles
+        title = "difference image: candidate "+str(n)
+        title_og = "original image: candidate "+str(n)
+        
+        # crosshair on full-frame difference image 
+        if "full" in plots:
+            if not(full_out): # set filename
+                full_output = sub_file.replace(".fits", 
+                                               "_candidate"+str(n)+".png")
             make_image(sub_file, 
                        scale=sub_scale, cmap="coolwarm", label="", title=title, 
-                       output=output, 
+                       output=full_output, 
                        target=toi,
-                       target_small=[targets[0][i], targets[1][i]],
+                       target_small=[targets[0][n], targets[1][n]],
                        crosshair_small=crosshair_sub)
-            
-            # crossair on small region of science image and difference image 
+        
+        # crossair on small region of science image and difference image
+        if "zoom og" in plots:
+            if not(zoom_og_out): # set filename
+                zoom_og_output = og_file.replace(".fits", 
+                                             "_zoomed_candidate"+str(n)+".png")
             transient_stamp(og_file, 
-                            [targets[0][i], targets[1][i]], 
+                            [targets[0][n], targets[1][n]], 
                             stampsize, 
                             scale=og_scale, cmap="viridis", 
                             crosshair=crosshair_og,
-                            title=title_og, output=output_og,
+                            title=title_og, output=zoom_og_output,
                             toi=toi)
+            
+        if "zoom diff" in plots:
+            if not(zoom_diff_out): # set filename
+                zoom_diff_output = sub_file.replace(".fits", 
+                                            "_zoomed_candidate"+str(n)+".png")
             transient_stamp(sub_file, 
-                            [targets[0][i], targets[1][i]], 
+                            [targets[0][n], targets[1][n]], 
                             stampsize, 
                             scale=sub_scale, cmap="coolwarm", label="",
                             crosshair=crosshair_sub,
-                            title=title, output=output_zoom,
-                            toi=toi)
-    return tbl
-    
+                            title=title, output=zoom_diff_output,
+                            toi=toi)    
+        
 ###############################################################################
 #### IMAGE DIFFERENCING WITH PROPER IMAGE SUBTRACTION ####
 #### Based on 2016 work by Barak Zackay, Eran O. Ofek and Avishay Gal-Yam ####
@@ -2072,8 +2301,6 @@ def __flux_ratio(new_file, ref_file, sigma=8.0, psfsigma=5.0, alim=1000,
     # -w --> estimated PSF width, -m 1000 --> max object size is 1000 pix**2
     options = " -b -O -p "+str(sigma)+" -w "+str(psfsigma)+" -m "+str(alim)+" "
     
-    ## BANDAID FIX: can't locate image2xy at the moment 
-    #run("/usr/local/astrometry/bin/image2xy"+options+new_file, shell=True)
     run("image2xy"+options+new_file, shell=True)    
     new_sources_file = new_file.replace(".fits", ".xy.fits")
     new_sources = fits.getdata(new_sources_file)
@@ -2908,7 +3135,10 @@ def proper_subtraction(new_file, new_og, ref_file, ref_og,
         source_mask = np.logical_or(source_mask, adu_mask)
         
         # estimate the background
-        sigma_clip = SigmaClip(sigma=3, maxiters=1) # sigma clipping
+        try:
+            sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+        except TypeError: # older versions of astropy, "maxiters" was "iters"
+            sigma_clip = SigmaClip(sigma=3, iters=5)
         bkg_estimator = MedianBackground(sigma_clip=sigma_clip)       
         bkg = Background2D(image_data, (5,5), filter_size=(1,1), 
                            sigma_clip=sigma_clip, bkg_estimator=bkg_estimator, 

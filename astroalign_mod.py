@@ -1,3 +1,16 @@
+""" 
+NOTE:
+
+This software has been slighly modified by Nicholas Vieira for use in a 
+CFHT image differencing pipeline. I claim no ownership for this software. 
+
+The original copyright is found below.
+
+The original software can be found at https://github.com/toros-astro/astroalign
+
+Nicholas Vieira [5 November 2019]
+"""
+
 # MIT License
 
 # Copyright (c) 2016-2019 Martin Beroiz
@@ -40,8 +53,6 @@ Astroalign can match images of very different field of view, point-spread
 functions, seeing and atmospheric conditions.
 
 (c) Martin Beroiz
-
-THIS VERSION HAS BEEN MODIFIED BY NICHOLAS VIEIRA.
 """
 
 
@@ -189,7 +200,7 @@ class _MatchTransform:
         return error
 
 
-def find_transform(source, target, thresh):
+def find_transform(source, target, thresh=3.0):
     """Estimate the transform between ``source`` and ``target``.
 
     Return a SimilarityTransform object ``T`` that maps pixel x, y indices from
@@ -224,6 +235,7 @@ def find_transform(source, target, thresh):
             source_controlp = _np.array(source)[:MAX_CONTROL_POINTS]
         else:
             # Assume it's a 2D image
+            print(source)
             source_controlp = _find_sources(source, 
                                             thresh, 
                                             imtype="source")[:MAX_CONTROL_POINTS]
@@ -325,6 +337,7 @@ def apply_transform(transform, source, target,
     else:
         target_data = target
 
+    print("hello")
     aligned_image = warp(source_data, inverse_map=transform.inverse,
                          output_shape=target_data.shape, order=3, mode='constant',
                          cval=_np.median(source_data), clip=False,

@@ -50,9 +50,11 @@ def geturl(ra, dec, size=2400, output_size=None, filters="grizy", format="jpg",
         raise ValueError("color images are available only for jpg/png formats")
     if format not in ("jpg","png","fits"):
         raise ValueError("format must be one of jpg, png, fits")
+        
     table = getimages(ra,dec,size=size,filters=filters)
     url = ("https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?"
-           "ra={ra}&dec={dec}&size={size}&format={format}").format(**locals())
+           "ra={ra}&dec={dec}&size={size}"+
+           "&format={format}").format(**locals())
     if output_size: # only relevant for jpgs, pngs
         url = url + "&output_size={}".format(output_size)
         
