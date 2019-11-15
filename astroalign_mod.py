@@ -337,7 +337,6 @@ def apply_transform(transform, source, target,
     else:
         target_data = target
 
-    print("hello")
     aligned_image = warp(source_data, inverse_map=transform.inverse,
                          output_shape=target_data.shape, order=3, mode='constant',
                          cval=_np.median(source_data), clip=False,

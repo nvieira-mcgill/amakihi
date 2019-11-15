@@ -7,7 +7,6 @@ Created on Tue Aug 27 14:06:15 2019
 """
 
 import amakihi 
-import os
 import sys
 from subprocess import run
 import glob 
@@ -16,6 +15,7 @@ import pandas as pd
 import numpy as np
 from astropy.io import fits
 from astropy import wcs
+from astropy.table import QTable
 from timeit import default_timer as timer
 
 # enable/disable plots popping up
@@ -36,33 +36,49 @@ CSV = "AT2019candidatesCFHT.csv"
 ## directories
 # base data directories:
 BASEDIR = "/media/nvieira/OS/Users/nviei/Documents/Storage/" # base data dir
-WORKDIR = BASEDIR+"workdir/" # top working directory 
+
+# i transients with CFHT templates:
+WORKDIR = BASEDIR+"workdir_CFHTtmps/" # top working directory 
 SCI_DIR = BASEDIR+"isci_transient" # science
 TMP_DIR = BASEDIR+"itmp_transient" # template
-SCI_NOTMP_DIR = BASEDIR+"isci_transient_notmp" # sci files w/o CFHT template
+SCI_NOTMP_DIR = BASEDIR+"isci_transient_notmp" # sci files without templates
+
+# giz transients with PS1 templates:
+#WORKDIR = BASEDIR+"workdir_PS1tmps/" # top working directory 
+#SCI_DIR = BASEDIR+"gizsci_transient_notmp_forPS1" # science
+#TMP_DIR = BASEDIR+"giztmp_transient_PS1" # template
+#SCI_NOTMP_DIR = BASEDIR+"" # sci files without templates
+
+# gz transients with DECaLS templates:
+#WORKDIR = BASEDIR+"workdir_DECaLStmps/" # top working directory 
+#SCI_DIR = BASEDIR+"gzsci_transient_notmp_forDECaLS" # science
+#TMP_DIR = BASEDIR+"gztmp_transient_DECaLS" # template
+#SCI_NOTMP_DIR = BASEDIR+"" # sci files without templates
 
 # general directories:
-PLOTDIR = WORKDIR+"plotdir" # plotting directory 
-CANDIDATEDIR = WORKDIR+"candidatedir" # tables of potential transients
-CANDIDATEPLOTDIR = CANDIDATEDIR+"/plots" 
-CROPDIR = WORKDIR+"cropdir"
-ALIGNDIR = WORKDIR+"aligndir" # aligned only 
+CROPDIR = WORKDIR+"cropdir" # cropped only
+ALIGNDIR = WORKDIR+"aligndir" # cropped + aligned only 
 ALIGNMASKDIR = WORKDIR+"alignmaskdir" # alignment masks
-BKGSUBDIR = WORKDIR+"bkgsubdir" # aligned, background-subtracted images
+BKGSUBDIR = WORKDIR+"bkgsubdir" # cropped, aligned, background-subtracted 
 SATMASKDIR = WORKDIR+"satmaskdir" # saturation masks
 SATMASKPLOTDIR = SATMASKDIR+"/plots"
+PLOTDIR = WORKDIR+"plotdir" # plotting directory 
 SUBDIR = WORKDIR+"subdir" # difference images
 SUBPLOTDIR = SUBDIR+"/plots"
 SUBMASKDIR = WORKDIR+"submaskdir" # hotpants subtraction mask
-#PSFDIR = WORKDIR+"psfdir" # ePSFs (proper image subtraction)
-#PROPSUBDIR = WORKDIR+"propersubdir" # proper image subtractions
+# transient directories:
+CANDIDATEDIR = WORKDIR+"candidatedir" # tables of potential transients
+CANDIDATEPLOTDIR = CANDIDATEDIR+"/plots" 
+TRIPDIR = WORKDIR+"tripletdir" # tables of triplets
+TRIPPLOTDIR = TRIPDIR+"/plots" 
 # where failed files go:
 ALIGNFAILDIR = WORKDIR+"alignfaildir" # failed both alignments 
 HOTPANTSFAILDIR = WORKDIR+"hotpantsfaildir" # failed hotpants images
 
 ## look for existing files or just overwrite them?
-OVERWRITE = False # alignments, background subtractions, masks
-OVERWRITEHOTPANTS = False # hotpants difference images
+OVERWRITE = False # overwrite alignments, background subtractions, masks?
+OVERWRITEHOTPANTS = True # overwrite hotpants difference images?
+OVERWRITETRANSIENTS = True # overwrite transient detections?
 
 ## RA, DEC determination
 RANKS = False # use the .csv to obtain RANKS
@@ -70,60 +86,60 @@ TRANSIENTS = True # use the .csv to obtain TRANSIENT NAMES
 MANUAL = False # manually supply a RA, DEC below 
 
 ## cropping parameters
-CROP = True # do any sort of cropping?
+CROP = False # do any sort of cropping?
 CROPMIN = 1000.0 # minimum crop size (pix)
-PRECROP = False # are files pre-cropped?
-TARGET_CROP = True # use the rank/transient .csv to set crop
+SCIPRECROP = True # are science files pre-cropped?
+TMPPRECROP = True # are template files pre-cropped?
+TARGET_CROP = False # use the rank/transient .csv to set crop
 OCTANT_CROP = False # crop according to which octant contains some target
-
-## which subtraction to use 
-PROPERSUB = False # use proper image subtraction (if False, use hotpants)
 
 ## general subtraction arguments
 ## templates
-TMP_CFHT = False # are templates also from CFHT? 
+TMP_CFHT = True # are templates also from CFHT? 
 SURVEY = "DECaLS" # if not from CFHT, which survey (PS1 or DECaLS)?
 
 ## alignment
-DOUBLEALIGN = True # do double alignment (if possible)?
-ASTROMSIGMA = [5, 8] # sigma(s) for source detection with astrometry.net
+DOUBLEALIGN = False # do double alignment (if possible)?
+ASTROMSIGMA = [5, 5] # sigma(s) for source detection with astrometry.net
 SEGMSIGMA = 3.0 # sigma for source detect with img segmentation in image_align
 MAXOFFSET = 100.0 # maximum allowed pixel offset for image_align_fine
 
 ## transient detection
-ELONGLIM = 1.5 # maximum allowed source elongation
 TRANSIENTSIGMA = 5.0 # subtraction image transient detection sigma
-SEPLIM = 5.0 # max allowed sep between transient and target of interest
+PIXELMIN = 10 # minimum required sq. pix. area of transient
+# set any of the following to 0 to impose no limit
+DIPOLEWIDTH = 1.0 # maximum dipole width to look for (")
+ELONGLIM = 1.8 # maximum allowed source elongation
+NSOURCE_LIM = 40 # maximum allowed total no. of transients
+SEPLIM = 5.0 # max allowed sep between transient and target of interest (")
 
 ## what to do with found candidates
-# ["full", "zoom og", "zoom diff"] --> plot all
-# None --> plot none 
-PLOTCANDS = ["zoom og", "zoom diff"] # plot candidate transients?
+# ["full", "zoom og", "zoom ref", "zoom diff"] --> plot all
+# ["zoom og", "zoom ref", "zoom diff"] --> plot only postage stamps
+# None OR False--> plot none 
+#PLOTCANDS = False # plot candidate transients?
+PLOTCANDS = ["zoom og", "zoom ref", "zoom diff"]
 
-## proper image subtraction arguments 
-#SIGMA = 8.0 # sigma for source detection when building ePSF, if applicable 
-#PSFSIGMA = 5.0 # estimated PSF width for astrometry.net 
-#ALIM = 1500 # maximum allowed area in pix**2 for astrometry.net
-#NTHREADS = 8 # number of threads to use in FFTs
+## triplets
+TRIPSIZE = 128 # triplet size
+PLOTTRIP = True # plot triplets?
 
 ## path to hotpants (needed when running on my machine)
 amakihi.hotpants_path("~/hotpants/hotpants")
- 
-## clean up directories
-run("rm -rf "+SCI_DIR+"/*xy.fits", shell=True)
-run("rm -rf "+TMP_DIR+"/*xy.fits", shell=True) 
 
 ### LOAD IN DATA #########################################################
 df = pd.read_csv(CSV) # get coordinates 
-cwd = os.getcwd() # get science/template filenames 
 sci_files = sorted(glob.glob(SCI_DIR+"/*.fits"))
+
+# ignore any xy files, if present
+sci_files = [s for s in sci_files.copy() if not(".xy.fits" in s)]
 
 if not(TMP_CFHT) and SURVEY == "DECaLS":
     sci_files = [s for s in sci_files.copy() if (
-            fits.getheader(s)["FILTER"][0] in ["g","r","z"])]
-elif not(TMP_CFHT) and SURVEY == "PS1":
-    sci_files = [s for s in sci_files.copy() if (
-            fits.getheader(s)["FILTER"][0] == "i")] 
+            fits.getheader(s)["FILTER"][0] in "grz")]
+#elif not(TMP_CFHT) and SURVEY == "PS1":
+#    sci_files = [s for s in sci_files.copy() if (
+#            fits.getheader(s)["FILTER"][0] == "griz")] 
 
 if RANKS: # if using rankXX.fits files
     ranks = df["Rank"] # get ranks for each object 
@@ -139,12 +155,16 @@ elif TRANSIENTS:
     names = df["ID"]
     tmp_files = []
     for s in sci_files:
-        if PRECROP:
-            s = s.replace(".fits", "")[:-13] # "YYYYMMDD_crop"
+        if SCIPRECROP:
+            s = s.replace(".fits", "")[:-13] # remove "YYYYMMDD_crop"
         else:
-            s = s.replace(".fits", "")[:-8] # "YYYYMMDD"
+            s = s.replace(".fits", "")[:-8] # remove "YYYYMMDD"
         topfile = re.sub(".*/", "", s) # from /a/b/c, extract c
-        tmp_files.append(TMP_DIR+"/"+topfile+"template.fits")
+        
+        if TMPPRECROP:
+            tmp_files.append(TMP_DIR+"/"+topfile+"template_crop.fits")        
+        else:
+            tmp_files.append(TMP_DIR+"/"+topfile+"template.fits")
     
     
 else: # if looping over many images of some object with MANUALLY input coords
@@ -195,13 +215,14 @@ for i in range(nfiles):
 
     source_file, template_file = sci_files[i], tmp_files[i]
     
-    if not(OVERWRITEHOTPANTS):
+    if not(OVERWRITETRANSIENTS):
         filename = re.sub(".*/", "",sci_files[i])
         filename = filename.replace(".fits", "")
-        subfiles = glob.glob(SUBDIR+"/"+filename+"*") # update
-        if len(subfiles) > 0:
-            print("\nA difference image already exists for this science file."+
-                  " Skipping to next science file.\n")
+        candfiles = glob.glob(CANDIDATEDIR+"/"+filename+"*") 
+        if len(candfiles) > 0:
+            print("\nImage differencing and transient detection has alread "+
+                  "been performed on this science file. Skipping to next "
+                  "science file.\n")
             continue
         
     print("\n*******************************************************")
@@ -387,6 +408,7 @@ for i in range(nfiles):
         source_align = ALIGNDIR+"/"
         source_align += (re.sub(".*/", "",source_file)).replace(".fits",
                          "_align.fits")
+        template_align = template_file
         mask_file = ALIGNMASKDIR+"/"
         mask_file += (re.sub(".*/", "",source_align)).replace(".fits", 
                       "_mask.fits")
@@ -417,7 +439,7 @@ for i in range(nfiles):
                 source_file = source_align # update
                 mask_file = mask_file 
                 
-        # if astroalign succeeds        
+        # if astroalign succeeds + double alignment      
         elif DOUBLEALIGN:
             # set doubly-aligned output names
             source_align_align = ALIGNDIR+"/"
@@ -439,9 +461,10 @@ for i in range(nfiles):
                 mask_file = mask_file_align 
             else: # if image_registration fails
                 source_file = source_align # update
-                
-        source_align = source_file # cropped and aligned 
-        template_align = template_file # cropped and aligned (no change)
+
+        # if astroalign succeeds but no double alignment
+        else:
+            source_file = source_align
 
         print("WRITING TO:\n"+source_file+"\n"+mask_file+"\n")
         
@@ -493,10 +516,12 @@ for i in range(nfiles):
     print("*******************************************************")
     print("Building a mask of saturated stars...")
     print("*******************************************************\n")
+
+    old_mask_file = mask_file
     
     satmasks = []
     if not(OVERWRITE):
-        filename = (re.sub(".*/", "",source_file)).replace(".fits", "")
+        filename = (re.sub(".*/", "",mask_file)).replace(".fits", "")
         satmasks = glob.glob(SATMASKDIR+"/"+filename+"*")
         if len(satmasks) > 0:
             print("A saturation mask for the image was already produced. "+
@@ -507,18 +532,22 @@ for i in range(nfiles):
             print("\nSATURATION MASK:\n"+re.sub(".*/", "",mask_file)+"\n")
 
     if OVERWRITE or (len(satmasks) == 0):
-        # set output name
+        # set output names
         mask_file = (re.sub(".*/", "",mask_file)).replace(".fits", 
                     "_satmask.fits")
         mask_file = SATMASKDIR+"/"+mask_file
+        satmask_plot = (re.sub(".*/", "",source_file)).replace(".fits", 
+                        "_satmask.png")
+        satmask_plot = SATMASKPLOTDIR+"/"+satmask_plot
+        
         # build saturation mask
-        amakihi.saturation_mask(source_file, mask_file=None, dilation_its=7, 
+        amakihi.saturation_mask(source_file, mask_file=old_mask_file, 
+                                dilation_its=7, 
                                 ra_safe=ra, dec_safe=dec, rad_safe=10.0,
-                                plot=True, output=mask_file)       
+                                output=mask_file,
+                                plot=True, plotname=satmask_plot)       
         satmask_plot = source_file.replace(".fits","_satmask.png")
     
-        # move over plot
-        run("mv "+satmask_plot+" "+SATMASKPLOTDIR, shell=True) # move
         print("WRITING TO:\n"+mask_file+"\n")
     
     
@@ -534,114 +563,68 @@ for i in range(nfiles):
     amakihi.make_image(source_bkgsub, mask_file=mask_file, output=implot, 
                        scale="asinh", cmap="viridis", target=[ra,dec])
     print("WRITING TO:\n"+implot+"\n")
-
-    """
-    ### PROPER IMAGE SUBTRACTION #########################################
-    if PROPERSUB:
-        print("*******************************************************")
-        print("Building ePSF for both science and reference image... ")
-        print("*******************************************************\n")
-        amakihi.build_ePSF(source_bkgsub, sigma=SIGMA, psfsigma=PSFSIGMA,
-                           alim=ALIM, plot=True)
-        amakihi.build_ePSF(template_bkgsub, sigma=SIGMA, psfsigma=PSFSIGMA,
-                           alim=ALIM, plot=True)
-        pn_file = source_bkgsub.replace(".fits", "_ePSF.fits")
-        pr_file = template_bkgsub.replace(".fits", "_ePSF.fits")
-    
-        print("*******************************************************")
-        print("Performing proper image subtraction...")
-        print("*******************************************************")
-        d, s = amakihi.proper_subtraction(new_file=source_file, 
-                                          ref_file=template_file, 
-                                          new_og=source_align,
-                                          ref_og=template_align,
-                                          pn_file=pn_file,
-                                          pr_file=pr_file,
-                                          mask_file=mask_file, 
-                                          odd=False,
-  
-                                          bpix_fill=True,
-                                          plot_bpixfill=True,
-
-                                          findbeta=False,
-                                          betaits=20, 
-                                          analyticbeta=True,
-                                        
-                                          sigma=SIGMA,
-                                          psfsigma=PSFSIGMA,
-                                          alim=ALIM, 
-                                          
-                                          nthreads=NTHREADS,
-                                          pad=True,
-                                          maskborder=False,
-                                          zeroborder=True,
-                                          
-                                          plot="S",
-                                          target=[ra,dec])
-        # move and copy files
-        if type(s) == np.ndarray: # if successful subtraction 
-            S_file = source_file.replace(".fits", "_propersub_S.fits")
-            D_file = source_file.replace(".fits", "_propersub_D.fits")
-            print("*******************************************************")
-            print("Performing transient detection...")
-            print("*******************************************************")
-            tab = amakihi.transient_detect_proper(S_file, source_align, 
-                                                  elongation_lim=ELONGLIM,
-                                                  og_scale="asinh",
-                                                  crosshair_sub="#fe01b1",
-                                                  toi=[ra,dec],
-                                                  toi_sep_min=0.0,
-                                                  toi_sep_max=SEPLIM,
-                                                  sigma=TRANSIENTSIGMA)
-            run("cp "+source_align+" "+CROPALDIR, shell=True) # cropped, align
-            run("cp "+template_align+" "+CROPALDIR, shell=True) 
-            run("cp "+source_bkgsub+" "+BKGSUBDIR, shell=True) # +bkgsub
-            run("cp "+template_bkgsub+" "+BKGSUBDIR, shell=True) 
-            run("cp "+mask_file+" "+SATMASKDIR, shell=True) # saturation mask
-            run("cp "+pn_file+" "+PSFDIR, shell=True) # new image ePSF
-            run("cp "+pr_file+" "+PSFDIR, shell=True) # ref image ePSF
-            run("cp "+S_file+" "+PROPSUBDIR, shell=True) # S statistic 
-            run("cp "+D_file+" "+PROPSUBDIR, shell=True) # D statistic 
-    
-    """    
+ 
     
     ### IMAGE DIFFERENCING WITH HOTPANTS #################################
     print("*******************************************************")
     print("Performing image subtraction with hotpants...")
     print("*******************************************************")
     
-    # set output names
-    subfile = (re.sub(".*/", "",source_file)).replace(
-               ".fits", "_subtracted.fits")
-    subfile = SUBDIR+"/"+subfile
-    submask = (re.sub(".*/", "",source_file)).replace(
-               ".fits", "_submask.fits")
-    submask = SUBMASKDIR+"/"+submask
+    # for later
+    ret = None
+    subfiles = []
 
-    if TMP_CFHT: # both science and template are from CFHT
-        ret = amakihi.hotpants(source_file, template_file, mask_file, 
-                               iu=50000, il=-100.0, tu=50000, tl=-100.0,
-                               ng="3 6 2.5 4 5.0 2 10.0", 
-                               bgo=0, ko=0, v=0, target=[ra,dec], 
-                               rkernel=2.5*5.0,
-                               output=subfile,
-                               mask_write=False,
-                               maskout=submask)
-    else:
-        ret = amakihi.hotpants(source_file, template_file, mask_file, 
-                               iu=50000, il=-500.0, bgo=0, ko=0,
-                               ng="3 6 2.5 4 5.0 2 10.0", 
-                               rkernel=2.5*5.0,
-                               convi=True, v=0, #target=[ra_gal,dec_gal],
-                               target_small=[ra,dec],
-                               output=subfile,
-                               mask_write=False,
-                               maskout=submask)
+    if not(OVERWRITEHOTPANTS):
+        filename = re.sub(".*/", "",sci_files[i])
+        filename = filename.replace(".fits", "")
+        subfiles = glob.glob(SUBDIR+"/"+filename+"*") # update
+        if len(subfiles) > 0:
+            print("A difference image already exists for this science file."+
+                  " Skipping to transient detection.\n")
+            subfile = subfiles[0]
+            print("\nDIFFERENCE IMAGE:\n"+re.sub(".*/", "",subfile)+"\n")
     
-    # move and copy files
-    if (type(ret) == np.ndarray): # if successful subtraction 
-        run("mv "+os.getcwd()+"/*.png "+SUBPLOTDIR, shell=True) # diffim plot
+    # set output names
+    subfile = SUBDIR+"/"+(re.sub(".*/", "",source_file)).replace(".fits", 
+                         "_subtracted.fits")
+    submask = SUBMASKDIR+"/"+(re.sub(".*/", "",source_file)).replace(".fits", 
+                             "_submask.fits")
+    subplot = SUBPLOTDIR+"/"+(re.sub(".*/", "",source_file)).replace(".fits", 
+                         "_subtracted_hotpants.png")
+
+    ## hotpants
+    if OVERWRITEHOTPANTS or (len(subfiles) == 0):  
+        if TMP_CFHT: # both science and template are from CFHT
+            ret = amakihi.hotpants(source_file, template_file, mask_file, 
+                                   iu=50000, il=-200.0, tu=50000, tl=-200.0,
+                                   #ng="3 6 2.5 4 5.0 2 10.0", 
+                                   bgo=0, ko=1, v=0, target=[ra,dec], 
+                                   rkernel=2.5*5.0,
+                                   output=subfile,
+                                   mask_write=True,
+                                   maskout=submask,
+                                   plot=True,
+                                   plotname=subplot)
+        else:
+            ret = amakihi.hotpants(source_file, template_file, mask_file, 
+                                   iu=50000, il=-200.0, 
+                                   lsigma=10, hsigma=10,
+                                   ng="3 6 2.5 4 5.0 2 10.0", 
+                                   bgo=0, ko=1, v=0, target_small=[ra,dec],
+                                   rkernel=2.5*5.0,
+                                   convi=True, 
+                                   output=subfile,
+                                   mask_write=False,
+                                   maskout=submask,
+                                   plot=True,
+                                   plotname=subplot)
+    
+    # if successful subtraction on this loop specifically
+    if (type(ret) == np.ndarray):
         print("\nWRITING TO:\n"+subfile+"\n")
+
+    # if existing subtraction was found OR successful subtraction on this loop       
+    if (not(OVERWRITEHOTPANTS) and len(subfiles)>0) or (type(ret)==np.ndarray): 
         
         print("*******************************************************")
         print("Performing transient detection...")
@@ -649,25 +632,47 @@ for i in range(nfiles):
         try:
             tabfile = CANDIDATEDIR+"/"+re.sub(".*/", "",source_align)
             tabfile = tabfile.replace(".fits", "_candidates.fits")
-            tab = amakihi.transient_detect_hotpants(subfile, source_align, 
-                                                elongation_lim=ELONGLIM,
-                                                output=tabfile,
-                                                plots=PLOTCANDS,
-                                                og_scale="asinh",
-                                                crosshair_sub="#fe01b1",
-                                                toi=[ra,dec],
-                                                toi_sep_min=0.0,
-                                                toi_sep_max=SEPLIM,
-                                                sigma=TRANSIENTSIGMA)
+            tab = amakihi.transient_detect(subfile, source_align,
+                                           template_align,
+                                           #astrom_sigma=ASTROMSIGMA,
+                                           thresh_sigma=TRANSIENTSIGMA,
+                                           pixelmin=PIXELMIN,
+                                           dipole_width=DIPOLEWIDTH,
+                                           elongation_lim=ELONGLIM,
+                                           nsource_lim=NSOURCE_LIM,
+                                           toi=[ra,dec], toi_sep_min=0.0,
+                                           toi_sep_max=SEPLIM,
+                                           output=tabfile,                                            
+                                           plots=PLOTCANDS,
+                                           og_scale="asinh",
+                                           crosshair_sub="#fe01b1",
+                                           plotdir=CANDIDATEPLOTDIR)
+                
+            if (type(tab) == QTable): # if any transients are found 
+                print("\n****************************************************"+
+                      "***")
+                print("Creating triplets...")
+                print("*****************************************************"+
+                      "**")
+                trip = TRIPDIR+"/"+re.sub(".*/", "",source_align)
+                trip = trip.replace(".fits", "_candidates_triplets.npy")
+                t = amakihi.transient_triplets(subfile, source_align, 
+                                               template_align, tabfile,
+                                               size=TRIPSIZE, crosshair=None,
+                                               output=trip, plot=PLOTTRIP,
+                                               plotdir=TRIPPLOTDIR)   
                 
         except: # except any errors
-            print("\nSome error occurred during transient detection. "+
-                  "No transients will be reported.")
+            e = sys.exc_info()
+            print("\nSome error occurred during transient detection/triplet "+
+                  "writing: \n"+str(e[0])+"\n"+str(e[1])+
+                  "\nNo transients will be reported.")
         
     else:
         print("\nCopying the science file to the directory holding files "+
               "which caused some error for hotpants.\n")
         run("cp "+sci_files[i]+" "+HOTPANTSFAILDIR, shell=True)
+        run("rm "+subfile, shell=True)
     
     end = timer()
     print("\nTIME = %.4f s"%(end-start))
