@@ -2,13 +2,17 @@
 NOTE:
 
 This software has been slighly modified by Nicholas Vieira for use in a 
-CFHT image differencing pipeline. I claim no ownership for this software. 
+CFHT image differencing pipeline. I claim no ownership for this software. The 
+modifications include:
+    - an error class for when too few stars are supplied
+    - ability to set the detection threshold when finding sources via image 
+      segmentation
 
 The original copyright is found below.
 
 The original software can be found at https://github.com/toros-astro/astroalign
 
-Nicholas Vieira [5 November 2019]
+Nicholas Vieira [15 November 2019]
 """
 
 # MIT License
