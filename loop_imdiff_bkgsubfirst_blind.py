@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Oct 19 23:46:30 2019
+Created on Thu Dec 19 13:50:00 2019
 @author: Nicholas Vieira
-@loop_imdiff_blind.py 
+@loop_imdiff_bkgsubfirst_blind.py
 """
 
 import amakihi 
@@ -37,7 +37,7 @@ BASEDIR = "/data/irulan/cfht/"
 #WORKDIR = f"{BASEDIR}GW190814_imdiff_workdir/" # top working directory 
 
 # base data directories (for files w DECaLS templates)
-#SCI_DIR = f"{BASEDIR}GW190814_coadds_science_notemplate_cropped28" # science 
+#SCI_DIR = f"{BASEDIR}GW190814_coadds_science_notemplate_cropped50" # science 
 #TMP_DIR = f"{BASEDIR}GW190814_templates_DECaLS" # template 
 #WORKDIR = f"{BASEDIR}GW190814_imdiff_DECaLS/" # working directory 
 
@@ -75,9 +75,9 @@ ELONGAREASCATTERS = f"{WORKDIR}elongation_area_scatters"
 REJECTIONDIR = f"{WORKDIR}rejection_plots"
 
 ## look for existing files or just overwrite them?
-OVERWRITE = True # overwrite alignments, background subtractions, masks?
-OVERWRITEHOTPANTS = True # overwrite hotpants difference images?
-OVERWRITETRANSIENTS = True # overwrite transient detections?
+OVERWRITE = False # overwrite alignments, background subtractions, masks?
+OVERWRITEHOTPANTS = False # overwrite hotpants difference images?
+OVERWRITETRANSIENTS = False # overwrite transient detections?
 
 ## templates
 TMP_CFHT = False # are templates also from CFHT? 
@@ -87,7 +87,7 @@ if SURVEY == "PS1": TU = 100000; TL = -500 # hotpants tu/tl
 
 ## alignment
 DOUBLEALIGN = False # do double alignment (if possible)?
-PLOTSOURCES = False # plot sources input to astroalign? 
+PLOTSOURCES = True # plot sources input to astroalign? 
 SEGMSIGMA = 3.0 # sigma for source detect with img segmentation in image_align
 MAXOFFSET = 200.0 # maximum allowed pixel offset for image_align_morph
 
@@ -174,7 +174,7 @@ for i in range(nfiles):
         filename = filename.replace(".fits", "")
         candfiles = glob.glob(f"{CANDIDATEDIR}/{filename}*.fits") 
         if len(candfiles) > 0:
-            print("\nImage differencing and transient detection has alread "+
+            print("\nImage differencing and transient detection has already "+
                   "been performed on this science file. Skipping to next "
                   "science file.\n")
             continue
@@ -186,11 +186,51 @@ for i in range(nfiles):
     print(f'template file: {re.sub(".*/", "",template_file)}\n')
 
     if not(TMP_CFHT) and SURVEY=="DECaLS":
-        ASTROMSIGMA = [3.0, 5.0] # z band
+        ASTROMSIGMA = [3.0, 3.0] # z band
     elif not(TMP_CFHT) and SURVEY=="PS1": # g or i band
         # g band, 20190816 or i band, 20190817
         if ("0816" in source_file) or ("0817" in source_file): 
-            ASTROMSIGMA = [3.0, 5.0]
+            ASTROMSIGMA = [3.0, 3.0]
+
+    ### BACKGROUND SUBTRACTION ###########################################    
+    bkgsubfiles_source = []
+    bkgsubfiles_temp = []
+    if not(OVERWRITE):
+        filename_source = (re.sub(".*/", "",source_file)).replace(".fits", "")
+        bkgsubfiles_source = glob.glob(f"{BKGSUBDIR}/{filename_source}*.fits")
+        filename_temp = (re.sub(".*/", "",template_file)).replace(".fits", "")
+        bkgsubfiles_temp = glob.glob(f"{BKGSUBDIR}/{filename_temp}*.fits")
+        if (len(bkgsubfiles_source) == 1) and (len(bkgsubfiles_temp) == 1):
+            print("A background-subtracted image was already produced. "+
+                  "Skipping to next step in image differencing.")
+            source_file = bkgsubfiles_source[0]
+            template_file = bkgsubfiles_temp[0]
+            source_bkgsub = source_file
+            template_bkgsub = template_file
+            print(f'\nBKG-SUB. SOURCE:\n{re.sub(".*/","",source_file)}')
+            print(f'BKG-SUB. TEMPLATE:\n{re.sub(".*/","",template_file)}')
+            print("\n")
+    
+    if OVERWRITE or (len(bkgsubfiles_source)<1) or (len(bkgsubfiles_temp)<1):
+        print("*******************************************************")
+        print("Background subtraction...")
+        print("*******************************************************")
+        # set output names
+        source_bkgsub = f"{BKGSUBDIR}/"
+        source_bkgsub += (re.sub(".*/", "",source_file)).replace(".fits",
+                         "_bkgsub.fits")
+        template_bkgsub = f"{BKGSUBDIR}/"
+        template_bkgsub += (re.sub(".*/", "",template_file)).replace(".fits",
+                           "_bkgsub.fits")
+        
+        # background subtraction
+        amakihi.bkgsub(source_file, bkg_filt=(5,5), output=source_bkgsub)       
+        amakihi.bkgsub(template_file, bkg_filt=(5,5), output=template_bkgsub)
+            
+        source_file = source_bkgsub # cropped, bkg-subtracted
+        template_file = template_bkgsub # cropped, bkg-subtracted
+        
+        print("WRITING TO:\n"+source_file+"\n"+template_file+"\n")
 
     ### IMAGE ALIGNMENT ##################################################
     # align with astroalign and then use image_registration for alignment 
@@ -228,6 +268,7 @@ for i in range(nfiles):
         
         # first, try astroalign
         ret = amakihi.image_align(source_file, template_file, 
+                                  bkgsubbed=True, # already bkg-subtracted
                                   astrometry=True, # use astrometry.net
                                   astrom_sigma=ASTROMSIGMA,
                                   psf_sigma=PSFSIGMA,
@@ -248,8 +289,8 @@ for i in range(nfiles):
                 print("\nCopying the science file and template to the "+
                       "directory holding files which could not be properly "+
                       "aligned.\n")
-                run(f"cp {sci_files[i]} {ALIGNFAILDIR}", shell=True)
-                run(f"cp {tmp_files[i]} {ALIGNFAILDIR}", shell=True)
+                run(f"cp {source_file} {ALIGNFAILDIR}", shell=True)
+                run(f"cp {template_file} {ALIGNFAILDIR}", shell=True)
                 al_fail += 1
                 print("Alignment success so far: "+
                       f"{al_success}/{al_success+al_fail}"+
@@ -259,7 +300,10 @@ for i in range(nfiles):
             else: 
                 source_file = source_align # update
                 mask_file = mask_file 
-                al_success += 1
+                al_success += 1 
+                print("Alignment success so far: "+
+                      f"{al_success}/{al_success+al_fail}"+
+                      f" = {al_success/(al_success+al_fail)*100}%\n")
                 
         # if astroalign succeeds + double alignment    
         elif DOUBLEALIGN:
@@ -284,58 +328,22 @@ for i in range(nfiles):
             else: # if image_registration fails
                 source_file = source_align # update
             al_success += 1
+            print("Alignment success so far: "+
+                  f"{al_success}/{al_success+al_fail}"+
+                  f" = {al_success/(al_success+al_fail)*100}%\n")
         
         # astroalign succeeds but no double alignment
         else:
             source_file = source_align
             al_success += 1
+            print("Alignment success so far: "+
+                  f"{al_success}/{al_success+al_fail}"+
+                  f" = {al_success/(al_success+al_fail)*100}%\n")
 
+        # files are now cropped, bkg-subtracted, and aligned
         print(f"WRITING TO:\n{source_file}\n{mask_file}\n")
-        print(f"Alignment success so far: {al_success}/{al_success+al_fail}"+
-              f" = {al_success/(al_success+al_fail)*100}%\n")
-
-    ### BACKGROUND SUBTRACTION ###########################################   
-    bkgsubfiles_source = []
-    bkgsubfiles_temp = []
-    if not(OVERWRITE):
-        filename_source = (re.sub(".*/", "",source_file)).replace(".fits", "")
-        bkgsubfiles_source = glob.glob(f"{BKGSUBDIR}/{filename_source}*.fits")
-        filename_temp = (re.sub(".*/", "",template_file)).replace(".fits", "")
-        bkgsubfiles_temp = glob.glob(f"{BKGSUBDIR}/{filename_temp}*.fits")
-        if (len(bkgsubfiles_source) == 1) and (len(bkgsubfiles_temp) == 1):
-            #print("A background-subtracted image was already produced. "+
-            #      "Skipping to next step in image differencing.")
-            source_file = bkgsubfiles_source[0]
-            template_file = bkgsubfiles_temp[0]
-            source_bkgsub = source_file
-            template_bkgsub = template_file
-            #print(f'\nBKG-SUB. SOURCE:\n{re.sub(".*/","",source_file)}')
-            #print(f'BKG-SUB. TEMPLATE:\n{re.sub(".*/","",template_file)}')
-            #print("\n")
-    
-    if OVERWRITE or (len(bkgsubfiles_source)<1) or (len(bkgsubfiles_temp)<1):
-        #print("*******************************************************")
-        #print("Background subtraction...")
-        #print("*******************************************************")
-        # set output names
-        source_bkgsub = f"{BKGSUBDIR}/"
-        source_bkgsub += (re.sub(".*/", "",source_file)).replace(".fits",
-                         "_bkgsub.fits")
-        template_bkgsub = f"{BKGSUBDIR}/"
-        template_bkgsub += (re.sub(".*/", "",template_file)).replace(".fits",
-                           "_bkgsub.fits")
         
-        # background subtraction
-        amakihi.bkgsub(source_file, mask_file=mask_file, bkg_filt=(1,1),
-                       output=source_bkgsub)       
-        amakihi.bkgsub(template_file, mask_file=mask_file, bkg_filt=(1,1),
-                       output=template_bkgsub)
-            
-        source_file = source_bkgsub # cropped, aligned, bkg-subtracted
-        template_file = template_bkgsub # cropped, aligned, bkg-subtracted
         
-        #print("WRITING TO:\n"+source_file+"\n"+template_file+"\n")
-    
     ### BUILDING A MASK OF SATURATED STARS ###############################    
     old_mask_file = mask_file
     
@@ -344,17 +352,17 @@ for i in range(nfiles):
         filename = (re.sub(".*/", "",mask_file)).replace(".fits", "")
         satmasks = glob.glob(f"{SATMASKDIR}/{filename}*.fits")
         if len(satmasks) > 0:
-            #print("A saturation mask for the image was already produced. "+
-            #      "Skipping to next step in image differencing.")
+            print("A saturation mask for the image was already produced. "+
+                  "Skipping to next step in image differencing.")
             mask_file = satmasks[0]
             satmask_plot = (re.sub(".*/", "",mask_file)).replace(".fits", "")
             satmask_plot = f"{SATMASKPLOTDIR}/{satmask_plot}.png"
-            #print(f'SATURATION MASK:\n{re.sub(".*/", "",mask_file)}\n')
+            print(f'SATURATION MASK:\n{re.sub(".*/", "",mask_file)}\n')
 
     if OVERWRITE or (len(satmasks) == 0):
-        #print("*******************************************************")
-        #print("Building a mask of saturated stars...")
-        #print("*******************************************************")
+        print("*******************************************************")
+        print("Building a mask of saturated stars...")
+        print("*******************************************************")
         # set output names
         mask_file = (re.sub(".*/", "",mask_file)).replace(".fits", 
                     "_satmask.fits")
@@ -368,7 +376,7 @@ for i in range(nfiles):
                                 dilation_its=7, output=mask_file,
                                 plot=True, plotname=satmask_plot)       
 
-        #print(f"WRITING TO:\n{mask_file}\n")
+        print(f"WRITING TO:\n{mask_file}\n")
 
     ### MAKE AN IMAGE WITH THE SATURATION MASK APPLIED ###################
 #    print("*******************************************************")
@@ -426,6 +434,7 @@ for i in range(nfiles):
                                    ng="3 6 0.95 4 1.9 2 3.8", 
                                    bgo=0, ko=0, v=0, 
                                    rkernel=2.5*4.42,
+                                   norm="i",
                                    output=subfile,
                                    mask_write=True,
                                    maskout=submask,
@@ -469,8 +478,8 @@ for i in range(nfiles):
         sub_success += 1
         print("Subtraction success so far: "+
               f"{sub_success}/{sub_success+sub_fail}"+
-              f" = {sub_success/(sub_success+sub_fail)*100}%\n")
-
+              f" = {sub_success/(sub_success+sub_fail)*100}%\n")     
+        
 #        print("*******************************************************")
 #        print("Plotting unscaled/scaled noise images...")
 #        print("*******************************************************")
@@ -495,6 +504,7 @@ for i in range(nfiles):
         print("*******************************************************")
         print("Performing transient detection...")
         print("*******************************************************")
+        
         try:
             tabfile = f'{CANDIDATEDIR}/{re.sub(".*/", "",source_align)}'
             tabfile = tabfile.replace(".fits", "_candidates.fits")
@@ -550,7 +560,7 @@ for i in range(nfiles):
         sub_fail += 1
         print("Subtraction success so far: "+
               f"{sub_success}/{sub_success+sub_fail}"+
-              f" = {sub_success/(sub_success+sub_fail)*100}%\n")        
+              f" = {sub_success/(sub_success+sub_fail)*100}%\n")
     
     end = timer()
     print(f"\nTIME = {(end-start):.4f} s")
