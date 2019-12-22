@@ -17,10 +17,10 @@ def geturl(ra, dec, size=400, pixscale=0.262, filters="grz"):
     urls = []
     # build the url
     url = "http://legacysurvey.org/viewer/fits-cutout?"
-    url += "ra={ra}&dec={dec}&layer=dr8-south".format(**locals())
-    url += "&size={size}&pixscale={pixscale}".format(**locals())
-    for f in filters:
-        urls.append(url+"&bands={f}".format(**locals()))
+    url = f"{url}ra={ra}&dec={dec}&layer=dr8-south"
+    url = f"{url}&size={size}&pixscale={pixscale}"
+    for fil in filters:
+        urls.append(f"{url}&bands={fil}")
     
     if len(urls) == 1:
         urls = urls[0]

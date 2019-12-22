@@ -25,8 +25,8 @@ def getimages(ra,dec,size=2400,filters="grizy"):
     """
     
     service = "https://ps1images.stsci.edu/cgi-bin/ps1filenames.py"
-    url = ("{service}?ra={ra}&dec={dec}&size={size}&format=fits"
-           "&filters={filters}").format(**locals())
+    url = f"{service}?ra={ra}&dec={dec}&size={size}&format=fits"
+    url = f"{url}&filters={filters}"
     table = Table.read(url, format='ascii')
     return table 
 
@@ -52,9 +52,9 @@ def geturl(ra, dec, size=2400, output_size=None, filters="grizy", format="jpg",
         raise ValueError("format must be one of jpg, png, fits")
         
     table = getimages(ra,dec,size=size,filters=filters)
-    url = ("https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?"
-           "ra={ra}&dec={dec}&size={size}"+
-           "&format={format}").format(**locals())
+    url = f"https://ps1images.stsci.edu/cgi-bin/fitscut.cgi?"
+    url = f"{url}ra={ra}&dec={dec}&size={size}"
+    url = f"{url}&format={format}"
     if output_size: # only relevant for jpgs, pngs
         url = url + "&output_size={}".format(output_size)
         

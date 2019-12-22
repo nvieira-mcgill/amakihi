@@ -17,11 +17,11 @@ def geturl(ra,dec,size=1600,filters="ur"):
     """
     
     filts = ""
-    for f in filters:
-        filts += "&fils="+f
-    url = ("http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/"
-           "cfis/mcut.pl?&ra={ra}&dec={dec}&tiles=true"
-           "{filts}&cutout={size}").format(**locals())
+    for fil in filters:
+        filts = f"{filts}&fils={fil}"
+    url = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/"
+    url = f"{url}cfis/mcut.pl?&ra={ra}&dec={dec}&tiles=true"
+    url = f"{url}{filts}&cutout={size}"
     
     r = requests.get(url)
     webpage = html.fromstring(r.content)
