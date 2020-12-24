@@ -1,19 +1,17 @@
 """ 
-**NOTE**:
 
-This software has been slighly modified by Nicholas Vieira for use in a 
-CFHT image differencing pipeline. **I claim no ownership for this software.** 
-The modifications include:
+**Important:** This software has been slighly modified by me (Nicholas Vieira) 
+for use in a CFHT image differencing pipeline. **I claim no ownership for this 
+software.** The modifications include:
     
-- An error class for when too few stars are supplied
+- An error class for when not enough stars are supplied
 - Ability to set the detection threshold when finding sources via image 
   segmentation
 
-The original copyright is found below. The original software can be found at: 
+Documentation used here is not consistent with that used in the rest of 
+`amakihi` as this was not changed from the original `astroalign`. 
 
-**astroalign:** https://github.com/toros-astro/astroalign
-
--- Nicholas Vieira [15 November 2019]
+The original code can be found at https://github.com/toros-astro/astroalign
 
 """
 

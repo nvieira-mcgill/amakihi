@@ -6,7 +6,7 @@ Created on Mon Aug 26 19:41:59 2019
 @query_DECaLS.py
 """
 
-def geturl(ra, dec, size=400, pixscale=0.262, filters="grz"):
+def geturl(ra, dec, size=512, pixscale=0.262, filters="grz"):
     """Get the URL(s) for some reference image(s) to download from the Dark 
     Energy Camera Legacy Survey (DECaLS) archive. 
 
@@ -16,10 +16,10 @@ def geturl(ra, dec, size=400, pixscale=0.262, filters="grz"):
         RA and Dec of interest
     size : int, optional
         Size of the cutout image in pixels (1 pix == 0.262" in native DECam
-        resolution, but pixel scale can be changed; default 400)
+        resolution, but pixel scale can be changed; default 512)
     pixscale : float, optional
-        Pixel scale of the images in arcsec per pixel, (optional; default 
-        0.262"/pix, which is the native DECam resolution)
+        Pixel scale of the images in arcsec per pixel, (default 0.262"/pix, 
+        which is the native DECam resolution)
     filters : str, optional
         Photometric filter of choice (default 'grz' --> g-, r-, and z-band; 
         options are 'g', 'r', 'z', or any combination of them)

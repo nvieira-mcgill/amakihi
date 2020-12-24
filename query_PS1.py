@@ -96,7 +96,7 @@ def geturl(ra, dec, size=2400, output_size=None, filters="grizy", fmt="jpg",
                         f"{size}")
         
     # check that the otuput size is an int
-    if not(type(output_size) == int):
+    if not(type(output_size) in (int, type(None))):
         raise TypeError("output_size must be an integer, argument supplied "+
                         f"was {output_size}")
 

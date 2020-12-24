@@ -5,62 +5,69 @@ Created on Thu Aug  1 13:58:03 2019
 @author: Nicholas Vieira
 @amakihi.py 
 
-This script contains a library of functions for downloading templates and all 
-other steps required for image differencing/subtraction: cropping, background-
-subtraction, registration (alignment) and masking out of bad pixels, including 
-saturated stars. Can then perform image subtraction using hotpants. 
-
-**hotpants:** https://github.com/acbecker/hotpants
-
-To be implemented: Proper Image Subtraction (ZOGY formalism) presented in 
-Zackay et al. 2016. [1]
-
-Zackay et al: https://ui.adsabs.harvard.edu/abs/2016ApJ...830...27Z/abstract
-
-Templates can be downloaded from each survey in the corresponding filters:
-    - Pan-STARRS 1 (PS1):                           g, r, i, z, y
-    - Dark Energy Camera Legacy Survey (DECaLS):    g, r, z
-    - Canada-France Imaging Survey (CFIS):          u, r
-    - 2MASS:                                        J, H, K
+**This script contains a library of functions for:**
     
-IMPORTANT NOTE: this software makes use of a slightly modified version of the 
-astroalign software developed by Martin Beroiz and the TOROS Dev Team. The 
-original software can be seen here:
+- Downloading templates (i.e. reference images)
+- Cropping images by pixels or WCS coordinates
+- Background subtraction
+- Image registration (i.e. image alignment)
+- Masking out bad pixels (including saturated stars)
 
-**astroalign:** https://github.com/toros-astro/astroalign
+It also acts as a crude python wrapper for hotpants 
+(https://github.com/acbecker/hotpants).
 
-I claim absolutely no ownership of this software. The additions I have made to 
-the software are mostly superficial and have to do with error handling. 
 
-SECTIONS:
-    - Downloading templates
-    - Cropping images
-    - Background subtraction
-    - Image registraton (alignment)
-    - Mask building (boxmask, saturation mask)
-    - ePSF building 
-    - Image differencing with HOTPANTS
-    - Transient detection, triplets 
-    - Miscellaneous plotting
+**Templates can be downloaded from each survey in the corresponding filters:**
 
-GENERAL DEPENDENCIES NOT INCLUDED ON THIS SOFTWARE'S GITHUB:
-    - astropy (used extensively)
-    - photutils (used extensively)
-    - astrometry.net (used extensively, but can be ignored in favour of 
-            source detection with photutils' image_segmentation instead)
-    - image_registration (used in image_align_morph())
+- Pan-STARRS 1 (PS1): *g, r, i, z, y*
+- Dark Energy Camera Legacy Survey (DECaLS): *g, r, z*
+- Canada-France Imaging Survey (CFIS): *u, r*
+- 2MASS: *J, H, K*
 
-HOTPANTS-SPECIFIC:
-    - hotpants (essential for image subtraction via hotpants)
+Note that CFIS requires user authentication.
+
+
+**Sections:**
+
+- Downloading templates
+- Cropping images
+- Background subtraction
+- Image registraton (alignment)
+- Mask building (boxmask, saturation mask)
+- ePSF building 
+- Image differencing with hotpants
+- Transient detection, triplets 
+- Miscellaneous plotting
+
+
+**Essential dependencies:**
+
+- ``astropy`` (used extensively)
+- ``photutils`` (used extensively)
+- ``astrometry.net`` (used extensively, but can be ignored in favour of 
+  source detection with `photutils`' `image_segmentation` instead)
+- ``image_registration`` (used in `image_align_morph()`)
+- ``hotpants`` (essential for image subtraction via `hotpants`, duh)
+
     
-LESS ESSENTIAL DEPENDENCIES:
-    - astroscrappy (OPTIONAL cosmic ray rejection during background removal)
-    
+**Non-essential dependencies:**
 
-**REFERENCES:**
+- ``astroscrappy`` (OPTIONAL cosmic ray rejection during background removal)
 
-[1] Zackay, B., Ofek, E.O. Gal-Yam, A. 2016, ApJ, 830, 27
-    https://ui.adsabs.harvard.edu/abs/2016ApJ...830...27Z/abstract
+
+**Important:** This software makes use of a slightly modified version of the 
+`astroalign` software developed by Martin Beroiz and the TOROS Dev Team 
+(https://github.com/toros-astro/astroalign) in the form of my own script 
+`astroalign_mod.py`. I claim absolutely no ownership of this software. All
+modifications are described in that script.
+
+
+**TO-DO: downloading templates**
+
+- Why do some of the `download_x_template()` functions not take an `output` arg
+  while others do?
+- Remove default CADC login
+- `filters` --> `filt` in `query_x` scripts
 
 """
 
@@ -122,16 +129,23 @@ class InvalidBandError(Exception):
 #### DOWNLOADING TEMPLATES ####
 
 def __downloadtemplate(url, survey, pixscale, output=None):
-    """
-    Input: 
-        - url(s) of interest
-        - survey the templates come from
-        - pixel scale used in arcsec per pix
-        - name(s) for the output file(s) (optional; defaults set below)
+    """Downloads the fits image(s) at the given url(s). 
     
-    Downloads the fits image(s) at the given url(s). 
+    Arguments
+    ---------
+    url : array_like
+        URL(s) of interest
+    survey : {'PS1', 'DECaLS', 'CFIS', '2MASS'}
+        Survey to get the templates from
+    pixscale : float
+        Pixel scale of image in arcseconds per pixel
+    output : str, optional
+        Output filename(s) (defaults set below)
     
-    Output: HDU object(s) for the downloaded template image(s) 
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s)
     """
 
     if type(url) == str: # if just one
@@ -169,17 +183,26 @@ def __downloadtemplate(url, survey, pixscale, output=None):
     
 
 def __downloadtemplate_auth(url, survey, pixscale, auth_user, auth_pass):
-    """
-    Input: 
-        - url(s) of interest
-        - survey the templates come from
-        - pixel scale used in arcsec per pix
-        - CADC username and password needed to access proprietary CFIS data 
+    """Downloads the fits image(s) at the given url(s), **with authorization**, 
+    as is required for CFIS images, which are downloaded from the CADC.
     
-    Downloads the fits image at the given url, with authorization, as is 
-    required for CFIS images.
+    Arguments
+    ---------
+    url : array_like
+        URL(s) of interest
+    survey : {'PS1', 'DECaLS', 'CFIS', '2MASS'}
+        Survey to get the templates from
+    pixscale : float
+        Pixel scale of image in arcseconds per pixel
+    auth_user : str
+        CADC username
+    auth_pass : str
+        CADC password
     
-    Output: HDU object(s) for the downloaded template images
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s)
     """
     
     if type(url) == str: # if just one
@@ -204,27 +227,29 @@ def __downloadtemplate_auth(url, survey, pixscale, auth_user, auth_pass):
 
 
 def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
-    """
-    Input: 
-        - RA, Dec of interest
-        - size for the image in pixels (1 pix == 0.258" in PS1; optional; 
-          default 2400)*
-        - filter(s) (g, r, i, z, y) to use (files are always downloaded 
-          separately when multiple filters are provided; optional; default 
-          'grizy') 
-        - output name(s) for the downloaded template(s) (optional; defaults 
-          set below)
+    """Downloads the relevant PS1 template image(s) at the input RA, Dec. 
     
-    Downloads the relevant PS1 template image(s) at the input RA, Dec. 
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : int, optional
+        Size of the cutout image in pixels (1 pix == 0.25" in PS1; default 
+        2400)
+    filt : str, optional
+        Photometric filter of choice (default 'grizy' --> g-, r-, i-, z-, and 
+        y-band; options are 'g', 'r', 'i', 'z', 'y' or any combination of them)
+    output : str, optional
+        Output filename(s) for the downloaded template(s) (default set below)
     
-    * size must be an int, will be converted if not
-    
-    Output: HDU object(s) for the downloaded template image(s) 
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s)
     """
     if dec < -30: 
-        print("\nPan-STARRS 1 does not cover regions of the sky below "+
-              "DEC = -30.0. Exiting.")
-        return
+        raise ValueError("\nPan-STARRS 1 does not cover regions of the sky "+
+                         "below Dec. = -30.0 deg")
     
     if (output and (type(output) != str)): # if output list too short or long
         if len(filt) != len(output):
@@ -232,11 +257,8 @@ def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
                   "the number of requested template filters. Exiting.")
             return
                         
-    import query_PS1 # script for using PS1's cutout service
-
-    size = int(size) # ensure size is an int in the url    
-    size_arcmin = size*0.258/60.0 # cutout size in arcmin    
-    
+    import query_PS1 # script for using PS1's cutout service  
+    size_arcmin = size*0.258/60.0 # cutout size in arcmin        
     url = query_PS1.geturl(ra, dec, size, filters=filt, fmt="fits")
     
     filt_upd = ""
@@ -262,23 +284,28 @@ def download_PS1_template(ra, dec, size=2400, filt="grizy", output=None):
 
 def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz", 
                              output=None):
-    """
-    Input: 
-        - RA, Dec of interest
-        - size for the image in pixels* (1 pixel == 0.262" in native DECam
-          resolution, but this resolution can be adjusted; optional; default 
-          512)
-        - scale (resolution) of the image in arcseconds per pixel (optional; 
-          default 0.262)
-        - filter(s) (g, r, z) to use (files are always downloaded separately 
-          when multiple filters are provided; optional; default 'grz') 
-        - output name(s) for the downloaded template(s)
+    """Downloads the relevant DECaLS template image(s) at the input RA, Dec.
     
-    Downloads the relevant DECaLS template image(s) at the input RA, Dec. 
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : int, optional
+        Size of the cutout image in pixels (1 pix == 0.262" in native DECam
+        resolution, but pixel scale can be changed; default 512)
+    pixscale : float, optional
+        Pixel scale of the images in arcsec per pixel, (default 0.262"/pix, 
+        which is the native DECam resolution)
+    filt : str, optional
+        Photometric filter of choice (default 'grz' --> g-, r-, and z-band; 
+        options are 'g', 'r', 'z', or any combination of them)
+    output : str, optional
+        Output filename(s) for the downloaded template(s) (default set below)
     
-    * size must be an int <= 512 , will be converted if not
-    
-    Output: HDU object(s) for the downloaded template image(s) 
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s)     
     """
     
     # verify the input filters 
@@ -309,12 +336,8 @@ def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz",
         print("\nPlease provide a list of output filenames to match "+
               "the number of valid requested template filters. Exiting.")
         return
-    
-    # ensure size is an int
-    size = int(size)
-       
+           
     import query_DECaLS # script for using DECaLS's cutout service
-    # get the url
     url = query_DECaLS.geturl(ra, dec, size, pixscale, filters=filt_upd)
     
     # download the template and tell the user
@@ -328,19 +351,27 @@ def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, filt="grz",
 
 def download_CFIS_template(ra, dec, size=1600, filt="ur", 
                            auth_user="nvieira97", auth_pass="iwtg2s"):
-    """
-    Input: 
-        - RA, Dec of interest
-        - size for the image in pixels (1 pix == 0.185" in CFIS; optional; 
-          default 1600)
-        - filter(s) (u, r) desired (files are always downloaded separately 
-          when multiple filters are provided; optional; default 'ur') 
-        - CADC username, password needed to download CFIS data (optional; 
-          login is set by default)
+    """Downloads the relevant CFIS template image(s) at the input RA, Dec.
+
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : float, optional
+        Size of the cutout image in pixels (1 pix == 0.185" in CFIS; default
+        1600)
+    filt : str, optional
+        Photometric filter of choice (default 'ur' --> u- and r-band; options 
+        are 'u', 'r', 'ur')
+    auth_user : str, optional
+        CADC username (default 'nvieira97')
+    auth_pass : str, optional 
+        CADC password (default 'iwtg2s')
     
-    Downloads the relevant CFIS template image(s) at the input RA, Dec.
-    
-    Output: HDU object(s) for the downloaded template image(s) 
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s)  
     """
     
     import query_CFIS # script for using CFIS' cutout service
@@ -373,13 +404,23 @@ def download_CFIS_template(ra, dec, size=1600, filt="ur",
 
 
 def download_2MASS_template(ra, dec, size=150, filt="A"):
-    """
-    Input: a RA, Dec of interest, a size for the image in pixels (1 pix ==
-    4.0" in 2MASS), and the filter(s) (A for all or J, H, K) desired
+    """Downloads the relevant 2MASS template image(s) at the input RA, Dec.
     
-    Downloads the relevant 2MASS template image(s) at the input RA, Dec. 
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : float, optional
+        Size of the cutout image in pixels (1 pix == 4.0" in 2MASS; default
+        150)
+    filt : str, optional
+        Photometric filter of choice (default 'A' --> all; options are 'A',
+        'J', 'H', 'K' - see notes for details)
     
-    Output: HDU object(s) for the downloaded template image(s) 
+    Returns
+    -------
+    list of `astropy.io.fits.hdu.hdulist.HDUList` objects
+        List of astropy HDUList object(s) for the downloaded template image(s) 
     """
     
     import query_2MASS
@@ -408,18 +449,18 @@ def download_2MASS_template(ra, dec, size=150, filt="A"):
 
 
 def get_templates(images, survey="PS1", outputs=None):
-    """
-    Input: 
-        - directory containing image file(s) for which to download a template,
-          OR a list of files 
-        - survey of interest (optional; default 'PS1'; current options are 
-          'PS1', 'CFIS')
-        - output filename(s) (optional; defaults set below)
+    """For a directory full of images, downloads a corresponding template from 
+    the requested survey, if possible.
     
-    For a directory full of images, downloads a corresponding template from the
-    requested survey, if possible.
-    
-    Output: None
+    Arguments
+    ---------
+    images : str or array_like
+        Directory containing image file(s) for which to download a template
+        **OR** a list of individual filenames
+    survey : {'PS1', 'CFIS'}, optional
+        Survey of interest (default 'PS1')
+    output : str, optional
+        Output filename(s) for the downloaded template(s) (default set below)
     """
     
     # get the image names
