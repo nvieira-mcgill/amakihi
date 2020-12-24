@@ -9,11 +9,30 @@ Created on Mon Aug 12 17:56:17 2019
 import requests
 from lxml import html
 
-def geturl(ra,dec,size=1600,filters="ur"):
-    """
-    Input: a RA, Dec of interest, a size for the cutout image in pixels (1 
-    pixel == 0.185" in CFIS), and filter(s) (u, r) for the image 
-    Output: a list of the urls for the relevant fits files 
+def geturl(ra, dec, size=1600, filters="ur"):
+    """Get the URL(s) for some reference image(s) to download from the Canada-
+    France Imaging Survey (CFIS) archive. 
+
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : float, optional
+        Size of the cutout image in pixels (1 pix == 0.185" in CFIS; default
+        1600)
+    filters : str, optional
+        Photometric filter of choice (default 'ur' --> u- and r-band; options 
+        are 'u', 'r', 'ur')
+    
+    Returns
+    -------
+    list
+        List of URL(s) to download the relevant fits files
+        
+    Notes
+    -----    
+    See: https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/community/cfis/csky.html
+    
     """
     
     filts = ""

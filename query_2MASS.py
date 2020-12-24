@@ -10,10 +10,32 @@ import requests
 import re
 
 def geturl(ra, dec, size=150, filters="A"):
-    """
-    Input: a RA, Dec of interest, a size for the cutout image in pixels (1 
-    pixel == 4.0" in 2MASS), and filter(s) (A for all or J, H, K) for the image
-    Output: a list of urls for the relevant fits files
+    """Get the URL(s) for some reference image(s) to download from the 2-Micron
+    All Sky Survey (2MASS) archive. 
+    
+    Arguments
+    ---------
+    ra, dec : float
+        RA and Dec of interest
+    size : float, optional
+        Size of the cutout image in pixels (1 pix == 4.0" in 2MASS; default
+        150)
+    filters : str, optional
+        Photometric filter of choice (default 'A' --> all; options are 'A',
+        'J', 'H', 'K' - see notes for details)
+    
+    Returns
+    -------
+    list
+        List of URL(s) to download the relevant fits files
+        
+    Notes
+    -----
+    Options for filters are 'A' -->  all, 'J' for only J-band, 'H' for H-band, 
+    and 'K' for K-band.
+    
+    See: https://irsa.ipac.caltech.edu/applications/2MASS/IM/docs/siahelp.html
+    
     """
     
     # define region of interest (ROI), bands, and which survey to use 
@@ -33,7 +55,7 @@ def geturl(ra, dec, size=150, filters="A"):
     f_urls = []
     for fil in f_messy:
         if len(fil) != 0: # files_messy is sometimes pop. with empty strings 
-            f_urls.append(f"{fil}.fits") # .fits needs to be appended to all files
+            f_urls.append(f"{fil}.fits") # needs to be appended to all files
             
     return f_urls
     
