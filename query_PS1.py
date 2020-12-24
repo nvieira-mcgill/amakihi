@@ -3,8 +3,9 @@
 """
 Created on Mon Aug 12 14:33:50 2019
 @author: Nicholas Vieira
-Taken from https://ps1images.stsci.edu/ps1image.html
 @query_PS1.py
+
+**NOTE**: Taken from https://ps1images.stsci.edu/ps1image.html
 """
 
 import numpy as np
