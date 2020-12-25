@@ -5,7 +5,9 @@ Created on Fri Dec 25 17:14:47 2020
 @author: Nicholas Vieira
 @referenceims.py
 
-**Templates can be downloaded from each survey in the corresponding filters:**
+This module enables downloading reference images (i.e. templates) to be used in
+image differencing. Templates can be downloaded from each survey in the 
+corresponding filters:
 
 - **Pan-STARRS 1 (PS1)** :math:`3\\pi` **survey:** *g, r, i, z, y*
 - **Dark Energy Camera Legacy Survey (DECaLS):** *g, r, z*

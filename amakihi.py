@@ -6,8 +6,7 @@ Created on Thu Aug  1 13:58:03 2019
 @amakihi.py 
 
 **This script contains a library of functions for:**
-    
-- Cropping images by pixels or WCS coordinates
+
 - Background subtraction
 - Image registration (i.e. image alignment)
 - Masking out bad pixels (including saturated stars)
@@ -17,7 +16,6 @@ It also acts as a crude python wrapper for hotpants
 
 **Sections:**
 
-- Cropping images
 - Background subtraction
 - Image registraton (alignment)
 - Mask building (boxmask, saturation mask)
@@ -77,10 +75,8 @@ from photutils import make_source_mask, detect_sources, source_properties
 #import pyfftw.interfaces.numpy_fft as fft # for speedy FFTs
 #pyfftw.interfaces.cache.enable()
 
-# disable annoying warnings
-import warnings
-from astropy.wcs import FITSFixedWarning
-warnings.simplefilter('ignore', category=FITSFixedWarning)
+# amakihi function for cropping by WCS
+from crop import crop_WCS
 
 # plotting
 import matplotlib.pyplot as plt
@@ -88,296 +84,18 @@ import matplotlib.patches as ptc
 try: plt.switch_backend('Qt5Agg')
 except ImportError: pass # for Compute Canada server
 
+# disable annoying warnings
+import warnings
+from astropy.wcs import FITSFixedWarning
+warnings.simplefilter('ignore', category=FITSFixedWarning)
+
 # if hotpants cannot be called directly from the command line, the path to the
 # executable can be put modified with the function hotpants_path() below
 # by default, set to None --> assume can be called directly from the cmd line
-HOTPANTS_PATH = ""
+HOTPANTS_PATH = "" 
 
 ###############################################################################
-#### CROPPING ####
-
-def __get_crop(fits_file, frac_hori=[0,1], frac_vert=[0,1]):
-    """
-    Input: a single fits file, the horizontal fraction of the fits file's 
-    image to crop (default [0,1], which does not crop), and the vertical 
-    fraction (default [0,1])
-    e.g. __get_crop("foo.fits", [0.5,1], [0,0.5]) would crop the bottom right
-    corner of the image 
-    Output: a new fits HDU containing the header and the cropped image
-    """
-        
-    # get data 
-    data = fits.getdata(fits_file)
-    hdr = fits.getheader(fits_file)
-    ydim, xdim = data.shape
-    
-    # get the indices in the data which bound the cropped area
-    idx_x = [int(round(frac_hori[0]*xdim)), int(round(frac_hori[1]*xdim))]
-    idx_y = [int(round(frac_vert[0]*ydim)), int(round(frac_vert[1]*ydim))]
-
-    # get the cropped data, build a new PrimaryHDU object
-    cropped = data[idx_y[0]:idx_y[1], idx_x[0]:idx_x[1]]
-    hdr["NAXIS1"] = len(idx_x) # adjust NAXIS sizes
-    hdr["NAXIS2"] = len(idx_y)
-    hdr["CRPIX1"] -= idx_x[0] # update WCS reference pixel 
-    hdr["CRPIX2"] -= idx_y[0]
-    new_hdu = fits.PrimaryHDU(data=cropped, header=hdr)
-    
-    return new_hdu
-
-
-def crop_WCS(source_file, ra, dec, size, mode="truncate", write=True, 
-             output=None):
-    """
-    Input: 
-        - fits filename
-        - right ascension, declination (in decimal degrees)
-        - size of a box (in pixels) to crop
-        - mode to apply if the requested crop lies outside of image bounds:
-          "truncate" to truncate the crop and return a crop smaller than the 
-          requested one; "extend" to extend the bounds of the image in the 
-          direction opposite the exceeded boundary, effectively recentering the 
-          crop (optional; default "truncate")
-        - whether to write the output to a .fits file (optional; default True) 
-        - name for the output fits file (optional; default set below)
-    
-    For a single fits file, crops the image to a box of size pixels centered 
-    on the given RA and Dec. If the given box extends beyond the bounds of the 
-    image, the box will either be truncated at these bounds or re-centered to 
-    allow for a box of the requested size, depending on the input mode.
-    
-    Output: a PrimaryHDU for the cropped image (contains data and header)
-    """
-    
-    hdr = fits.getheader(source_file)
-    img = fits.getdata(source_file)
-    y_size, x_size = img.shape # total image dims in pix 
-    w = wcs.WCS(hdr)
-
-    try:
-        pix_scale = hdr["PIXSCAL1"] # scale of image in arcsec per pix
-    except KeyError:
-        topfile = re.sub(".*/", "", source_file)
-        pix_scale = float(input(f'\nPixel scale not found for {topfile}. '+
-                                'Please input a scale in arcseconds per '+
-                                'pixel \n(NOTE: PS1=0.258"/pix, DECaLS='+
-                                '0.262"/pix, CFIS=0.185"/pix, 2MASS=4.0"/pix)'+
-                                '\n>>> '))
-                                
-    size_wcs = pix_scale*size/3600.0 # size of desired box in degrees
-    pix_x1 = np.array(w.all_world2pix(ra-size_wcs/2.0, dec, 1))[0]
-    pix_x2 = np.array(w.all_world2pix(ra+size_wcs/2.0, dec, 1))[0]
-    pix_y1 = np.array(w.all_world2pix(ra, dec-size_wcs/2.0, 1))[1]
-    pix_y2 = np.array(w.all_world2pix(ra, dec+size_wcs/2.0, 1))[1]
-    x_bounds = np.array(sorted([pix_x1, pix_x2])) # sorted arrays of 
-    y_bounds = np.array(sorted([pix_y1, pix_y2])) # pixel boundaries
-    
-    if mode == "truncate": # truncate bounds if needed
-        x_bounds[x_bounds<0] = 0 
-        x_bounds[x_bounds>x_size] = x_size
-        y_bounds[y_bounds<0] = 0 
-        y_bounds[y_bounds>y_size] = y_size
-    
-    elif mode == "extend": # re-center crop to obtain requested size
-        # fix the size
-#        if (x_bounds[1] - x_bounds[0]) < size:
-#            x_bounds[0] -= (size-(x_bounds[1]-x_bounds[0]))
-#        if (y_bounds[1] - y_bounds[0]) < size:
-#            y_bounds[0] -= (size-(y_bounds[1]-y_bounds[0]))  
-#        if (x_bounds[1] - x_bounds[0]) > size:
-#            x_bounds[0] += (size-(x_bounds[1]-x_bounds[0]))
-#        if (y_bounds[1] - y_bounds[0]) > size:
-#            y_bounds[0] += (size-(y_bounds[1]-y_bounds[0]))
-        x_bounds[0] = round(x_bounds[0])
-        x_bounds[1] = x_bounds[0] + size
-        y_bounds[0] = round(y_bounds[0])
-        y_bounds[1] = y_bounds[0] + size        
-        
-        # check boundaries
-        if x_bounds[0] < 0: # left edge beyond boundary
-            x_bounds[0] = 0
-            x_bounds[1] = size
-        if x_bounds[1] > x_size: # right edge beyond boundary
-            x_bounds[0] = x_size - size
-            x_bounds[1] = x_size
-        if y_bounds[0] < 0: # bottom edge beyond boundary
-            y_bounds[0] = 0
-            y_bounds[1] = size
-        if y_bounds[1] > y_size: # top edge beyond boundary
-            y_bounds[0] = y_size - size
-            y_bounds[1] = y_size
-            
-    # convert to horizontal & vertical fractions, pass to __get_crop()
-    frac_hori = x_bounds/x_size
-    frac_vert = y_bounds/y_size
-    
-    # if the crop does not contain the bounds, notify user and exit
-    # if the crop's aspect ratio is more skew than 4:1 or 1:4, notify user
-    # if the crop is < 50% the width/height of the desired box, notify user 
-    if np.all(frac_hori==0) or np.all(frac_hori==1.0) or np.all(
-            frac_vert==0.0) or np.all(frac_vert==1.0):
-            print("\nDesired cropped image is out of bounds. Exiting.")
-            return 
-    elif not((x_bounds[1]-x_bounds[0] > size/2.0) and 
-             (y_bounds[1]-y_bounds[0] > size/2.0) ):
-            print("\nWARNING: the cropped image is less than 50% the height "+
-                  "or width of the desired crop.")
-    elif not(0.25 < ((frac_hori[1]-frac_hori[0])/
-                     (frac_vert[1]-frac_vert[0])) < 4.0):
-            print("\nWARNING: the aspect ratio of the image is more skew than"+
-                  " 1:4 or 4:1.")
-    
-    cropped_hdu = __get_crop(source_file, frac_hori, frac_vert)
-    
-    if write: # if we want to write the cropped .fits file 
-        if not(output): # if no output name given, set default
-            output = source_file.replace(".fits", "_crop.fits")
-        cropped_hdu.writeto(output, overwrite=True, output_verify="ignore")
-    
-    return cropped_hdu
-
-
-def crop_frac(source_file, frac_hori=[0,1], frac_vert=[0,1], write=True, 
-             output=None):
-    """
-    Input: the horizontal fraction of the fits file's 
-    image to crop (default [0,1], which does not crop), the vertical fraction 
-    (default [0,1]), a bool indicating whether to save write the output .fits 
-    file (optional; default True) and a name for the output fits file 
-    (optional; default is set below) 
-    
-    Output: a PrimaryHDU for the cropped image (contains data and header)
-    """
-    
-    cropped_hdu = __get_crop(source_file, frac_hori, frac_vert)
-    if write: # if we want to write the cropped .fits file 
-        if not(output): # if no output name given, set default
-            output = source_file.replace(".fits", "_crop.fits")
-        cropped_hdu.writeto(output, overwrite=True, output_verify="ignore")
-    
-    return cropped_hdu
-
-
-def crop_octant(source_file, ra, dec, write=True, output=None):
-    """
-    Input: the name of the fits file, a right ascension, declination (in 
-    decimal degrees), whether to write the output fits file (optional; 
-    default True) and the name for the output fits file (optional; default set
-    below)
-    
-    For a given, RA, Dec, finds the octant-sized ~square of the image in which 
-    these coords are found. Then crops the image to this octant. Best for 
-    images with an aspect ratio of around 2:1 (i.e. MegaCam images) such that 
-    the output crop is square-like.
-    
-    Output: a PrimaryHDU for the cropped image (contains data and header)
-    """
-    
-    # get data 
-    data = fits.getdata(source_file)
-    hdr = fits.getheader(source_file)
-    
-    # locate the octant of the image in which the source is found 
-    ydim, xdim = data.shape # total image dims in pix 
-    w = wcs.WCS(hdr)
-    x, y = w.all_world2pix(ra, dec, 1)
-    x, y = x/xdim, y/ydim   
-    if x < 0.5: # check the x coord
-        frac_hori = [0.0, 0.5]
-        #if abs(0.5-y) < abs(0.25-y):
-        #    frac_hori = [0.25, 0.75]
-        #else:
-        #    frac_hori = frac_h
-    else:
-        frac_hori = [0.5, 1.0]
-        #if abs(0.5-y) < abs(0.75-y):
-        #    frac_hori = [0.25, 0.75]
-        #else:
-        #    frac_hori = frac_h
-        
-    if y < 0.25: # check the y coord 
-        frac_v = [0, 0.25]
-        if abs(0.25-y) < abs(0.125-y):
-            frac_vert = [f+0.125 for f in frac_v]
-        else:
-            frac_vert = frac_v
-    elif y < 0.5:
-        frac_v = [0.25, 0.5]
-        if abs(0.25-y) < abs(0.375-y):
-            frac_vert = [f-0.125 for f in frac_v]
-        elif abs(0.5-y) < abs(0.375-y):
-            frac_vert = [f+0.125 for f in frac_v]
-        else:
-            frac_vert = frac_v
-    elif y < 0.75:
-        frac_v = [0.5, 0.75]
-        if abs(0.5-y) < abs(0.625-y):
-            frac_vert = [f-0.125 for f in frac_v]
-        elif abs(0.75-y) < abs(0.625-y):
-            frac_vert = [f+0.125 for f in frac_v]
-        else:
-            frac_vert = frac_v
-    else:
-        frac_v = [0.75, 1.0]
-        if abs(0.75-y) < abs(0.875-y):
-            frac_vert = [f-0.125 for f in frac_v]
-        else:
-            frac_vert = frac_v
-    
-    cropped_hdu = __get_crop(source_file, frac_hori, frac_vert)
-    
-    if write: # if we want to write the cropped .fits file 
-        if not(output): # if no output name given, set default
-            output = source_file.replace(".fits", "_crop.fits")
-        cropped_hdu.writeto(output, overwrite=True, output_verify="ignore")
-    
-    return cropped_hdu   
-
-
-def crop_half(source_file, ra, dec, write=True, output=None):
-    """
-    Input: the name of the fits file, a right ascension, declination (in 
-    decimal degrees), whether to write the output fits file (optional; 
-    default True) and the name for the output fits file (optional; default set
-    below)
-    
-    For a given, RA, Dec, finds the half of the image in which these coords
-    are found. This can be the top half, bottom half, or a box centered on the 
-    center of the overall image. Then crops the image. Best for images with an 
-    aspect ratio of around 2:1 (i.e. MegaCam images) such that the output crop 
-    is square-like.
-    
-    Output: a PrimaryHDU for the cropped image (contains data and header)
-    """
-    
-    # get data 
-    data = fits.getdata(source_file)
-    hdr = fits.getheader(source_file)
-    
-    # locate the "half" of the image in which the source is found 
-    ydim, xdim = data.shape # total image dims in pix 
-    w = wcs.WCS(hdr)
-    x, y = w.all_world2pix(ra, dec, 1)
-    x, y = x/xdim, y/ydim   
-    if y < 0.25: # check the y coord 
-        frac_vert = [0, 0.5]
-    elif y < 0.75:
-        frac_vert = [0.25, 0.75]
-    else:
-        frac_vert = [0.5, 1]
-    frac_hori = [0, 1]        
-    
-    cropped_hdu = __get_crop(source_file, frac_hori, frac_vert)
-    
-    if write: # if we want to write the cropped .fits file 
-        if not(output): # if no output name given, set default
-            output = source_file.replace(".fits", "_crop.fits")
-        cropped_hdu.writeto(output, overwrite=True, output_verify="ignore")
-    
-    return cropped_hdu   
-
-###############################################################################
-#### BACKGROUND SUBTRACTION ####
+#### BACKGROUND SUBTRACTION ###################################################
     
 def bkgsub(im_file, mask_file=None, bkg_box=(5,5), bkg_filt=(5,5),
            crreject=False, plot_bkg=False, scale_bkg=None, plot=False, 

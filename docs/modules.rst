@@ -6,6 +6,7 @@ amakihi
 
    amakihi
    astroalign_mod
+   crop
    query_2MASS
    query_CFIS
    query_DECaLS
