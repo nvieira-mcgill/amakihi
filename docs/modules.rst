@@ -10,3 +10,4 @@ amakihi
    query_CFIS
    query_DECaLS
    query_PS1
+   referenceims

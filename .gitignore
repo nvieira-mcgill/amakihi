@@ -4,3 +4,6 @@ __pycache__/
 
 # Sphinx documentation
 docs/_build/
+
+# Particular to amakihi
+CADC_LOGIN.md

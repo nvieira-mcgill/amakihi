@@ -6,9 +6,9 @@ Created on Mon Aug 26 19:41:59 2019
 @query_DECaLS.py
 """
 
-def geturl(ra, dec, size=512, pixscale=0.262, filters="grz"):
+def geturl_DECaLS(ra, dec, size=512, pixscale=0.262, bands="grz"):
     """Get the URL(s) for some reference image(s) to download from the Dark 
-    Energy Camera Legacy Survey (DECaLS) archive. 
+    Energy Camera Legacy Survey (DECaLS). 
 
     Arguments
     ---------
@@ -20,9 +20,9 @@ def geturl(ra, dec, size=512, pixscale=0.262, filters="grz"):
     pixscale : float, optional
         Pixel scale of the images in arcsec per pixel, (default 0.262"/pix, 
         which is the native DECam resolution)
-    filters : str, optional
-        Photometric filter of choice (default 'grz' --> g-, r-, and z-band; 
-        options are 'g', 'r', 'z', or any combination of them)
+    bands : str, optional
+        Photometric band(s) of choice (default "grz" --> g-, r-, and z-band; 
+        options are "g", "r", "z", or any combination of them)
     
     Returns
     -------
@@ -46,8 +46,8 @@ def geturl(ra, dec, size=512, pixscale=0.262, filters="grz"):
     url = "http://legacysurvey.org/viewer/fits-cutout?"
     url = f"{url}ra={ra}&dec={dec}&layer=dr8-south"
     url = f"{url}&size={size}&pixscale={pixscale}"
-    for fil in filters:
-        urls.append(f"{url}&bands={fil}")
+    for bs in bands:
+        urls.append(f"{url}&bands={bs}")
     
     if len(urls) == 1:
         urls = urls[0]

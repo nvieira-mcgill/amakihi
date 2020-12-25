@@ -9,9 +9,9 @@ Created on Mon Aug 12 17:56:17 2019
 import requests
 from lxml import html
 
-def geturl(ra, dec, size=1600, filters="ur"):
+def geturl_CFIS(ra, dec, size=1600, bands="ur"):
     """Get the URL(s) for some reference image(s) to download from the Canada-
-    France Imaging Survey (CFIS) archive. 
+    France Imaging Survey (CFIS). 
 
     Arguments
     ---------
@@ -20,9 +20,9 @@ def geturl(ra, dec, size=1600, filters="ur"):
     size : float, optional
         Size of the cutout image in pixels (1 pix == 0.185" in CFIS; default
         1600)
-    filters : str, optional
-        Photometric filter of choice (default 'ur' --> u- and r-band; options 
-        are 'u', 'r', 'ur')
+    bands : str, optional
+        Photometric band(s) of choice (default "ur" --> u- and r-band; 
+        options are "u", "r", "ur")
     
     Returns
     -------
@@ -32,15 +32,14 @@ def geturl(ra, dec, size=1600, filters="ur"):
     Notes
     -----    
     See: https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/community/cfis/csky.html
-    
     """
     
-    filts = ""
-    for fil in filters:
-        filts = f"{filts}&fils={fil}"
+    bands_upd = ""
+    for bs in bands:
+        bands_upd = f"{bands_upd}&fils={bs}"
     url = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/"
     url = f"{url}cfis/mcut.pl?&ra={ra}&dec={dec}&tiles=true"
-    url = f"{url}{filts}&cutout={size}"
+    url = f"{url}{bands_upd}&cutout={size}"
     
     r = requests.get(url)
     webpage = html.fromstring(r.content)
