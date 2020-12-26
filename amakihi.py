@@ -7,10 +7,8 @@ Created on Thu Aug  1 13:58:03 2019
 
 **Sections:**
 
-- ePSF building 
 - Image differencing with hotpants (https://github.com/acbecker/hotpants)
 - Transient detection, triplets 
-- Miscellaneous plotting
 
 
 **Essential dependencies:**
@@ -31,13 +29,9 @@ modifications are described in that script.
 
 # misc
 import os
-#import sys
 from subprocess import run, PIPE, CalledProcessError
 import numpy as np
 import re
-
-# scipy
-from scipy.ndimage import zoom
 
 # astropy
 from astropy.io import fits
@@ -47,8 +41,7 @@ import astropy.units as u
 from astropy.stats import (sigma_clipped_stats, SigmaClip, 
                            gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm)
 from astropy.coordinates import SkyCoord
-from astropy.convolution import convolve_fft, Gaussian2DKernel, Moffat2DKernel
-from astropy.table import Table, Column
+from astropy.table import Table
 from photutils import Background2D, MedianBackground
 from photutils import make_source_mask, detect_sources, source_properties
 
@@ -57,8 +50,10 @@ from photutils import make_source_mask, detect_sources, source_properties
 #import pyfftw.interfaces.numpy_fft as fft # for speedy FFTs
 #pyfftw.interfaces.cache.enable()
 
-# amakihi function for cropping by WCS
+# amakihi 
 from crop import crop_WCS
+from ePSF import build_ePSF_imsegm, ePSF_FWHM
+from plotting import __plot_rejected, __plot_triplet, plot_transient
 
 # plotting
 import matplotlib.pyplot as plt
@@ -70,443 +65,6 @@ except ImportError: pass # for Compute Canada server
 import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
-
-###############################################################################
-#### ePSF BUILDING/USAGE ####
-
-def ePSF_FWHM(epsf_data, verbose=False):
-    """
-    Input: 
-        - fits file containing ePSF data OR the data array itself
-        - be verbose (optional; default False)
-    
-    Output: the FWHM of the input ePSF
-    """
-    
-    if (type(epsf_data) == str): # if a filename, open it 
-        epsf_data = fits.getdata(epsf_data)
-    
-    # enlarge the ePSF by a factor of 100 
-    epsf_data = zoom(epsf_data, 10)
-    
-    # compute FWHM of ePSF 
-    y, x = np.indices(epsf_data.shape)
-    x_0 = epsf_data.shape[1]/2.0
-    y_0 = epsf_data.shape[0]/2.0
-    r = np.sqrt((x-x_0)**2 + (y-y_0)**2) # radial distances from source
-    r = r.astype(np.int) # round to ints 
-    
-    # bin the data, obtain and normalize the radial profile 
-    tbin = np.bincount(r.ravel(), epsf_data.ravel()) 
-    norm = np.bincount(r.ravel())  
-    profile = tbin/norm 
-    
-    # find radius at FWHM
-    limit = np.min(profile) 
-    limit += 0.5*(np.max(profile)-np.min(profile)) # limit: half of maximum
-    for i in range(len(profile)):
-        if profile[i] >= limit:
-            continue
-        else: # if below 50% of max 
-            epsf_radius = i # radius in pixels 
-            break
-
-    if verbose:
-        print(f"ePSF FWHM = {epsf_radius*2.0/10.0} pix")
-    return epsf_radius*2.0/10.0
-
-
-def build_ePSF(image_file, mask_file=None, nstars=40,              
-               astrometry=False,                 
-               thresh_sigma=5.0, pixelmin=20, etamax=1.4, area_max=500,             
-               image_source_file=None, astrom_sigma=5.0, psf_sigma=5.0, 
-               alim=10000, lowper=60, highper=90, clean=True,
-               cutout=35, 
-               write=True, output=None, plot=False, output_plot=None, 
-               verbose=False):
-    """             
-    Input: 
-        general:
-        - filename for a **BACKGROUND-SUBTRACTED** image
-        - filename for a mask image (optional; default None)
-        - maximum number of stars to use (optional; default 40; set to None
-          to impose no limit)
-          
-        source detection:
-        - use astrometry.net for source detection if True, use simple image 
-          segmentation to detect sources if False (optional; default False)
-
-          if astrometry = False (default):
-        - sigma threshold for source detection with image segmentation 
-          (optional; default 5.0)
-        - *minimum* number of isophotal pixels (optional; default 20)
-        - *maximum* allowed elongation for sources found by image segmentation 
-          (optional; default 1.4)
-        - *maximum* allowed area for sources found by image segmentation 
-          (optional; default 500 pix**2)
-         
-          if astrometry=True:
-        - filename for a .xy.fits file containing detected sources with their
-          x, y coords and **BACKGROUND-SUBTRACTED** fluxes (optional; default 
-          None, in which case a new list will be made)
-        - sigma threshold for astrometry.net source detection image (optional; 
-          default 5.0)
-        - sigma of the Gaussian PSF of the image (optional; default 5.0)
-        - maximum allowed source area in pix**2 for astrometry.net for 
-          deblending (optional; default 10000)
-        - LOWER flux percentile such that sources below this flux will be 
-          rejected when building the ePSF (optional; default 60 [%])
-        - UPPER flux percentile such that sources above this flux will be 
-          rejected when building the ePSF (optional; default 90 [%])
-        - whether to remove files output by image2xy once finished with them 
-          (optional; default True)
-        
-        - cutout size around each star in pix (optional; default 35 pix; must 
-          be ODD, rounded down if even)
-        
-        writing, plotting, verbosity:
-        - whether to write the ePSF to a new fits file (optional; default True)
-        - name for the output fits file (optional; default set below)
-        - whether to plot the ePSF (optional; default False) 
-        - name for the output plot (optional; default set below)
-        - be verbose (optional; default False)
-    
-    Uses image segmentation OR astrometry.net to obtain a list of sources in 
-    the image with their x, y coordinates, flux, and background at their 
-    location. (If a list of sources has already been obtained with astrometry, 
-    this can be input). If astrometry is used for source detection, then 
-    selects stars between the <lowper>th and <highper>th percentile flux.
-    
-    Finally, uses EPSFBuilder to empirically obtain the ePSF of these stars. 
-    Optionally writes and/or plots the obtaind ePSF.
-    
-    The ePSF obtained here should NOT be used in convolutions. Instead, it can 
-    serve as a tool for estimating the seeing of an image. 
-    
-    Output: the ePSF data array
-    """
-    
-    # ignore annoying warnings from photutils
-    from astropy.utils.exceptions import AstropyWarning
-    warnings.simplefilter('ignore', category=AstropyWarning)
-    
-    from astropy.nddata import NDData
-    from photutils.psf import extract_stars
-    from photutils import EPSFBuilder
-    
-    # load in data 
-    image_data = fits.getdata(image_file)
-    image_header = fits.getheader(image_file) 
-    try:
-        instrument = image_header["INSTRUME"]
-    except KeyError:
-        instrument = "Unknown"
-        
-    ### source detection
-
-    ### OPTION 1: use image segmentation to find sources with an area > 
-    ### pixelmin pix**2 which are above the threshold sigma*std (DEFAULT)
-    if not(astrometry):
-        image_data = fits.getdata(image_file) # subfile data
-        image_data = np.ma.masked_where(image_data==0.0, 
-                                        image_data) # mask bad pixels
-        
-        ## build an actual mask
-        mask = (image_data==0)
-        if mask_file:
-            mask = np.logical_or(mask, fits.getdata(mask_file))
-
-        ## set detection standard deviation
-        try:
-            std = image_header["BKGSTD"] # header written by bkgsub function
-        except KeyError:
-            # make crude source mask, get standard deviation of background
-            source_mask = make_source_mask(image_data, snr=3, npixels=5, 
-                                           dilate_size=15, mask=mask)
-            final_mask = np.logical_or(mask, source_mask)
-            std = np.std(np.ma.masked_where(final_mask, image_data))
-        
-        ## use the segmentation image to get the source properties 
-        segm = detect_sources(image_data, thresh_sigma*std, npixels=pixelmin,
-                              mask=mask) 
-        cat = source_properties(image_data, segm, mask=mask)
-
-        ## get the catalog and coordinates for sources
-        try:
-            tbl = cat.to_table()
-        except ValueError:
-            print("SourceCatalog contains no sources. Exiting.")
-            return
-        
-        # restrict elongation and area to obtain only unsaturated stars 
-        tbl = tbl[(tbl["elongation"] <= etamax)]
-        tbl = tbl[(tbl["area"].value <= area_max)]
-
-        sources = Table() # build a table 
-        sources['x'] = tbl['xcentroid'] # for EPSFBuilder 
-        sources['y'] = tbl['ycentroid']
-        sources['flux'] = tbl['source_sum'].data/tbl["area"].data   
-        sources.sort("flux")
-        sources.reverse()
-        
-        if nstars:
-            sources = sources[:min(nstars, len(sources))]
-
-    ### OPTION 2: use pre-existing file obtained by astrometry.net, if supplied
-    elif image_source_file:
-        image_sources = np.logical_not(fits.getdata(image_source_file))
-        
-    ### OPTION 3: use astrometry.net to find the sources 
-    # -b --> no background-subtraction
-    # -O --> overwrite
-    # -p <astrom_sigma> --> signficance
-    # -w <psf_sigma> --> estimated PSF sigma 
-    # -m <alim> --> max object size for deblending is <alim>    
-    else:
-        options = f" -b -O -p {astrom_sigma} -w {psf_sigma} -m {alim}"  
-        run(f"image2xy {options} {image_file}", shell=True) 
-        image_sources_file = image_file.replace(".fits", ".xy.fits")
-        image_sources = fits.getdata(image_sources_file)
-        if clean:
-            run(f"rm {image_sources_file}", shell=True) # this file is not needed
-        print(f'\n{len(image_sources)} stars at >{astrom_sigma} sigma found '+
-              f'in image {re.sub(".*/", "", image_file)} with astrometry.net')  
-
-        sources = Table() # build a table 
-        sources['x'] = image_sources['X'] # for EPSFBuilder 
-        sources['y'] = image_sources['Y']
-        sources['flux'] = image_sources['FLUX']
-
-        if nstars:
-            sources = sources[:min(nstars, len(sources))]
-
-    ## get WCS coords for all sources 
-    w = wcs.WCS(image_header)
-    sources["ra"], sources["dec"] = w.all_pix2world(sources["x"],
-                                                    sources["y"], 1)    
-    ## mask out edge sources: 
-    # a bounding circle for WIRCam, rectangle for MegaPrime
-    xsize = image_data.shape[1]
-    ysize = image_data.shape[0]
-    if "WIRCam" in instrument:
-        rad_limit = xsize/2.0
-        dist_to_center = np.sqrt((sources['x']-xsize/2.0)**2 + 
-                                 (sources['y']-ysize/2.0)**2)
-        mask = dist_to_center <= rad_limit
-        sources = sources[mask]
-    else: 
-        x_lims = [int(0.05*xsize), int(0.95*xsize)] 
-        y_lims = [int(0.05*ysize), int(0.95*ysize)]
-        mask = (sources['x']>x_lims[0]) & (sources['x']<x_lims[1]) & (
-                sources['y']>y_lims[0]) & (sources['y']<y_lims[1])
-        sources = sources[mask]
-        
-    ## empirically obtain the effective Point Spread Function (ePSF)  
-    nddata = NDData(image_data) # NDData object
-    if mask_file: # supply a mask if needed 
-        nddata.mask = fits.getdata(mask_file)
-    if cutout%2 == 0: # if cutout even, subtract 1
-        cutout -= 1
-    stars = extract_stars(nddata, sources, size=cutout) # extract stars
-    
-    ## use only the stars with fluxes between two percentiles if using 
-    ## astrometry.net
-    if astrometry and image_source_file:
-        stars_tab = Table() # temporary table 
-        stars_col = Column(data=range(len(stars.all_stars)), name="stars")
-        stars_tab["stars"] = stars_col # column of indices of each star
-        fluxes = [s.flux for s in stars]
-        fluxes_col = Column(data=fluxes, name="flux")
-        stars_tab["flux"] = fluxes_col # column of fluxes
-        
-        # get percentiles
-        per_low = np.percentile(fluxes, lowper) # lower percentile flux 
-        per_high = np.percentile(fluxes, highper) # upper percentile flux
-        mask = (stars_tab["flux"] >= per_low) & (stars_tab["flux"] <= per_high)
-        stars_tab = stars_tab[mask] # include only stars between these fluxes
-        idx_stars = (stars_tab["stars"]).data # indices of these stars
-        
-        # update stars object 
-        # have to manually update all_stars AND _data attributes
-        stars.all_stars = [stars[i] for i in idx_stars]
-        stars._data = stars.all_stars
-
-    ## build the ePSF
-    nstars_epsf = len(stars.all_stars) # no. of stars used in ePSF building
-    
-    if nstars_epsf == 0:
-        print("\nNo valid sources were found to build the ePSF with the given"+
-              " conditions. Exiting.")
-        return    
-    if verbose:
-        print(f"{nstars_epsf} stars used in building the ePSF")
-        
-    epsf_builder = EPSFBuilder(oversampling=1, maxiters=7, # build it
-                               progress_bar=False)
-    epsf, fitted_stars = epsf_builder(stars)
-    epsf_data = epsf.data       
-    
-    if write: # write, if desired
-        epsf_hdu = fits.PrimaryHDU(data=epsf_data)
-        if not(output):
-            output = image_file.replace(".fits", "_ePSF.fits")
-            
-        epsf_hdu.writeto(output, overwrite=True, output_verify="ignore")
-    
-    if plot: # plot, if desired
-        plt.figure(figsize=(10,9))
-        plt.imshow(epsf_data, origin='lower', aspect=1, cmap='bone',
-                   interpolation="nearest")
-        plt.xlabel("Pixels", fontsize=16)
-        plt.ylabel("Pixels", fontsize=16)
-        plt.title("effective Point-Spread Function", fontsize=16)
-        plt.colorbar(orientation="vertical", fraction=0.046, pad=0.08)
-        plt.rc("xtick",labelsize=16) # not working?
-        plt.rc("ytick",labelsize=16)
-    
-        if not(output_plot):
-            output_plot = image_file.replace(".fits", "_ePSF.png")
-        plt.savefig(output_plot, bbox_inches="tight")
-        plt.close()
-    
-    return epsf_data
-
-
-def convolve_self(image_file, mask_file=None,                                
-                  thresh_sigma=5.0, pixelmin=20, etamax=1.4, area_max=500, 
-                  cutout=35, verbose=True,
-                  psf_fwhm_max=7.0, 
-                  kernel='gauss', alpha=1.5, print_new_epsf=False,
-                  write=True, output=None, 
-                  plot=False, output_plot=None):
-    """
-    Input:
-        - science image 
-        - mask image (optional; default None)
-        ...
-        ...
-        args to pass to build_ePSF(see above)
-        ...
-        ...
-        - maximum allowed ePSF FWHM (pix); if FWHM is larger than this value 
-          the function will exit (optional; default 7.0 pix)
-        - type of kernel to build using ePSF (optional; default 'gauss'; 
-          options are 'gauss' and 'moffat')
-        - alpha parameter (power) for the Moffat kernel (optional; default 1.5,
-          only relevant if kernel='moffat')
-        -
-        - whether to write the output image (optional; default True)
-        - output filename (optional; default set below)
-        - whether to plot the output image (optional; default False)
-        - output plot filename (optional; default set below)
-    
-    Finds the ePSF of the input image and finds the FWHM (and thus sigma) of 
-    the ePSF. Then builds a Gaussian with this sigma and convolves the science
-    image with the Gaussian, OR builds a Moffat distribution with half the ePSF 
-    FWHM as the core width and convolves the image with the Moffat. 
-    
-    Effectively tries to increase the size of the image's ePSF by ~sqrt(2). 
-    Useful as a preparation for image differencing when sigma_template > 
-    sigma_science.
-    
-    Output: PrimaryHDU for the science image convolved with the kernel
-    """
-    
-    # get the ePSF for the image 
-    epsf_data = build_ePSF(image_file, mask_file, thresh_sigma=thresh_sigma, 
-                           pixelmin=pixelmin, etamax=etamax, 
-                           area_max=area_max, cutout=cutout, write=False, 
-                           verbose=verbose)     
-    
-    # get the sigma of the ePSF, assuming it is Gaussian
-    fwhm = ePSF_FWHM(epsf_data, verbose)
-    
-    # if too large, exit 
-    if fwhm > psf_fwhm_max:
-        print(f"\nePSF_FWHM = {fwhm} > ePSF_FWHM_max = {psf_fwhm_max}")
-        print("--> Exiting.")
-        return
-    
-    # if size OK, build a kernel 
-    if kernel == 'gauss': # gaussian with sigma = sigma of ePSF
-        sigma = fwhm*gaussian_fwhm_to_sigma
-        print("\nBuilding Gaussian kernel...")
-        print(f"sigma = {sigma:.2f} pix")
-        kern = Gaussian2DKernel(sigma, x_size=511, y_size=511)
-    elif kernel == 'moffat':
-        gamma = 0.5*fwhm/(2.0*((2**(1.0/alpha) - 1.0)**0.5))
-        print("\nBuilding Moffat kernel...")
-        print(f"gamma [core width] = {gamma:.2f} pix")
-        kern = Moffat2DKernel(gamma, alpha=alpha, factor=1, x_size=127, 
-                              y_size=127)
-    else:
-        print("\nInvalid kernel selected; options are 'gauss' or 'moffat'")
-        print("--> Exiting.")
-        return
-    
-    ## for bugtesting
-    #plt.imshow(kern)
-    
-    # convolve the image data with its own ePSF, approximated as a Gaussian
-    hdr = fits.getheader(image_file)
-    data = fits.getdata(image_file)
-    mask = np.logical_or(data==0, np.isnan(data))
-    if mask_file: 
-        mask = np.logical_or(fits.getdata(mask_file), mask)
-    data = np.ma.masked_where(mask, data) # mask the bad pixels 
-    print("\nConvolving...")
-    conv = convolve_fft(data, kernel=kern, boundary='fill', fill_value=0,
-                        nan_treatment='fill', preserve_nan=True,
-                        fft_pad=False, psf_pad=False)
-    conv[mask] = 0 # set masked values to zero again
-    
-    if plot: # plot, if desired
-        plt.figure(figsize=(14,13))
-        w = wcs.WCS(hdr)
-        ax = plt.subplot(projection=w) # show WCS
-        mean, med, std = sigma_clipped_stats(conv, mask=mask)
-        ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-        plt.imshow(conv, vmin=med-8*std, vmax=mean+8*std, cmap="bone",
-                   aspect=1, interpolation='nearest', origin='lower')
-
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08)
-        cb.set_label(label="ADU", fontsize=16)
-        cb.ax.tick_params(which='major', labelsize=15)   
-        
-        plt.xlabel("RA (J2000)", fontsize=16)
-        plt.ylabel("Dec (J2000)", fontsize=16)
-        
-        # set the title
-        topfile = re.sub(".*/", "", image_file)
-        title = topfile.replace(".fits","")
-        title = r"$\mathtt{"+title.replace("_","\_")+"}$"
-        title = f"{title} convolved with self"
-        plt.title(title, fontsize=15)
-    
-        if not(output_plot):
-            output_plot = image_file.replace(".fits", "_selfconv.png")
-        plt.savefig(output_plot, bbox_inches="tight")
-        plt.close()
-
-    hdu = fits.PrimaryHDU(data=conv, header=hdr)    
-    if write: # write, if desired     
-        if not(output):
-            output = image_file.replace(".fits", "_selfconv.fits")          
-        hdu.writeto(output, overwrite=True, output_verify="ignore")
-
-        if print_new_epsf:
-            # get the ePSF for the convolved image
-            epsf_data = build_ePSF(output, mask_file, 
-                                   thresh_sigma=thresh_sigma, 
-                                   pixelmin=pixelmin, 
-                                   etamax=etamax, area_max=area_max, 
-                                   cutout=cutout, write=False, verbose=verbose)     
-        
-            # get the sigma of the ePSF, assuming it is Gaussian
-            fwhm = ePSF_FWHM(epsf_data, verbose)
-        
-    return hdu
 
 ###############################################################################
 #### IMAGE DIFFERENCING WITH HOTPANTS ####
@@ -675,9 +233,9 @@ def get_substamps(source_file, template_file,
     
 
 def param_estimate(source_file, template_file, mask_file=None,
-                            source_epsf_file=None, tmp_epsf_file=None, 
-                            thresh_sigma=3.0, pixelmin=20, etamax=1.4,
-                            area_max=400, cutout=35, verbose=True):
+                   source_epsf_file=None, tmp_epsf_file=None, 
+                   thresh_sigma=3.0, pixelmin=20, etamax=1.4,
+                   areamax=400, cutout=35, verbose=True):
     """   
     WIP:
         - Not stable right now; messes up when science and reference have 
@@ -711,20 +269,23 @@ def param_estimate(source_file, template_file, mask_file=None,
     if source_epsf_file:
         source_epsf = fits.getdata(source_epsf_file)
     else:
-        source_epsf = build_ePSF(source_file, mask_file, 
-                                 thresh_sigma=thresh_sigma, pixelmin=pixelmin, 
-                                 etamax=etamax, 
-                                 area_max=area_max, cutout=cutout, 
-                                 write=False, verbose=verbose)
+        source_epsf = build_ePSF_imsegm(source_file, mask_file, 
+                                        thresh_sigma=thresh_sigma, 
+                                        pixelmin=pixelmin, 
+                                        etamax=etamax, areamax=areamax, 
+                                        cutout=cutout, 
+                                        write=False, verbose=verbose)
     
     ## load in OR build the template image ePSF
     if tmp_epsf_file:
         tmp_epsf = fits.getdata(tmp_epsf_file)
     else:
-        tmp_epsf = build_ePSF(template_file, mask_file, 
-                              thresh_sigma=thresh_sigma, pixelmin=pixelmin, 
-                              etamax=etamax, area_max=area_max,                                
-                              cutout=cutout, write=False, verbose=verbose)
+        tmp_epsf = build_ePSF_imsegm(template_file, mask_file, 
+                                     thresh_sigma=thresh_sigma, 
+                                     pixelmin=pixelmin, 
+                                     etamax=etamax, areamax=areamax,                                
+                                     cutout=cutout, 
+                                     write=False, verbose=verbose)
         
     
     ## get the FWHM and sigma of each PSF, assuming roughly Gaussian
@@ -739,7 +300,7 @@ def param_estimate(source_file, template_file, mask_file=None,
         # matching, which increases the sigma of the science image ePSF by a
         # factor of ~sqrt(2)
         if verbose:
-            print("\n FWHM_tmp > FWHM_sci")        
+            print("\n FWHM_sci < FWHM_tmp")        
         # trying the following for now 
         psf_match_sig = (tmp_epsf_sig**2 - source_epsf_sig**2)**(0.5)
         widths = (0.5*psf_match_sig, psf_match_sig, 2.0*psf_match_sig)
@@ -1255,230 +816,7 @@ def hotpants(source_file, template_file,
     return sub
 
 ###############################################################################
-#### TRANSIENT DETECTION ####
-
-def __rejection_plot(sub_file, 
-                     dipoles, elongated_sources, large_sources, vetted, 
-                     dipole_width, etamax, area_max, nsource_max,
-                     toi=None, #toi_sep_max=None, 
-                     dipole_color="black", 
-                     elong_color="#be03fd", 
-                     large_color="#fcc006", 
-                     vetted_color="#53fca1",
-                     cmap="coolwarm", 
-                     output=None):
-    """    
-    Input:
-        - filename for the difference image
-        - table of candidates rejected as dipoles
-        - table of candidates rejected due to elongation
-        - table of candidates rejected due to area 
-        - table of candidates after all vetting 
-        - maximum dipole width 
-        - maximum allowed elongation 
-        - maximum allowed pixel area 
-        - [ra,dec] for some target of interest (optional; default None)
-        - radius (in arcsec) around the toi to probe (optional; default None)
-        - color of circle flagging dipoles (optional; default black)
-        - color of square flagging elongated sources (optional; default bright
-          purple)
-        - color of triangle flagging overly large sources (optional; default 
-          marigold)
-        - color of diamond flagging sources which passed all vetting (optional;
-          default sea green)
-        - colourmap for image (optional; default "coolwarm")
-        - output plotname (optional; default set below)
-    
-    Plot a difference image with marker flagging likely dipoles, overly 
-    elongated sources, overly large sources, and sources which passed all these
-    vetting steps, as determined by transient_detect()
-    
-    Output: None
-    """
-
-    from collections import OrderedDict
-
-    ## load in data    
-    data = fits.getdata(sub_file)
-    hdr = fits.getheader(sub_file)
-
-    plt.figure(figsize=(14,13))
-    w = wcs.WCS(hdr) # show WCS
-    ax = plt.subplot(projection=w) 
-    ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-    ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-
-    ## plot the image
-    mean, median, std = sigma_clipped_stats(data)
-    plt.imshow(data, vmin=mean-5*std, vmax=mean+5*std, origin='lower', 
-               cmap=cmap)
-    cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08)
-    cb.set_label(label="ADU", fontsize=16)
-    cb.ax.tick_params(which='major', labelsize=15)
-
-    # markers over dipoles, overly elongated sources, & overly large sources
-    for d in dipoles: # circles
-        ra, dec = d["ra"], d["dec"]
-        plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
-                 mec=dipole_color, mfc="None", mew=2, marker="o", ls="", 
-                 label='dipole '+r'$\leqslant{ }$'+' '+str(dipole_width)+'"')
-
-    for e in elongated_sources: # squares
-        ra, dec = e["ra"], e["dec"]
-        plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
-                 mec=elong_color, mfc="None", mew=2, marker="s", ls="", 
-                 label=r"$\eta$"+" "+r"$\geqslant$"+" "+str(etamax))
-        
-    for l in large_sources: # triangles
-        ra, dec = l["ra"], l["dec"]
-        plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
-                 mec=large_color, mfc="None", mew=2, marker="^", ls="", 
-                label=r"$A$"+" "+r"$\geqslant$"+" "+str(area_max)+
-                " pix"+r"${}^2$")
-        
-    # marker over accepted sources
-    for v in vetted: # diamonds
-        ra, dec = v["ra"], v["dec"]
-        plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
-                 mec=vetted_color, mfc="None", mew=2, marker="D", ls="", 
-                 label="accepted")
-
-    # crosshair denoting target of interest
-    if (toi != None):
-        # circle?
-        #circ = ptc.Circle((toi[0],toi[1]), radius=toi_sep_max/3600.0, 
-        #                  transform=ax.get_transform('icrs'), fill=False,
-        #                  ec="black", lw=2, ls="-.")
-        #plt.gca().add_patch(circ)
-        # or a crosshair?
-        plt.plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
-                 transform=ax.get_transform('icrs'), linewidth=2, 
-                 color="black", marker="")
-        plt.plot([ra, ra], [dec-10.0/3600.0, dec-5.0/3600.0], 
-                 transform=ax.get_transform('icrs'),  linewidth=2, 
-                 color="black", marker="")
-    
-    # title
-    topfile = re.sub(".*/", "", sub_file)
-    title = topfile.replace(".fits","")
-    title = r"$\mathtt{"+title.replace("_","\_")+"}$"+" transient candidates"
-    plt.title(title, fontsize=16)
-    # remove duplicates from legend
-    handles, labels = ax.get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels,handles))
-    # add the legend
-    ax.legend(by_label.values(), by_label.keys(), loc="lower center",
-              bbox_to_anchor=[0.5,-0.1], fontsize=16, ncol=len(by_label), 
-              fancybox=True)  
-
-    if not(output):
-        output = sub_file.replace(".fits", "_rejections.png")
-    plt.savefig(output, bbox_inches="tight")
-    plt.close()
-
-
-def __triplet_plot(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,  
-                   wide=True, cmap="bone", title=None, plotdir=None):
-    """
-    Input:
-        - difference image PrimaryHDU
-        - science image PrimaryHDU
-        - reference image PrimaryHDU
-        - id of the candidate (i.e., for candidate #14, n=14)
-        - total number of vetted candidates in the difference image 
-        - whether to plot the triplets as 3 columns, 1 row (horizontally wide)
-          or 3 rows, 1 column (vertically tall) (optional; default wide=True)
-        - colourmap to apply to all images in the triplet (optional; default 
-          "bone")
-        - a title to include in all plots AND to append to all filenames 
-          (optional; default None)
-        - directory in which to store plots (optional; default is the location
-          of the science image file)
-    
-    Plots a single [science image, reference image, difference image] triplet.
-    
-    Output: None
-    """
-    
-    # load in data
-    sub_data = sub_hdu.data
-    og_data = og_hdu.data
-    ref_data = ref_hdu.data
-
-    # parameters for the plots and subplots based on whether wide=True
-    plot_dict = {True:[(14,5), 131, 132, 133], 
-                 False:[(5, 14), 311, 312, 313]}
-    
-    ## plot
-    fig = plt.figure(figsize=plot_dict[wide][0])   
-
-    # science image
-    w = wcs.WCS(og_hdu.header) # wcs of science image
-    ax = fig.add_subplot(plot_dict[wide][1], projection=w)
-    mean, median, std = sigma_clipped_stats(og_data)
-    ax.imshow(og_data, vmin=mean-5*std, vmax=mean+5*std, origin='lower', 
-              cmap=cmap)
-    
-    # reference image 
-    w2 = wcs.WCS(ref_hdu.header) # wcs of reference image
-    ax2 = fig.add_subplot(plot_dict[wide][2], projection=w2)
-    mean, median, std = sigma_clipped_stats(ref_data)
-    ax2.imshow(ref_data, vmin=mean-5*std, vmax=mean+9*std, origin='lower', 
-               cmap=cmap)
-    
-    # difference image 
-    w3 = wcs.WCS(sub_hdu.header) # wcs of difference image
-    ax3 = fig.add_subplot(plot_dict[wide][3], projection=w3)
-    mean, median, std = sigma_clipped_stats(sub_data)
-    ax3.imshow(sub_data, vmin=mean-5*std, vmax=mean+9*std, origin='lower', 
-               cmap=cmap)
-    
-    ## express the candidate number as a string
-    if ntargets < 100:
-        if n < 10: nstr = "0"+str(n)
-        else: nstr = str(n)
-    else:
-        if n < 10: nstr = "00"+str(n)
-        elif n < 100: nstr = "0"+str(n)
-        else: nstr = str(n)
-
-    ## ticks, tick labels
-    if wide: # RA under middle image, DEC left of leftmost image 
-        ax.coords["ra"].set_ticklabel_visible(False)
-        ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax.set_ylabel("Dec (J2000)", fontsize=16)
-        ax2.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax2.coords["dec"].set_ticklabel_visible(False)
-        ax2.set_xlabel("RA (J2000)", fontsize=16)
-        ax3.coords["ra"].set_ticklabel_visible(False)
-        ax3.coords["dec"].set_ticklabel_visible(False)
-    else: # RA under bottom image, DEC left of middle image
-        ax.coords["ra"].set_ticklabel_visible(False)
-        ax.coords["dec"].set_ticklabel_visible(False)        
-        ax2.coords["ra"].set_ticklabel_visible(False)        
-        ax2.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax2.set_ylabel("Dec (J2000)", fontsize=16)
-        ax3.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax3.coords["dec"].set_ticklabel_visible(False)    
-        ax3.set_xlabel("RA (J2000)", fontsize=16)
-    
-    ## titles, output filenames
-    if title:
-        if wide: # title above the middle image 
-            ax2.set_title(title, fontsize=15)
-        else: # title above the topmost image
-            ax.set_title(title, fontsize=15)
-        figname = og_file.replace(".fits", f"_{title}_candidate{nstr}.png")
-    else:
-        figname = og_file.replace(".fits", f"_candidate{nstr}.png")   
-        
-    if plotdir: 
-        figname = f'{plotdir}/{re.sub(".*/", "", figname)}'
-    
-    # save and close the figure
-    plt.savefig(figname, bbox_inches="tight")
-    plt.close()
-    
+#### TRANSIENT DETECTION ####    
 
 def transient_detect(sub_file, og_file, ref_file, mask_file=None, 
                      thresh_sigma=5.0, pixelmin=20, 
@@ -1744,8 +1082,8 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         plt.close()
     
     ### CANDIDATE VETTING #####################################################
-    ## look for dipoles by looking for sources in (-1)*difference and cross-  
-    ## matching to the segmentation image 
+    ## (1) look for dipoles by looking for sources in (-1)*difference and  
+    ## cross-matching to the segmentation image 
     if dipole_width:
         idx_rem = [] # indices to remove
         try:
@@ -1783,7 +1121,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                   "for dipoles.")
             tbl_nodipoles = tbl.copy() # tbl with no dipoles
     
-    ## restrict based on elongation 
+    ## (2) restrict based on source elongation 
     if etamax:
         premasklen = len(tbl)
         mask = tbl["elongation"] < etamax 
@@ -1794,7 +1132,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                   f"elongation >{etamax} removed")
         tbl_noelong = tbl.copy()
             
-    ## restrict based on maximum pixel area 
+    ## (3) restrict based on maximum pixel area 
     if area_max:
         premasklen = len(tbl)
         mask = tbl["area"].value < area_max
@@ -1814,16 +1152,22 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         large_sources = tbl_noelong[tbl_noelong["area"].value >= area_max]
         
         # colours below might be out of date (could be improved)
-        __rejection_plot(sub_file,
-                         dipoles, elongated_sources, large_sources, vetted,
-                         dipole_width, etamax, area_max, nsource_max,
-                         toi, #toi_sep_max, 
-                         dipole_color="black", 
-                         elong_color="#be03fd", 
-                         large_color="#fcc006", 
-                         vetted_color="#53fca1",
-                         cmap="coolwarm",
-                         output=None)
+        __plot_rejected(sub_file=sub_file,
+                        dipoles=dipoles, 
+                        elongated_sources=elongated_sources, 
+                        large_sources=large_sources, 
+                        vetted=vetted,
+                        dipole_width=dipole_width, 
+                        etamax=etamax, 
+                        area_max=area_max, 
+                        nsource_max=nsource_max,
+                        toi=toi, #toi_sep_max, 
+                        dipole_color="black", 
+                        elong_color="#be03fd", 
+                        large_color="#fcc006", 
+                        vetted_color="#53fca1",
+                        cmap="coolwarm",
+                        output=None)
 
     ## check that the number of detected sources is believable 
     if nsource_max:
@@ -1879,7 +1223,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     
     ### PLOT ##################################################################
     if type(plots) in (list, np.ndarray, np.array):
-        transient_plot(sub_file=sub_file, og_file=og_file, ref_file=ref_file, 
+        plot_transient(sub_file=sub_file, og_file=og_file, ref_file=ref_file, 
                        tbl=tbl, 
                        pixcoords=pixcoords, 
                        toi=toi, 
@@ -1889,184 +1233,6 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                        crosshair_og=crosshair_og, crosshair_sub=crosshair_sub, 
                        title_append=title, plotdir=plotdir)    
     return tbl
-
-
-def transient_plot(sub_file, og_file, ref_file, tbl, 
-                   pixcoords=False,
-                   toi=None, 
-                   plots=["zoom og", "zoom ref", "zoom diff"], 
-                   sub_scale=None, og_scale=None, 
-                   stampsize=200.0, 
-                   crosshair_og="#fe019a", crosshair_sub="#5d06e9", 
-                   title_append=None, plotdir=None):
-    """
-    Inputs:
-        general:￼
-        - difference image file
-        - original science image file (can be background-subtracted or not)
-        - original reference image file (can be background-subtracted or not)
-        - a table of candidate transient source(s) found with 
-          transient_detect() or some other tool (can be the name of a table 
-          file or the table itself)
-          note: if pixcoords=False, the table must have at least the columns 
-          "ra" and "dec"; if pixcoords=True, the table must have at least the 
-          columns "xcentroid" and "ycentroid"
-        - whether to use the pixel coordinates of the transients when plotting 
-          rather than the ra, dec (optional; default False; recommended to use
-          in cases where it is not clear that the WCS of the science and 
-          reference images matches exactly)
-        - [ra,dec] for some target of interest (e.g., a candidate host galaxy)
-          such that a crosshair is also plotted at its location (optional; 
-          default None)
-        
-        plotting specifics:
-        - an array of which plots to produce, where valid options are:
-              (1) "full" - the full-frame subtracted image
-              (2) "zoom og" - postage stamp of the original science image 
-              (3) "zoom ref" - postage stamp of the original reference image
-              (4) "zoom diff" - postage stamp of the subtracted image 
-              (optional; default is ["zoom og", "zoom ref", "zoom diff"])
-              
-        - scale to apply to the difference images (optional; default "asinh"; 
-          options are "linear", "log", "asinh")
-        - scale to apply to the science/reference images (optional; default
-          "asinh"; options are "linear", "log", "asinh")
-        - size of the transient stamp in pixels (optional; default 200.0)
-        - colour for crosshair on transient in science/ref images (optional; 
-          default hot pink)
-        - colour for crosshair on transient in difference images (optional;
-          default purple-blue)
-        - a title to include in all plots AND all filenames for the plots 
-          (optional; default None)
-        - name for the directory in which to store all plots (optional; 
-          default set below)   
-        
-    Output: None
-    """
-
-    # check if table is a filename or pre-loaded table
-    if type(tbl) == str:
-        tbl = Table.read(tbl, format="ascii")
-    
-    if not(pixcoords):
-        targets_sci= [tbl["ra"].data, tbl["dec"].data]
-        targets_ref = [tbl["ra"].data, tbl["dec"].data]
-    else:
-        pix = [tbl["xcentroid"].data, tbl["ycentroid"].data]
-        wsci = wcs.WCS(fits.getheader(sub_file))
-        wref = wcs.WCS(fits.getheader(ref_file))
-        rasci, decsci = wsci.all_pix2world(pix[0], pix[1], 1)
-        raref, decref = wref.all_pix2world(pix[0], pix[1], 1)
-        targets_sci = [rasci, decsci]
-        targets_ref = [raref, decref]
-    
-    if not(type(plots) in (list, np.ndarray, np.array)):
-        print("\ntransient_plot() was called, but no plots were requested "+
-              "via the <plots> arg. Exiting.")
-        return
-    elif len(plots) == 0:
-        print("\ntransient_plot() was called, but no plots were requested "+
-              "via the <plots> arg. Exiting.")
-        return
-    
-    ntargets = len(targets_sci[0])
-    for n in range(ntargets):
-        if ntargets < 100:
-            if n < 10: nstr = "0"+str(n)
-            else: nstr = str(n)
-        else:
-            if n < 10: nstr = "00"+str(n)
-            elif n < 100: nstr = "0"+str(n)
-            else: nstr = str(n)
-                
-        ### set titles 
-        if title_append:
-            title = f"{title_append} difference image: candidate {nstr}"
-            title_og = f"{title_append} original image: candidate {nstr}"
-            title_ref = f"{title_append} reference image: candidate {nstr}"
-        else:
-            title = f"difference image: candidate {nstr}"
-            title_og = f"original image: candidate {nstr}"
-            title_ref = f"reference image: candidate {nstr}"
-    
-        # setting output figure directory
-        if plotdir:
-            if plotdir[-1] == "/": plotdir = plotdir[-1]        
-        
-        ### full-frame difference image #######################################
-        if "full" in plots:
-            
-            # set output figure title
-            if title_append:
-                full_output = sub_file.replace(".fits", 
-                             f"_{title_append}_diff_candidate{nstr}.png")                
-            else:
-                full_output = sub_file.replace(".fits", 
-                                               f"_diff_candidate{nstr}.png")                
-            if plotdir:
-                full_output = f'{plotdir}/{re.sub(".*/", "", full_output)}'
-                
-            make_image(sub_file, 
-                       scale=sub_scale, cmap="coolwarm", label="", title=title, 
-                       output=full_output, 
-                       target=toi,
-                       target_small=[targets_sci[0][n], targets_sci[1][n]],
-                       crosshair_small=crosshair_sub)
-        
-        ### small region of science image ####################################
-        if "zoom og" in plots:
-            # set output figure name
-            if title_append:
-                zoom_og_output = og_file.replace(".fits", 
-                        f"_{title_append}_zoomed_sci_candidate{nstr}.png")
-            else:
-                zoom_og_output = og_file.replace(".fits", 
-                                        f"_zoomed_sci_candidate{nstr}.png")                
-            if plotdir:
-                zoom_og_output = f'{plotdir}/{re.sub(".*/","",zoom_og_output)}'
-                
-            transient_stamp(og_file, [targets_sci[0][n], targets_sci[1][n]], 
-                            stampsize, 
-                            scale=og_scale, cmap="viridis", 
-                            crosshair=crosshair_og, title=title_og, 
-                            output=zoom_og_output, toi=toi)
-
-        ### small region of reference image ###################################
-        if "zoom ref" in plots:
-            # set output figure name
-            if title_append:
-                zoom_ref_output = og_file.replace(".fits", 
-                        f"_{title_append}_zoomed_ref_candidate{nstr}.png")
-            else:
-                zoom_ref_output = og_file.replace(".fits", 
-                                        f"_zoomed_ref_candidate{nstr}.png")
-            if plotdir:
-                zoom_ref_output = f'{plotdir}/'
-                zoom_ref_output += f'{re.sub(".*/", "", zoom_ref_output)}'
-                
-            transient_stamp(ref_file, [targets_ref[0][n], targets_ref[1][n]], 
-                            stampsize, 
-                            scale=og_scale, cmap="viridis", 
-                            crosshair=crosshair_og, title=title_ref, 
-                            output=zoom_ref_output, toi=toi)
-        
-        ### small region of difference image ##################################
-        if "zoom diff" in plots:
-            # set output figure name
-            if title_append:
-                zoom_diff_output = sub_file.replace(".fits", 
-                        f"_{title_append}_zoomed_diff_candidate{nstr}.png")
-            else:
-                zoom_diff_output = sub_file.replace(".fits", 
-                                        f"_zoomed_diff_candidate{nstr}.png")
-            if plotdir:
-                zoom_diff_output = f'{plotdir}/'
-                zoom_diff_output += f'{re.sub(".*/", "", zoom_diff_output)}'
-                
-            transient_stamp(sub_file, [targets_sci[0][n], targets_sci[1][n]], 
-                            stampsize, scale=sub_scale, cmap="coolwarm", 
-                            label="ADU", crosshair=crosshair_sub, title=title, 
-                            output=zoom_diff_output, toi=toi)    
 
 
 def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False, 
@@ -2162,7 +1328,7 @@ def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False,
             if plotdir[-1] == "/":
                 plotdir = plotdir[-1]
                 
-            __triplet_plot(og_file=og_file, 
+            __plot_triplet(og_file=og_file, 
                            sub_hdu=sub_hdu, og_hdu=og_hdu, ref_hdu=ref_hdu, 
                            n=n, ntargets=ntargets, 
                            wide=wide, cmap=cmap, title=title, plotdir=plotdir)
@@ -2210,220 +1376,5 @@ def im_contains(im_file, ra, dec, exclusion=None, mute=False):
     if (xlims[0] < x < xlims[1]) and (ylims[0] < y < ylims[1]): return True
     else: return  
         
-###############################################################################
-#### MISCELLANEOUS PLOTTING ###################################################
-    
-def make_image(im_file, mask_file=None, scale=None, cmap="bone", label=None,
-               title=None, output=None, target=None, target_small=None,
-               crosshair_big="black", crosshair_small="#fe019a"):
-    """
-    Input: 
-        - image of interest
-        - bad pixels mask (optional; default None)
-        - scale to use for the image (optional; default None (linear), options 
-          are "linear", "log", "asinh")
-        - colourmap to use for the image (optional; default is "bone")
-        - label to apply to the colourbar (optional; default set below)
-        - title for the image (optional; default None)
-        - name for the output file (optional; default set below)
-        - [ra,dec] for a target at which to place a crosshair (optional; 
-          default None)
-        - [ra,dec] for a second target at which to place a smaller crosshair 
-          (optional; default None)
-        - colour for the big crosshair (optional; default "black")
-        - colour for the small crosshair (optional; default hot pink)
-          
-    Output: None
-    """
-    
-    image_data = fits.getdata(im_file)
-    image_header = fits.getheader(im_file)
-    
-    plt.figure(figsize=(14,13))
-    
-    # show WCS     
-    w = wcs.WCS(image_header)
-    ax = plt.subplot(projection=w) 
-    ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-    ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-    
-    if mask_file:
-        mask = fits.getdata(mask_file)
-        image_data_masked = np.ma.masked_where(mask, image_data)
-        image_data = np.ma.filled(image_data_masked, 0)
-    
-    if not scale or (scale == "linear"): # if no scale to apply 
-        scale = "linear"
-        mean, median, std = sigma_clipped_stats(image_data)
-        plt.imshow(image_data, vmin=mean-5*std, vmax=mean+9*std, cmap=cmap, 
-                   aspect=1, interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08)
-        if label == None:
-            cb.set_label(label="ADU", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
-        
-    elif scale == "log": # if we want to apply a log scale 
-        image_data_log = np.log10(image_data)
-        lognorm = simple_norm(image_data_log, "log", percent=99.0)
-        plt.imshow(image_data_log, cmap=cmap, aspect=1, norm=lognorm,
-                   interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-        if label == None:
-            cb.set_label(label=r"$\log(ADU)$", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
-        
-    elif scale == "asinh": # asinh scale 
-        image_data_asinh = np.arcsinh(image_data)
-        asinhnorm = simple_norm(image_data_asinh, "asinh")
-        plt.imshow(image_data_asinh, cmap=cmap, aspect=1, norm=asinhnorm,
-                   interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-        if label == None:
-            cb.set_label(label="a"+r"$\sinh{(ADU)}$", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
 
-    cb.ax.tick_params(which='major', labelsize=15)        
-    plt.xlabel("RA (J2000)", fontsize=16)
-    plt.ylabel("Dec (J2000)", fontsize=16)
-    
-    if not(title):
-        topfile = re.sub(".*/", "", im_file)
-        title = topfile.replace(".fits","")
-        title = r"$\mathtt{"+title.replace("_","\_")+"}$"+" data"
-    if not(output):
-        output = im_file.replace(".fits", f"_{scale}.png")
-
-    if target:
-        ra, dec = target
-        plt.gca().plot([ra+10.0/3600.0, ra+5.0/3600.0], [dec,dec], 
-               transform=plt.gca().get_transform('icrs'), linewidth=2, 
-               color=crosshair_big, marker="")
-        plt.gca().plot([ra, ra], [dec+10.0/3600.0, dec+5.0/3600.0], 
-               transform=plt.gca().get_transform('icrs'),  linewidth=2, 
-               color=crosshair_big, marker="")
-    if target_small:
-        ra, dec = target_small
-        plt.gca().plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
-               transform=plt.gca().get_transform('icrs'), linewidth=2, 
-               color=crosshair_small, marker="")
-        plt.gca().plot([ra, ra], [dec-10.0/3600.0, dec-5.0/3600.0], 
-               transform=plt.gca().get_transform('icrs'),  linewidth=2, 
-               color=crosshair_small, marker="")
-
-    plt.title(title, fontsize=15)
-    plt.savefig(output, bbox_inches="tight")
-    plt.close()
-
-
-def transient_stamp(im_file, target, size=200.0, cropmode="truncate", 
-                    scale=None, cmap="bone", label=None, crosshair="#fe019a", 
-                    title=None, output=None, toi=None):
-    """
-    Inputs: 
-        - image of interest
-        - [ra, dec] of a candidate transient source
-        - size of the zoomed-in region around the transient to plot in pixels 
-          (optional; default 200.0)
-        - mode to use for crop_WCS (optional; default "truncate"; options are
-          "truncate" and "extend")
-        - scale to apply to the image (optional; default None (linear); options 
-          are "linear", "log", "asinh")
-        - colourmap to use for the image (optional; default is "bone")
-        - label to apply to the colourbar (optional; defaults set below)
-        - colour for the crosshairs (optional; default is ~ hot pink)
-        - title for the image (optional; defaults set below)
-        - name for the output file (optional; defaults set below)
-        - [ra, dec] of some other source of interest (optional; default None)
-        
-    Output: None
-    """
-    
-    ra, dec = target
-    imhdu = crop_WCS(im_file, ra, dec, size, mode=cropmode, write=False)
-    if imhdu == None:
-        print("\nCropping was unsucessful, so a stamp cannot be produced. "+
-              "Exiting. ")
-        return
-        
-    image_data = imhdu.data
-    image_header = imhdu.header
-
-    plt.figure(figsize=(14,13))
-    
-    # show WCS     
-    w = wcs.WCS(image_header)
-    ax = plt.subplot(projection=w) 
-    ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-    ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-    
-    if not scale or (scale == "linear"): # if no scale to apply 
-        scale = "linear"
-        mean, median, std = sigma_clipped_stats(image_data)
-        plt.imshow(image_data, vmin=mean-5*std, vmax=mean+9*std, cmap=cmap, 
-                   aspect=1, interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08)
-        if label == None:
-            cb.set_label(label="ADU", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
-        
-    elif scale == "log": # if we want to apply a log scale 
-        image_data_log = np.log10(image_data)
-        lognorm = simple_norm(image_data_log, "log", percent=99.0)
-        plt.imshow(image_data_log, cmap=cmap, aspect=1, norm=lognorm,
-                   interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-        if label == None:
-            cb.set_label(label=r"$\log(ADU)$", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
-        
-    elif scale == "asinh": # asinh scale 
-        image_data_asinh = np.arcsinh(image_data)
-        asinhnorm = simple_norm(image_data_asinh, "asinh")
-        plt.imshow(image_data_asinh, cmap=cmap, aspect=1, norm=asinhnorm,
-                   interpolation='nearest', origin='lower')
-        cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
-        if label == None:
-            cb.set_label(label="a"+r"$\sinh{(ADU)}$", fontsize=16)
-        else:
-            cb.set_label(label=label, fontsize=16)
-
-    cb.ax.tick_params(which='major', labelsize=15)        
-    plt.xlabel("RA (J2000)", fontsize=16)
-    plt.ylabel("Dec (J2000)", fontsize=16)
-    
-    if not(title):
-        topfile = re.sub(".*/", "", im_file)
-        title = topfile.replace(".fits","")
-        title = r"$\mathtt{"+title.replace("_","\_")+"}$"+" data (stamp)"
-    if not(output):
-        output = im_file.replace(".fits", f"_stamp_{scale}.png")
-
-    plt.gca().plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
-           transform=plt.gca().get_transform('icrs'), linewidth=2, 
-           color=crosshair, marker="")
-    plt.gca().plot([ra, ra], [dec-10.0/3600.0, dec-5.0/3600.0], 
-           transform=plt.gca().get_transform('icrs'),  linewidth=2, 
-           color=crosshair, marker="")
-    
-    # textbox indicating the RA, Dec of the candidate transient source 
-    textstr = r"$\alpha = $"+"%.5f\n"%ra+r"$\delta = $"+"%.5f"%dec
-    
-    if toi: # if a target of interest is given
-        toi_coord = SkyCoord(toi[0]*u.deg, toi[1]*u.deg, frame="icrs")
-        trans_coord = SkyCoord(ra*u.deg, dec*u.deg, frame="icrs")
-        sep = toi_coord.separation(trans_coord).arcsecond
-        textstr+='\n'+r'$s = $'+'%.2f'%sep+'"'
-        
-    box = dict(boxstyle="square", facecolor="white", alpha=0.8)
-    plt.text(0.05, 0.9, transform=ax.transAxes, s=textstr, 
-             bbox=box, fontsize=20)    
-        
-    plt.title(title, fontsize=15)
-    plt.savefig(output, bbox_inches="tight")
-    plt.close()                    
     

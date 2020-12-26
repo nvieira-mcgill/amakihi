@@ -650,8 +650,8 @@ def image_align_astrometry(science_file, template_file,
         Detection significance when using `image2xy` in `astrometry.net` to 
         find sources (default 8.0, can be length-2 array to assign different
         values for science and template)
-    psf_sigma : float or array_like
-        sigma of the approximate Gaussian PSF of the images (default 5.0; can 
+    psf_sigma : float or array_like, optional
+        Sigma of the approximate Gaussian PSF of the images (default 5.0; can 
         be length-2 array to assign different values for science and template)
     keep : bool, optional
         Whether to keep the source list files (`.xy.fits` files; default False)
