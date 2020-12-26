@@ -9,6 +9,7 @@ amakihi
    background
    crop
    imalign
+   masking
    plotting
    query_2MASS
    query_CFIS

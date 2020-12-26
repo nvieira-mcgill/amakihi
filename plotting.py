@@ -357,3 +357,40 @@ def __plot_align(template_hdr, img_aligned, mask, scale, output):
     plt.savefig(output, bbox_inches="tight")
     plt.close()
 
+
+###############################################################################
+### masking ###################################################################
+    
+def __plot_mask(hdr, newmask, title, output):
+    """Plot a mask (box mask or saturation mask) as a binary image (black or 
+    white).
+    
+    Arguments
+    ---------
+    hdr : astropy.io.fits.header.Header
+        Header for the image (needed for WCS info)
+    newmask : array_like
+        Mask data as 2D array
+    title : str
+        Title to give the plot
+    output : str
+        Name for output figure 
+    """
+
+    # set figure dimensions
+    plt.figure(figsize=(14,13))
+    
+    # show WCS      
+    w = wcs.WCS(hdr)
+    ax = plt.subplot(projection=w) 
+    ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
+    ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
+    
+    # plot mask as a binary image (black or white)
+    plt.imshow(newmask, cmap='binary_r', aspect=1, interpolation='nearest', 
+               origin='lower')
+    plt.xlabel("RA (J2000)", fontsize=16)
+    plt.ylabel("Dec (J2000)", fontsize=16)
+    plt.title(title, fontsize=15)
+    plt.savefig(output) 
+    plt.close()

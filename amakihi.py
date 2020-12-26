@@ -5,18 +5,11 @@ Created on Thu Aug  1 13:58:03 2019
 @author: Nicholas Vieira
 @amakihi.py 
 
-**This script contains a library of functions for:**
-
-- Image registration (i.e. image alignment)
-- Masking out bad pixels (including saturated stars)
-
 It also acts as a crude python wrapper for hotpants 
 (https://github.com/acbecker/hotpants).
 
 **Sections:**
 
-- Image registraton (alignment)
-- Mask building (boxmask, saturation mask)
 - ePSF building 
 - Image differencing with hotpants
 - Transient detection, triplets 
@@ -47,13 +40,13 @@ modifications are described in that script.
 
 # misc
 import os
-import sys
+#import sys
 from subprocess import run, PIPE, CalledProcessError
 import numpy as np
 import re
 
 # scipy
-from scipy.ndimage import zoom, binary_dilation, gaussian_filter
+from scipy.ndimage import zoom
 
 # astropy
 from astropy.io import fits
@@ -86,243 +79,6 @@ except ImportError: pass # for Compute Canada server
 import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
-
-# if hotpants cannot be called directly from the command line, the path to the
-# executable can be put modified with the function hotpants_path() below
-# by default, set to None --> assume can be called directly from the cmd line
-HOTPANTS_PATH = "" 
-
-
-###############################################################################
-#### MASK BUILDING ####
-    
-def box_mask(image_file, pixx, pixy, mask_file=None, plot=False, 
-             write=True, output=None):
-    """
-    Input: image file, the x pixel range and y pixel range to mask, an 
-    already existing mask file to combine with the new box mask (optional; 
-    default None), whether to plot the mask (optional; default False), whether
-    to write the mask file (optional; default True), and the name for the
-    output mask file (optional; default set below)
-    
-    Creates a simple box-shaped mask delimited by (pixx[0],pixx[1]) and 
-    (pixy[0],pixy[1]). If an existing mask is supplied, the output mask will be 
-    a combination of the previous mask and the box mask. 
-    
-    Output: the mask file HDU 
-    """
-    data = fits.getdata(image_file)
-    hdr = fits.getheader(image_file)
-    
-    newmask = np.zeros(data.shape)
-    newmask[pixy[0]:pixy[1], pixx[0]:pixx[1]] = 1.0
-    newmask = newmask.astype(bool)
-    
-    if mask_file: # combine with another mask 
-        mask = fits.getdata(mask_file)
-        newmask = np.logical_or(mask, newmask)
-    
-    hdr = fits.getheader(image_file)
-    mask_hdu = fits.PrimaryHDU(data=newmask.astype(int), header=hdr)
-    
-    if plot:
-        plt.figure(figsize=(14,13))
-        # show WCS      
-        w = wcs.WCS(hdr)
-        ax = plt.subplot(projection=w) 
-        ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-        plt.imshow(newmask, cmap='binary_r', aspect=1, interpolation='nearest', 
-                   origin='lower')
-        plt.xlabel("RA (J2000)", fontsize=16)
-        plt.ylabel("Dec (J2000)", fontsize=16)
-        plt.title("boxmask", fontsize=15)
-        plt.savefig(image_file.replace(".fits","_boxmask.png")) 
-        plt.close()
-    
-    if write:
-        if not(output):
-            output = image_file.replace(".fits", "_boxmask.fits")
-            
-        mask_hdu.writeto(output, overwrite=True, output_verify="ignore")
-        
-    return mask_hdu
-
-
-def saturation_mask(image_file, mask_file=None, sat_ADU=40000, 
-                    sat_area_min=500, 
-                    ra_safe=None, dec_safe=None, rad_safe=None, dilation_its=5, 
-                    blursigma=2.0, write=True, output=None, plot=True, 
-                    plotname=None):
-    """
-    Input: 
-        - image file
-        - a mask file to merge with the created saturation mask (optional; 
-          default None)
-        - saturation ADU above which all pixels will be masked (optional; 
-          default 40000, which is a bit below the limit for MegaCam)
-        - *minimum* and maximum areas in square pixels for a saturated source 
-          (optional; default 500 and 100000, respectively)
-        - the RA (deg), DEC (deg), and radius (arcsec) denoting a "safe zone"
-          in which no sources will be masked (optional; defaults are None)
-        - the number of iterations of binary dilation to apply to the mask, 
-          where binary dilation is a process which "dilates" the detected 
-          sources to make sure all pixels are adequately masked (optional; 
-          default 5)
-        - sigma of the gaussian filter to apply to the mask to blur it 
-          (optional; default 2.0)
-        - whether to write the mask file (optional; default True)
-        - name for the output mask file (optional; default set below)
-        - whether to plot the mask in greyscale (optional; default True)
-        - name for the output plot (optional; default set below; only relevant
-          if plot=True)
-        
-    Uses image segmentation to find all sources in the image. Then, looks for 
-    sources which have a maximum flux above the saturation ADU and within the 
-    minimum and maximum saturation area and creates a mask of these sources. 
-    Binary dilation is applied to to enlarge features in the mask and Gaussian 
-    blurring is applied to smooth out the mask. 
-    
-    If a "safe zone" is supplied, any sources within the safe zone will be 
-    labelled as NON-saturated. This is useful if you know the coordinates of 
-    some galaxy/nebulosity in your image which should not be masked, as it is 
-    sometimes difficult to distinguish between a saturated source and a galaxy.
-    
-    If an existing mask is supplied, the output mask will be a combination of 
-    the previous mask and saturation mask.
-    
-    Output: a table of source properties and the mask file HDU 
-    """    
-    
-    data = fits.getdata(image_file)
-    hdr = fits.getheader(image_file)
-    
-    ## set the threshold for image segmentation
-    try:
-        bkg_rms = hdr["BKGSTD"] # header written by bkgsub function
-    except KeyError:
-        # use crude image segmentation to find sources above SNR=3, build a 
-        # source mask, and estimate the background RMS 
-        if mask_file: # load a bad pixel mask if one is present 
-            bp_mask = fits.getdata(mask_file).astype(bool)
-            source_mask = make_source_mask(data, snr=3, npixels=5, 
-                                       dilate_size=15, mask=bp_mask)
-            # combine the bad pixel mask and source mask 
-            rough_mask = np.logical_or(bp_mask,source_mask)
-        else: 
-            source_mask = make_source_mask(data, snr=3, npixels=5, 
-                                       dilate_size=15)
-            rough_mask = source_mask
-        
-        # estimate the background standard deviation
-        try:
-            sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
-        except TypeError: # in old astropy, "maxiters" was "iters"
-            sigma_clip = SigmaClip(sigma=3, iters=5)
-        
-        bkg = Background2D(data, (10,10), filter_size=(5,5), 
-                           sigma_clip=sigma_clip, 
-                           bkg_estimator=MedianBackground(), 
-                           mask=rough_mask)
-        bkg_rms = bkg.background_rms
-
-    threshold = 3.0*bkg_rms # threshold for proper image segmentation 
-    
-    ## get the segmented image and source properties
-    ## only detect sources composed of at least sat_area_min pixels
-    segm = detect_sources(data, threshold, npixels=sat_area_min)
-    labels = segm.labels 
-    cat = source_properties(data, segm) 
-    
-    ## if any sources are found
-    if len(cat) != 0:
-        tbl = cat.to_table() # catalogue of sources as a table    
-        mask = tbl["max_value"] >= sat_ADU # must be above this ADU
-        sat_labels = labels[mask]
-        tbl = tbl[mask] 
-        
-        # eliminate sources within the "safe zone", if given
-        if (ra_safe and dec_safe and rad_safe):
-            # get coordinates
-            w = wcs.WCS(hdr)
-            tbl["ra"], tbl["dec"] = w.all_pix2world(tbl["xcentroid"],
-                                                    tbl["ycentroid"], 1) 
-            safe_coord = SkyCoord(ra_safe*u.deg, dec_safe*u.deg, frame="icrs")
-            source_coords = SkyCoord(tbl["ra"]*u.deg, tbl["dec"]*u.deg, 
-                                     frame="icrs")
-            sep = safe_coord.separation(source_coords).arcsecond # separations 
-            tbl["sep"] = sep # add a column for sep from safe zone centre
-            mask = tbl["sep"] > rad_safe # only select sources outside this rad
-            sat_labels = sat_labels[mask]
-            tbl = tbl[mask]  
-            
-        # keep only the remaining saturated sources
-        segm.keep_labels(sat_labels)        
-        # build the mask, where masked=1 and unmasked=0
-        newmask = segm.data_ma
-        
-        # combine with existing mask, if given
-        if mask_file: 
-            mask = fits.getdata(mask_file)
-            newmask = np.logical_or(mask, newmask)             
-        newmask[newmask >= 1] = 1 # masked pixels are labeled with 1
-        newmask = newmask.filled(0) # unmasked labeled with 0 
-
-        # mask pixels equal to 0, nan, or above the saturation ADU in the data
-        newmask[data==0] = 1
-        newmask[np.isnan(data)] = 1
-        newmask[data>=sat_ADU] = 1
-        
-        # use binary dilation to fill holes, esp. near diffraction spikes
-        newmask = (binary_dilation(newmask, 
-                                   iterations=dilation_its)).astype(float)
-        # use gaussian blurring to smooth out the mask 
-        newmask = gaussian_filter(newmask, sigma=blursigma, mode="constant", 
-                                  cval=0.0)
-        newmask[newmask > 0] = 1
-      
-    ## if no sources are found 
-    else: 
-        tbl = Table() # empty table
-
-        # use existing mask, if given
-        newmask = np.zeros(shape=data.shape)
-        if mask_file:
-            mask = fits.getdata(mask_file)
-            newmask[mask] = 1
-            
-        # mask pixels equal to 0, nan, or above the saturation ADU in the data
-        newmask[data==0] = 1
-        newmask[np.isnan(data)] = 1
-        newmask[data>=sat_ADU] = 1
-    
-    ## construct the mask PrimaryHDU object    
-    hdr = fits.getheader(image_file)
-    mask_hdu = fits.PrimaryHDU(data=newmask.astype(int), header=hdr)
-   
-    if plot: # plot, if desired
-        plt.figure(figsize=(14,13))
-        w = wcs.WCS(hdr)
-        ax = plt.subplot(projection=w) # show WCS
-        ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
-        ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
-        plt.imshow(newmask, cmap='gray', aspect=1, interpolation='nearest', 
-                   origin='lower')
-        plt.xlabel("RA (J2000)", fontsize=16)
-        plt.ylabel("Dec (J2000)", fontsize=16)
-        plt.title("saturation mask", fontsize=15)
-        
-        if not(plotname):
-            plotname = image_file.replace(".fits","_satmask.png")
-        plt.savefig(plotname, bbox_inches="tight") 
-        plt.close()
-    
-    if write:
-        if not(output):
-            output = image_file.replace(".fits", "_satmask.fits")          
-        mask_hdu.writeto(output, overwrite=True, output_verify="ignore")
-        
-    return tbl, mask_hdu
 
 ###############################################################################
 #### ePSF BUILDING/USAGE ####
@@ -763,19 +519,6 @@ def convolve_self(image_file, mask_file=None,
 
 ###############################################################################
 #### IMAGE DIFFERENCING WITH HOTPANTS ####
-
-def hotpants_path(path):
-    """
-    Input: a path to the hotpants executable
-    Output: None
-    
-    A bandaid fix for when I haven't correctly setup my paths to find hotpants
-    on the command line. Can explicitly set the path here.
-    
-    """
-    global HOTPANTS_PATH
-    HOTPANTS_PATH = path
-
 
 def get_substamps(source_file, template_file, 
                   sci_mask_file=None, tmp_mask_file=None, 
@@ -1408,11 +1151,9 @@ def hotpants(source_file, template_file,
     if log: hp_options = f"{hp_options} 2> {log}"
 
     ######################### CALL HOTPANTS  ##################################
-    
-    # if a special path to hotpants is supplied
-    if HOTPANTS_PATH: hp_cmd = f"{HOTPANTS_PATH} {hp_options}"
-    # if not, use the system default
-    else: hp_cmd = f"hotpants {hp_options}"
+
+    # build the command
+    hp_cmd = f"hotpants {hp_options}"
     
     # try calling hotpants
     try:
@@ -2479,7 +2220,7 @@ def im_contains(im_file, ra, dec, exclusion=None, mute=False):
     else: return  
         
 ###############################################################################
-#### MISCELLANEOUS PLOTTING ####
+#### MISCELLANEOUS PLOTTING ###################################################
     
 def make_image(im_file, mask_file=None, scale=None, cmap="bone", label=None,
                title=None, output=None, target=None, target_small=None,
