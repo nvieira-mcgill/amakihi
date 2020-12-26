@@ -5,13 +5,10 @@ Created on Thu Aug  1 13:58:03 2019
 @author: Nicholas Vieira
 @amakihi.py 
 
-It also acts as a crude python wrapper for hotpants 
-(https://github.com/acbecker/hotpants).
-
 **Sections:**
 
 - ePSF building 
-- Image differencing with hotpants
+- Image differencing with hotpants (https://github.com/acbecker/hotpants)
 - Transient detection, triplets 
 - Miscellaneous plotting
 
@@ -22,13 +19,7 @@ It also acts as a crude python wrapper for hotpants
 - ``photutils`` (used extensively)
 - ``astrometry.net`` (used extensively, but can be ignored in favour of 
   source detection with `photutils`' `image_segmentation` instead)
-- ``image_registration`` (used in `image_align_morph()`)
 - ``hotpants`` (essential for image subtraction via `hotpants`, duh)
-
-    
-**Non-essential dependencies:**
-
-- ``astroscrappy`` (OPTIONAL cosmic ray rejection during background removal)
 
 
 **Important:** This software makes use of a slightly modified version of the 
@@ -183,8 +174,8 @@ def build_ePSF(image_file, mask_file=None, nstars=40,
     Uses image segmentation OR astrometry.net to obtain a list of sources in 
     the image with their x, y coordinates, flux, and background at their 
     location. (If a list of sources has already been obtained with astrometry, 
-    this can be input). If astrometry is used for source detetion, then selects 
-    stars between the <lowper>th and <highper>th percentile flux.
+    this can be input). If astrometry is used for source detection, then 
+    selects stars between the <lowper>th and <highper>th percentile flux.
     
     Finally, uses EPSFBuilder to empirically obtain the ePSF of these stars. 
     Optionally writes and/or plots the obtaind ePSF.

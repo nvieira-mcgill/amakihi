@@ -43,32 +43,6 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 ###############################################################################
 ### UTILITIES #################################################################
 
-def __remove_SIP(header):
-    """Removes all SIP-related keywords from a FITS header, in-place.
-    
-    Arguments
-    ---------
-    header : astropy.io.fits.header.Header
-        A fits header    
-    """
-    
-    SIP_KW = re.compile('''^[AB]P?_1?[0-9]_1?[0-9][A-Z]?$''')
-    
-    for key in (m.group() for m in map(SIP_KW.match, list(header))
-            if m is not None):
-        del header[key]
-    try:
-        del header["A_ORDER"]
-        del header["B_ORDER"]
-        del header["AP_ORDER"]
-        del header["BP_ORDER"]
-    except KeyError:
-        pass
-    
-    header["CTYPE1"] = header["CTYPE1"][:-4] # get rid of -SIP
-    header["CTYPE2"] = header["CTYPE2"][:-4] # get rid of -SIP
-
-
 def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
                      im_type, eta, exclu, per, nsources):
     """
@@ -133,6 +107,73 @@ def __control_points_astrometry():
     """
     pass
 
+
+def __remove_SIP(header):
+    """Removes all SIP-related keywords from a fits header, in-place.
+    
+    Arguments
+    ---------
+    header : astropy.io.fits.header.Header
+        A fits header    
+    """
+    
+    SIP_KW = re.compile('''^[AB]P?_1?[0-9]_1?[0-9][A-Z]?$''')
+    
+    for key in (m.group() for m in map(SIP_KW.match, list(header))
+            if m is not None):
+        del header[key]
+    try:
+        del header["A_ORDER"]
+        del header["B_ORDER"]
+        del header["AP_ORDER"]
+        del header["BP_ORDER"]
+    except KeyError:
+        pass
+    
+    header["CTYPE1"] = header["CTYPE1"][:-4] # get rid of -SIP
+    header["CTYPE2"] = header["CTYPE2"][:-4] # get rid of -SIP
+    
+
+def __WCS_transfer(header, template_header):
+    """Transfer the WCS information from `template_header` to `header`.
+    
+    Arguments
+    ---------
+    header : astropy.io.fits.header.Header
+        A fits header
+    template_header : astropy.io.fits.header.Header
+        Fits header for template image 
+    
+    Returns
+    -------
+    astropy.io.fits.header.Header
+        Fits header with updated WCS information
+    """
+
+    mjdobs, dateobs = header["MJD-OBS"], header["DATE-OBS"] # store temporarily
+    w = wcs.WCS(template_header)    
+    # if no SIP transformations in header, need to update 
+    if not("SIP" in template_header["CTYPE1"]) and ("SIP" in header["CTYPE1"]):
+        __remove_SIP(header) # remove -SIP and remove related headers 
+        # if old-convention headers (used in e.g. PS1), need to update 
+        # not sure if this is helping 
+        #if 'PC001001' in template_header: 
+        #    hdr['PC001001'] = template_header['PC001001']
+        #    hdr['PC001002'] = template_header['PC001002']
+        #    hdr['PC002001'] = template_header['PC002001']
+        #    hdr['PC002002'] = template_header['PC002002']
+        #    del hdr["CD1_1"]
+        #    del hdr["CD1_2"]
+        #    del hdr["CD2_1"]
+        #    del hdr["CD2_2"]   
+    header.update((w.to_fits(relax=False))[0].header) # update 
+
+    # build the final header
+    header["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
+    header["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
+    
+    return header
+    
 ###############################################################################
 ### ALIGNMENT WITH ASTROALIGN PACKAGE #########################################
 
@@ -190,7 +231,7 @@ def image_align_imsegm(science_file, template_file,
         alignment (default 8)
     wcs_transfer : bool, optional
         Whether to attempt to transfer WCS coordinates from the template to the 
-        newly-aligned image (default False)
+        newly-aligned image (default True)
     plot_sources : bool, optional
         Whether to plot sources detected in the science and template images, 
         side-by-side, for visual inspection (default False)
@@ -259,12 +300,12 @@ def image_align_imsegm(science_file, template_file,
     template_hdr = fits.getheader(template_file)
 
     ## build up masks, apply them
-    mask = np.logical_or(science==0, np.isnan(science)) # mask zeros/nans in sci
+    mask = np.logical_or(science==0, np.isnan(science)) # in sci image
     if mask_file: # if a mask is provided
         mask = np.logical_or(mask, fits.getdata(mask_file))
     science = np.ma.masked_where(mask, science)  
     
-    template_mask = np.logical_or(template==0, np.isnan(template)) # in template
+    template_mask = np.logical_or(template==0, np.isnan(template)) # in tmp
     template = np.ma.masked_where(template_mask, template)
 
     # check if input thresh_sigma is a list or single value 
@@ -547,30 +588,10 @@ def image_align_imsegm(science_file, template_file,
         hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
     except KeyError:
         pass
-    
-    if wcs_transfer: # try to transfer the template WCS 
-        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
-        w = wcs.WCS(template_hdr)    
-        # if no SIP transformations in header, need to update 
-        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
-            __remove_SIP(hdr) # remove -SIP and remove related headers 
-            # if old-convention headers (used in e.g. PS1), need to update 
-            # not sure if this is helping 
-            #if 'PC001001' in template_header: 
-            #    hdr['PC001001'] = template_header['PC001001']
-            #    hdr['PC001002'] = template_header['PC001002']
-            #    hdr['PC002001'] = template_header['PC002001']
-            #    hdr['PC002002'] = template_header['PC002002']
-            #    del hdr["CD1_1"]
-            #    del hdr["CD1_2"]
-            #    del hdr["CD2_1"]
-            #    del hdr["CD2_2"]   
-        hdr.update((w.to_fits(relax=False))[0].header) # update     
-
-        # build the final header
-        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
-        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
-        
+    # try to transfer the template WCS 
+    if wcs_transfer: 
+        hdr = __WCS_transfer(hdr, template_hdr)
+    # final HDUs
     align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
     mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
     
@@ -636,7 +657,7 @@ def image_align_astrometry(science_file, template_file,
         Whether to keep the source list files (`.xy.fits` files; default False)
     wcs_transfer : bool, optional
         Whether to attempt to transfer WCS coordinates from the template to the 
-        newly-aligned image (default False)
+        newly-aligned image (default True)
     plot_sources : bool, optional
         Whether to plot sources detected in the science and template images, 
         side-by-side, for visual inspection (default False)
@@ -656,6 +677,13 @@ def image_align_astrometry(science_file, template_file,
     output_mask : str, optional
         Name for output mask fits file (default 
         `science_file.replace(".fits", "_align_mask.fits")`)    
+
+    Returns
+    -------
+    align_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the aligned science image 
+    mask_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the final mask
 
     Notes
     -----
@@ -879,30 +907,10 @@ def image_align_astrometry(science_file, template_file,
         hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
     except KeyError:
         pass
-    
-    if wcs_transfer: # try to transfer the template WCS 
-        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
-        w = wcs.WCS(template_hdr)    
-        # if no SIP transformations in header, need to update 
-        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
-            __remove_SIP(hdr) # remove -SIP and remove related headers 
-            # if old-convention headers (used in e.g. PS1), need to update 
-            # not sure if this is helping 
-            #if 'PC001001' in template_header: 
-            #    hdr['PC001001'] = template_header['PC001001']
-            #    hdr['PC001002'] = template_header['PC001002']
-            #    hdr['PC002001'] = template_header['PC002001']
-            #    hdr['PC002002'] = template_header['PC002002']
-            #    del hdr["CD1_1"]
-            #    del hdr["CD1_2"]
-            #    del hdr["CD2_1"]
-            #    del hdr["CD2_2"]   
-        hdr.update((w.to_fits(relax=False))[0].header) # update     
-
-        # build the final header
-        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
-        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
-        
+    # try to transfer the template WCS 
+    if wcs_transfer: 
+        hdr = __WCS_transfer(hdr, template_hdr)
+    # final HDUs
     align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
     mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
     
@@ -941,7 +949,7 @@ def image_align(science_file, template_file, mask_file=None,
         Sigma threshold for source detection within astroalign (default 3.0)
     wcs_transfer : bool, optional
         Whether to attempt to transfer WCS coordinates from the template to the 
-        newly-aligned image (default False)
+        newly-aligned image (default True)
     plot_align : bool, optional
         Whether to plot the final aligned science image (default False)
     scale : {"linear", "log", "asinh"}
@@ -1048,30 +1056,10 @@ def image_align(science_file, template_file, mask_file=None,
         hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
     except KeyError:
         pass
-    
-    if wcs_transfer: # try to transfer the template WCS 
-        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
-        w = wcs.WCS(template_hdr)    
-        # if no SIP transformations in header, need to update 
-        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
-            __remove_SIP(hdr) # remove -SIP and remove related headers 
-            # if old-convention headers (used in e.g. PS1), need to update 
-            # not sure if this is helping 
-            #if 'PC001001' in template_header: 
-            #    hdr['PC001001'] = template_header['PC001001']
-            #    hdr['PC001002'] = template_header['PC001002']
-            #    hdr['PC002001'] = template_header['PC002001']
-            #    hdr['PC002002'] = template_header['PC002002']
-            #    del hdr["CD1_1"]
-            #    del hdr["CD1_2"]
-            #    del hdr["CD2_1"]
-            #    del hdr["CD2_2"]   
-        hdr.update((w.to_fits(relax=False))[0].header) # update     
-
-        # build the final header
-        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
-        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
-        
+    # try to transfer the template WCS 
+    if wcs_transfer: 
+        hdr = __WCS_transfer(hdr, template_hdr)
+    # final HDUs
     align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
     mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
     
@@ -1089,11 +1077,13 @@ def image_align(science_file, template_file, mask_file=None,
 ###############################################################################
 ### ALIGNMENT WITH IMAGE_REGISTRATION PACKAGE #################################
 
-def image_align_morph(source_file, template_file, mask_file=None, 
+def image_align_morph(science_file, template_file, mask_file=None, 
                       flip=False, maxoffset=30.0, wcs_transfer=True, 
-                      plot_align=False, scale=None, 
+                      plot_align=False, scale="linear", 
                       write=True, output_im=None, output_mask=None):
-    """
+    """Align a science image to a template image using `image_registration`, 
+    which relies on image morphology rather than cross-matching control points.
+    
     WIP: WCS header of aligned image doesn't always seem correct for alignment
          with non-CFHT templates
          
@@ -1111,88 +1101,118 @@ def image_align_morph(source_file, template_file, mask_file=None,
         - whether to write the output to .fits files (optional; default True)
         - name for output aligned image file (optional; default set below)
         - name for output mask image file (optional; default set below)
+
+    Arguments
+    ---------
+    science_file, template_file :  str
+        Science and template fits file names
+    mask_file : str, optional
+        Mask fits file name (default None)
+    flip : bool, optional
+        Whether to flip the science image before attempting to align it 
+        (default False)
+    maxoffset : float, optional
+        *Maximum* allowed offset between science and template images to 
+        consider the solution a good alignment (default 30.0)
+    wcs_transfer : bool, optional
+        Whether to attempt to transfer WCS coordinates from the template to the 
+        newly-aligned image (default True)
+    plot_align : bool, optional
+        Whether to plot the final aligned science image (default False)
+    scale : {"linear", "log", "asinh"}
+        Scale to apply to the plots (default "linear")
+    write : bool, optional
+        Whether to write *both* outputs (the aligned image and mask image from
+        the image registration footprint) (default True)
+    output_im : str, optional
+        Name for output aligned image fits file (default 
+        `science_file.replace(".fits", "_align.fits")`)
+    output_mask : str, optional
+        Name for output mask fits file (default 
+        `science_file.replace(".fits", "_align_mask.fits")`)
+
+    Returns
+    -------
+    align_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the aligned science image 
+    mask_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the final mask
     
-    Input: the science image (the source), the template to match to, a mask of
-    bad pixels to ignore (optional; default None), a bool indicating whether to 
-    flip (invert along x AND y) the image before trying to align (optional; 
-    default False), the maximum allowed offset before deciding 
-    that the alignment is not accurate (optional; default 30.0 pix), a bool 
-    indicating whether to plot the matched image data (optional; default 
-    False), a scale to apply to the plot (optional; default None (linear); 
-    options are "linear", "log", "asinh"), whether to write output .fits to 
-    files (optional; default True) and names for the output aligned image and 
-    image mask (both optional; defaults set below)
-    
-    Calls on image_registration to align the source image with the target to 
-    allow for proper image subtraction. Also finds a mask of out of bounds 
-    pixels to ignore during subtraction. The image registration in this 
+    Notes
+    -----
+    Calls on `image_registration` to align the science image with the target to 
+    allow for proper image differencing. Also finds a mask of out of bounds 
+    pixels to ignore during differencing. The image registration in this 
     function is based on morphology and edge detection in the image, in 
-    contrast with image_align, which uses asterism-matching to align the two
-    images. 
+    contrast with `image_align_segm()`, `image_align_astrometry()`, and 
+    `image_align()`, which use asterism-matching to align the two images. 
     
     For images composed mostly of point sources, use image_align. For images 
     composed mainly of galaxies/nebulae and/or other extended objects, use this
     function.
     
-    Output: the aligned image and a bad pixel mask
+    **TO-DO:**
+    
+    - Fix: WCS header of aligned image doesn't always seem correct for alignment
+      with non-CFHT templates
+    
     """
-    
-    ## load in data
-    if flip:
-        source = np.flip(fits.getdata(source_file), axis=0)
-        source = np.flip(source, axis=1)
-    else: 
-        source = fits.getdata(source_file)
-    template = fits.getdata(template_file)
-    template_hdr = fits.getheader(template_file)
-    
+ 
+    # some imports
     import warnings # ignore warning given by image_registration
-    warnings.simplefilter('ignore', category=FutureWarning)
-    
+    warnings.simplefilter('ignore', category=FutureWarning)   
     from image_registration import chi2_shift
     from scipy import ndimage
     
-    ## pad/crop the source array so that it has the same shape as the template
-    if source.shape != template.shape:
-        xpad = (template.shape[1] - source.shape[1])
-        ypad = (template.shape[0] - source.shape[0])
+    ## load in data
+    science = fits.getdata(science_file)
+    if flip:
+        science = np.flip(science, axis=0)
+        science = np.flip(science, axis=1)
+        
+    template = fits.getdata(template_file)
+    template_hdr = fits.getheader(template_file)
+    
+    ## pad/crop the science array so that it has the same shape as the template
+    if science.shape != template.shape:
+        xpad = (template.shape[1] - science.shape[1])
+        ypad = (template.shape[0] - science.shape[0])
         
         if xpad > 0:
-            print(f"\nXPAD = {xpad} --> padding source")
-            source = np.pad(source, [(0,0), (0,xpad)], mode="constant", 
-                                     constant_values=0)
+            print(f"\nXPAD = {xpad} --> padding science")
+            science = np.pad(science, [(0,0), (0,xpad)], mode="constant", 
+                             constant_values=0)
         elif xpad < 0: 
-            print(f"\nXPAD = {xpad} --> cropping source")
-            source = source[:, :xpad]
+            print(f"\nXPAD = {xpad} --> cropping science")
+            science = science[:, :xpad]
         else: 
-            print(f"\nXPAD = {xpad} --> no padding/cropping source")
+            print(f"\nXPAD = {xpad} --> no padding/cropping science")
             
         if ypad > 0:
-            print(f"YPAD = {ypad} --> padding source\n")
-            source = np.pad(source, [(0,ypad), (0,0)], mode="constant", 
-                                     constant_values=0)
-            
+            print(f"YPAD = {ypad} --> padding science\n")
+            science = np.pad(science, [(0,ypad), (0,0)], mode="constant", 
+                             constant_values=0)
         elif ypad < 0:
-            print(f"YPAD = {ypad} --> cropping source\n")
-            source = source[:ypad, :]
+            print(f"YPAD = {ypad} --> cropping science\n")
+            science = science[:ypad, :]
         else: 
-            print(f"\nYPAD = {ypad} --> no padding/cropping source\n")
+            print(f"\nYPAD = {ypad} --> no padding/cropping science\n")
 
     ## build up and apply a mask
-    srcmask = np.logical_or(source==0, np.isnan(source)) # zeros/nans in source
+    scimask = np.logical_or(science==0, np.isnan(science)) # in science
     template_mask = np.logical_or(template==0,np.isnan(template)) # in template 
-    mask = np.logical_or(srcmask, template_mask)
+    mask = np.logical_or(scimask, template_mask)
     
     if mask_file: # if a mask is provided
         maskdata = fits.getdata(mask_file) # load it in
-        maskdata = maskdata[0:srcmask.shape[0], 0:srcmask.shape[1]] # crop
+        maskdata = maskdata[0:scimask.shape[0], 0:scimask.shape[1]] # crop
         mask = np.logical_or(mask, fits.getdata(mask_file))
 
-    source = np.ma.masked_where(mask, source)
+    science = np.ma.masked_where(mask, science)
     template = np.ma.masked_where(mask, template)
         
     ## compute the required shift
-    xoff, yoff, exoff, eyoff = chi2_shift(template, source, err=None, 
+    xoff, yoff, exoff, eyoff = chi2_shift(template, science, err=None, 
                                           return_error=True, 
                                           upsample_factor="auto",
                                           boundary="constant")
@@ -1201,9 +1221,9 @@ def image_align_morph(source_file, template_file, mask_file=None,
     if not(abs(xoff) < maxoffset and abs(yoff) < maxoffset):   
         print(f"\nEither the X or Y offset is larger than {maxoffset} "+
               "pix. Flipping the image and trying again...") 
-        source = np.flip(source, axis=0) # try flipping the image
-        source = np.flip(source, axis=1)
-        xoff, yoff, exoff, eyoff = chi2_shift(template, source, err=None, 
+        science = np.flip(science, axis=0) # try flipping the image
+        science = np.flip(science, axis=1)
+        xoff, yoff, exoff, eyoff = chi2_shift(template, science, err=None, 
                                               return_error=True, 
                                               upsample_factor="auto",
                                               boundary="constant")
@@ -1214,7 +1234,7 @@ def image_align_morph(source_file, template_file, mask_file=None,
             return 
         
     ## apply the shift 
-    img_aligned = ndimage.shift(source, np.array((-yoff, -xoff)), order=3, 
+    img_aligned = ndimage.shift(science, np.array((-yoff, -xoff)), order=3, 
                                 mode='constant', cval=0.0, prefilter=True)   
     if mask_file:
         mask = np.logical_or((img_aligned == 0), mask)
@@ -1223,12 +1243,10 @@ def image_align_morph(source_file, template_file, mask_file=None,
     
     print(f"\nX OFFSET = {xoff} +/- {exoff}")
     print(f"Y OFFSET = {yoff} +/- {eyoff}\n")
-
-    template_header = fits.getheader(template_file) # image header
     
     if plot_align: # plot, if desired
-        alignplot = source_file.replace(".fits", 
-                                        f"_image_morph_{scale}.png")
+        alignplot = science_file.replace(".fits", 
+                                         f"_image_morph_{scale}.png")
         __plot_align(template_hdr=template_hdr, 
                      img_aligned=img_aligned, 
                      mask=mask, 
@@ -1236,45 +1254,25 @@ def image_align_morph(source_file, template_file, mask_file=None,
                      output=alignplot)
 
     ## set header for new aligned fits file 
-    hdr = fits.getheader(source_file)
+    hdr = fits.getheader(science_file)
     # make a note that image_registration was applied
     hdr["IMREG"] = ("image_registration", "image registration software")  
     try: 
         hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
     except KeyError:
         pass
-    
-    if wcs_transfer:
-        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
-        w = wcs.WCS(template_header)    
-        # if no SIP transformations in header, need to update 
-        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
-            __remove_SIP(hdr) # remove -SIP and remove related headers 
-            # if old-convention headers (used in e.g. PS1), need to update
-            # not sure if this is helping
-            #if 'PC001001' in template_header: 
-            #    hdr['PC001001'] = template_header['PC001001']
-            #    hdr['PC001002'] = template_header['PC001002']
-            #    hdr['PC002001'] = template_header['PC002001']
-            #    hdr['PC002002'] = template_header['PC002002']
-            #    del hdr["CD1_1"]
-            #    del hdr["CD1_2"]
-            #    del hdr["CD2_1"]
-            #    del hdr["CD2_2"]
-        hdr.update((w.to_fits(relax=False))[0].header) # update     
-
-        # build the final header
-        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
-        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
-        
+    # try to transfer the template WCS 
+    if wcs_transfer: 
+        hdr = __WCS_transfer(hdr, template_hdr)
+    # final HDUs
     align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
     mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
     
     if write: # if we want to write the aligned fits file and the mask 
         if not(output_im): # if no output name given, set default
-            output_im = source_file.replace(".fits", "_align.fits")
+            output_im = science_file.replace(".fits", "_align.fits")
         if not (output_mask): 
-            output_mask = source_file.replace(".fits", "_align_mask.fits")
+            output_mask = science_file.replace(".fits", "_align_mask.fits")
             
         align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
         mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
@@ -1282,47 +1280,66 @@ def image_align_morph(source_file, template_file, mask_file=None,
     return align_hdu, mask_hdu
 
 
+###############################################################################
+### ASTROMETRY ################################################################
+
 def solve_field(image_file, remove_PC=True, verify=False, prebkgsub=False, 
                 guess_scale=False, read_scale=True, pixscale=None, 
-                scale_tolerance=0.05, 
+                scale_tol=0.05, 
                 verbose=0, output=None):
-    """
-    Input:
-        general:
-        - image file to solve with astrometry.net's solve-field
-        - whether to look for PC00i00j headers and remove them in the image 
-          before solving, if present (optional; default True)
-        - try to verify WCS headers when solving (optional; default False)
-        - whether input file is previously background-subtracted (optional; 
-          default False)
+    """Use the `solve-field` command of `astrometry.net` to find an astrometric 
+    solution for an image and output an updated, solved fits file.
+    
+    Arguments
+    ---------
+    image_file : str
+        Filename for fits image to solve with `astrometry.net`'s 
+        `solve-field`
+    remove_PC : bool, optional
+        Whether to look for "PC00i00j" headers and remove them before solving,
+        if present (default True)
+    verify : bool, optional
+        Whether to try and verify existing WCS headers when solving (default 
+        False)
+    prebkgsub : bool, optional
+        Whether the input image has already been background-subtracted (default 
+        False)
+    guess_scale : bool, optional
+        Whether to try and guess the scale of the image from WCS headers 
+        (default False)
+    read_scale : bool, optional
+        Whether to instead search for a "PIXSCAL1" header containing the image 
+        pixel scale (default True; ignored if `guess_scale == True`)
+    pixscale : float, optional
+        Image scale in arcsec per pixel, if known (default None; will be 
+        ignored if `guess_scale == True` *OR* if `read_scale == True` and the 
+        "PIXSCAL1" header is successfully found)
+    scale_tol : float, optional
+        Degree of +/- tolerance for the pixel scale of the image (in arcsec per
+        pix), if the header "PIXSCAL1" is found *or* if a scale is given 
+        (default 0.05; see notes for details)
+    verbose : {0, 1, 2}, optional
+        Level of verbosity (default 0)
+    output : str, optional
+        Name for output updated .fits file (default 
+        `image_file.replace(".fits","_solved.fits")`)
+    
+    Returns
+    -------
+    str
+        The STDOUT produced by `astrometry.net`
         
-        pixel scale:
-        - try to guess the scale of the image from WCS headers (optional; 
-          default False)
-        - whether to search the headers for a PIXSCAL1 header containing the 
-          image pixel scale (optional; default True)
-          will be ignored if guess_scale=True
-        - image scale (in arcsec per pixel), if known (optional; default None)
-          will be ignored unless :
-              guess_scale=False AND read_scale=True AND no header "PIXSCAL1",
-              OR guess_scale=False AND read_scale=False
-        - degree of +/- tolerance for the pixel scale of the image, if the 
-          header PIXSCAL1 is found in the image file OR if a scale is given 
-          (optional; default 0.05 arcsec per pix)
-          e.g., if hdr["PIXSCAL1"] = 0.185, astrometry.net will only look for 
-          solutions with a pixel scale of 0.185 +/- 0.05 arcsec per pix by 
-          default
-          or, if this header is not found OR read_scale=False AND scale=0.185,
-          the same 
-          
-        other:
-        - level of verbosity (optional; default 0; options are 0, 1, 2)
-        - name for output updated .fits file (optional; default set below)
-        
-    NOTE: the output filename MUST be different from the input filename. 
-    astrometry.net will exit if this is not the case.
-        
-    Output: the STDOUT from solve-field, as text
+    Raises
+    ------
+    ValueError
+        If the output filename and input filename are the same
+    
+    Notes
+    -----
+    If hdr["PIXSCAL1"] = 0.185 and `scale_tol = 0.05`, `solve-field` will only 
+    look for solutions with a pixel scale of 0.185 +/- 0.05 arcsec per pix.
+    
+    **Note:** Output filename must be different from input filename.
     """
     
     if remove_PC: # check for PC00i00j headers (e.g. in PS1)
@@ -1341,8 +1358,7 @@ def solve_field(image_file, remove_PC=True, verify=False, prebkgsub=False,
     w = wcs.WCS(hdr)
     
     if output == image_file: 
-        print("Output and input can not have the same name. Exiting.")
-        return
+        raise ValueError("Output and input can not have the same name")
 
     # overwrite, don't plot, input a fits image
     options = "--overwrite --no-plot --fits-image"
@@ -1371,16 +1387,16 @@ def solve_field(image_file, remove_PC=True, verify=False, prebkgsub=False,
     elif read_scale:
         try:
             pixscale = hdr["PIXSCAL1"]
-            pixmin = pixscale-scale_tolerance
-            pixmax = pixscale+scale_tolerance
+            pixmin = pixscale-scale_tol
+            pixmax = pixscale+scale_tol
             options = f"{options} --scale-low {pixmin} --scale-high {pixmax}"
             options = f'{options} --scale-units "app"'
         except KeyError:
             pass
     # manually input the scale
     elif pixscale:
-        pixmin = pixscale-scale_tolerance
-        pixmax = pixscale+scale_tolerance
+        pixmin = pixscale-scale_tol
+        pixmax = pixscale+scale_tol
         options = f"{options} --scale-low {pixmin} --scale-high {pixmax}"
         options = f'{options} --scale-units "app"'
         
