@@ -6,9 +6,12 @@ amakihi
 
    amakihi
    astroalign_mod
+   background
    crop
+   imalign
+   plotting
    query_2MASS
    query_CFIS
    query_DECaLS
    query_PS1
-   referenceims
+   templates

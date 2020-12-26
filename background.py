@@ -53,7 +53,7 @@ def bkgsub(im_file, mask_file=None,
         Whether to plot background-SUBTRACTED image (default False)
     scale_bkg : {"linear", "log", "asinh"}, optional
         Scale to apply to BACKGROUND image plot (default "linear")
-    scale_bkg : {"linear", "log", "asinh"}, optional
+    scale_bkgsubbed : {"linear", "log", "asinh"}, optional
         Scale to apply to background-SUBTRACTED image plot (default "linear")
     write : bool, optional
         Whether to write the background-SUBTRACTED image to a fits file 
@@ -66,6 +66,8 @@ def bkgsub(im_file, mask_file=None,
     -------
     astropy.io.fits.PrimaryHDU
         New HDU (image + header) with the image background-subtracted
+
+
         
     **TO-DO:**
     
