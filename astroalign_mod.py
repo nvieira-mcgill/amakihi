@@ -13,6 +13,9 @@ Documentation used here is not consistent with that used in the rest of
 
 The original code can be found at https://github.com/toros-astro/astroalign
 
+And the most up-to-date version of the code at 
+https://github.com/quatrope/astroalign
+
 """
 
 # MIT License

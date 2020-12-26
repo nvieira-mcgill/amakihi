@@ -10,6 +10,7 @@ Background estimation and subtraction.
 
 # misc
 import numpy as np
+import sys
 
 # astropy
 from astropy.io import fits
@@ -26,7 +27,7 @@ from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 ###############################################################################
-#### BACKGROUND SUBTRACTION ###################################################
+#### BACKGROUND ESTIMATION/SUBTRACTION ########################################
     
 def bkgsub(im_file, mask_file=None, 
            bkg_box=(5,5), bkg_filt=(5,5),
@@ -67,8 +68,8 @@ def bkgsub(im_file, mask_file=None,
     astropy.io.fits.PrimaryHDU
         New HDU (image + header) with the image background-subtracted
 
-
-        
+    Notes
+    -----
     **TO-DO:**
     
     - Allow naming of output plots
@@ -129,18 +130,18 @@ def bkgsub(im_file, mask_file=None,
         output_bkg = f"background_{scale_bkg}.png"
         __plot_bkg(im_header=fits.getheader(im_file), 
                    bkg_img_masked=bkg_img_masked, 
-                   scale_bkg=scale_bkg, 
-                   output_bkg=output_bkg)
+                   scale=scale_bkg, 
+                   output=output_bkg)
             
     if plot_bkgsubbed: # plot the background-subtracted image, if desired
         output_bkgsubbed = f"background_subbed_{scale_bkgsubbed}.png"        
         __plot_bkgsubbed(im_header=fits.getheader(im_file), 
                          bkgsub_img_masked=bkgsub_img_masked, 
-                         scale_bkgsubbed=scale_bkgsubbed,
-                         output_bkgsubbed=output_bkgsubbed)
+                         scale=scale_bkgsubbed,
+                         output=output_bkgsubbed)
 
     
-    ## wrapping up
+    ## building the final HDU
     hdr = fits.getheader(im_file)
     hdr["BKGSTD"] = bkgstd # useful header for later
     bkgsub_hdu = fits.PrimaryHDU(data=bkgsub_img, header=hdr)
@@ -151,3 +152,48 @@ def bkgsub(im_file, mask_file=None,
         bkgsub_hdu.writeto(output, overwrite=True, output_verify="ignore")
         
     return bkgsub_hdu
+
+
+def bkgstd(im_data, mask):
+    """Estimate the RMS standard deviation of the background in the `im_data`
+    image.
+    
+    Arguments
+    ---------
+    im_data : array_like
+        Image data
+    mask : array_like
+        Mask to apply to image
+    
+    Returns
+    -------
+    np.ndarray
+        RMS standard deviation of the background image
+    """
+    
+    # use crude image segmentation to find sources above SNR=3, build a 
+    # source mask, and estimate the background RMS 
+    source_mask = make_source_mask(im_data, snr=3, npixels=5, 
+                                   dilate_size=15, mask=mask)
+    # combine the bad pixel mask and source mask 
+    rough_mask = np.logical_or(mask, source_mask)
+          
+    # estimate the background standard deviation
+    try:
+        sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
+    except TypeError: # in old astropy, "maxiters" was "iters"
+        sigma_clip = SigmaClip(sigma=3, iters=5)            
+    try:
+        bkg = Background2D(im_data, (50,50), filter_size=(5,5), 
+                           sigma_clip=sigma_clip, 
+                           bkg_estimator=MedianBackground(), 
+                           mask=rough_mask)
+    except ValueError:
+        e = sys.exc_info()
+        print("\nWhile attempting background estimation on the "+
+              "science image, the following error was raised: "+
+              f"\n{str(e[0])}\n{str(e[1])}\n--> exiting.")
+        return
+    
+    return bkg.background_rms
+

@@ -51,23 +51,25 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 ###############################################################################
 ### background ################################################################
 
-def __plot_bkg(im_header, bkg_img_masked, scale_bkg, output_bkg):
+def __plot_bkg(im_header, bkg_img_masked, scale, output):
     """Plot the background image. 
     
     Arguments
     ---------
-    im_header : FIX THIS
-        FIX THIS
+    im_header : astropy.io.fits.header.Header
+        Image fits header
     bkg_img_masked : array_like
         2D array representing the background image 
-    scale_bkg : {"linear", "log", "asinh"}
+    scale : {"linear", "log", "asinh"}
         Scale to apply to the plot    
+    output : str
+        Name for output figure
     """
 
-    # verify scale_bkg
-    if not(scale_bkg in ("linear", "log", "asinh")):
-        raise ValueError('scale_bkg must be one of ("linear", "log", '+
-                         f'"asinh"), but argument supplied was {scale_bkg}')
+    # verify scale
+    if not(scale in ("linear", "log", "asinh")):
+        raise ValueError('scale must be one of ("linear", "log", "asinh"), '+
+                         'but argument supplied was {scale}')
     
     # set figure dimensions
     plt.figure(figsize=(14,13))
@@ -79,13 +81,13 @@ def __plot_bkg(im_header, bkg_img_masked, scale_bkg, output_bkg):
     ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
     
     # plot the background image with desired scaling
-    if scale_bkg == "linear": # linear scale
+    if scale == "linear": # linear scale
         plt.imshow(bkg_img_masked, cmap='bone', aspect=1, 
                    interpolation='nearest', origin='lower')
         cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
         cb.set_label(label="ADU", fontsize=16)
         
-    elif scale_bkg == "log": # log scale 
+    elif scale == "log": # log scale 
         bkg_img_log = np.log10(bkg_img_masked)
         lognorm = simple_norm(bkg_img_log, "log", percent=99.0)
         plt.imshow(bkg_img_log, cmap='bone', aspect=1, norm=lognorm,
@@ -93,7 +95,7 @@ def __plot_bkg(im_header, bkg_img_masked, scale_bkg, output_bkg):
         cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
         cb.set_label(label=r"$\log(ADU)$", fontsize=16)
         
-    elif scale_bkg == "asinh":  # asinh scale
+    elif scale == "asinh":  # asinh scale
         bkg_img_asinh = np.arcsinh(bkg_img_masked)
         asinhnorm = simple_norm(bkg_img_asinh, "asinh")
         plt.imshow(bkg_img_asinh, cmap="bone", aspect=1, 
@@ -105,12 +107,11 @@ def __plot_bkg(im_header, bkg_img_masked, scale_bkg, output_bkg):
     plt.xlabel("RA (J2000)", fontsize=16)
     plt.ylabel("Dec (J2000)", fontsize=16)
     plt.title("image background", fontsize=15)
-    plt.savefig(output_bkg, bbox_inches="tight")
+    plt.savefig(output, bbox_inches="tight")
     plt.close()
 
 
-def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale_bkgsubbed, 
-                     output_bkgsubbed):
+def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale, output):
     """Plot the background-SUBTRACTED image.
 
     Arguments
@@ -119,17 +120,16 @@ def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale_bkgsubbed,
         Image fits header
     bkgsub_img_masked : array_like
         2D array representing the background image 
-    scale_bkgsubbed : {"linear", "log", "asinh"}
+    scale : {"linear", "log", "asinh"}
         Scale to apply to the plot    
-    output_bkgsubbed : str
+    output : str
         Name for output figure
     """
     
-    # verify scale_bkgsubbed
-    if not(scale_bkgsubbed in ("linear", "log", "asinh")):
-        raise ValueError('scale_bkgsubbed must be one of ("linear", "log", '+
-                         '"asinh"), but argument supplied was '+
-                         f'{scale_bkgsubbed}')
+    # verify scale
+    if not(scale in ("linear", "log", "asinh")):
+        raise ValueError('scale must be one of ("linear", "log", "asinh"), '+
+                         'but argument supplied was {scale}')
 
     # set figure dimensions
     plt.figure(figsize=(14,13))
@@ -141,13 +141,13 @@ def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale_bkgsubbed,
     ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
 
     # plot with desired scaling     
-    if scale_bkgsubbed == "linear": # linear scale
+    if scale == "linear": # linear scale
         plt.imshow(bkgsub_img_masked, cmap='bone', aspect=1, 
                    interpolation='nearest', origin='lower')
         cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
         cb.set_label(label="ADU", fontsize=16)
         
-    elif scale_bkgsubbed == "log": # log scale
+    elif scale == "log": # log scale
         bkgsub_img_masked_log = np.log10(bkgsub_img_masked)
         lognorm = simple_norm(bkgsub_img_masked_log, "log", percent=99.0)
         plt.imshow(bkgsub_img_masked_log, cmap='bone', aspect=1, 
@@ -155,7 +155,7 @@ def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale_bkgsubbed,
         cb = plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
         cb.set_label(label=r"$\log(ADU)$", fontsize=16)
         
-    elif scale_bkgsubbed == "asinh":  # asinh scale
+    elif scale == "asinh":  # asinh scale
         bkgsub_img_masked_asinh = np.arcsinh(bkgsub_img_masked)
         asinhnorm = simple_norm(bkgsub_img_masked_asinh, "asinh")
         plt.imshow(bkgsub_img_masked_asinh, cmap="bone", aspect=1, 
@@ -167,20 +167,20 @@ def __plot_bkgsubbed(im_header, bkgsub_img_masked, scale_bkgsubbed,
     plt.xlabel("RA (J2000)", fontsize=16)
     plt.ylabel("Dec (J2000)", fontsize=16)
     plt.title("background-subtracted image", fontsize=15)
-    plt.savefig(output_bkgsubbed, bbox_inches="tight")
+    plt.savefig(output, bbox_inches="tight")
     plt.close()   
     
 ###############################################################################
 ### imalign ###################################################################
 
-def __plot_sources(source_data, template_data, source_hdr, template_hdr, 
-                   source_list, template_list, scale, color, output):    
+def __plot_sources(science_data, template_data, science_hdr, template_hdr, 
+                   science_list, template_list, scale, color, output):    
     """Given some source image and template image, plot the locations of cross-
     matched sources in each, side-by-side for comparison.
     
     Arguments
     ---------
-    source_data, template_data : array_like
+    science_data, template_data : array_like
         Source image and template image data
     source_hdr, template_hdr : astropy.io.fits.header.Header
         Source fits header and template fits header
@@ -200,12 +200,12 @@ def __plot_sources(source_data, template_data, source_hdr, template_hdr,
                          f'"asinh"), but argument supplied was {scale}')
 
     # get WCS objects    
-    wsci = wcs.WCS(source_hdr)
+    wsci = wcs.WCS(science_hdr)
     wtmp = wcs.WCS(template_hdr)
     
     # get miscellaneous coords
-    xsci = [s[0] for s in source_list]
-    ysci = [s[1] for s in source_list]
+    xsci = [s[0] for s in science_list]
+    ysci = [s[1] for s in science_list]
     xtmp = [t[0] for t in template_list]
     ytmp = [t[1] for t in template_list]
     rasci, decsci = wsci.all_pix2world(xsci, ysci, 1)
@@ -222,18 +222,18 @@ def __plot_sources(source_data, template_data, source_hdr, template_hdr,
     ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)       
     # plot with desired scaling
     if scale == "linear": # linear scale
-        mean, median, std = sigma_clipped_stats(source_data)
-        ax.imshow(source_data, cmap='bone', vmin=mean-5*std, vmax=mean+9*std,
+        mean, median, std = sigma_clipped_stats(science_data)
+        ax.imshow(science_data, cmap='bone', vmin=mean-5*std, vmax=mean+9*std,
                   aspect=1, interpolation='nearest', origin='lower')      
     elif scale == "log": # log scale
-        source_data_log = np.log10(source_data)
-        lognorm = simple_norm(source_data_log, "log", percent=99.0)
-        ax.imshow(source_data_log, cmap='bone', aspect=1, norm=lognorm,
+        science_data_log = np.log10(science_data)
+        lognorm = simple_norm(science_data_log, "log", percent=99.0)
+        ax.imshow(science_data_log, cmap='bone', aspect=1, norm=lognorm,
                   interpolation='nearest', origin='lower')      
     elif scale == "asinh":  # asinh scale
-        source_data_asinh = np.arcsinh(source_data)
-        asinhnorm = simple_norm(source_data_asinh, "asinh")
-        ax.imshow(source_data_asinh, cmap="bone", aspect=1, 
+        science_data_asinh = np.arcsinh(science_data)
+        asinhnorm = simple_norm(science_data_asinh, "asinh")
+        ax.imshow(science_data_asinh, cmap="bone", aspect=1, 
                   norm=asinhnorm, interpolation="nearest", origin="lower")
     # sources in the science image  
     for i in range(len(rasci)):

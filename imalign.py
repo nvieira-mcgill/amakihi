@@ -5,13 +5,10 @@ Created on Fri Dec 25 21:44:27 2020
 @author: Nicholas Vieira
 @imalign.py
 
-**NOTE:** If using astroalign for everything, can't plot sources. Make note of
-this.
-
-**TO-DO:**
-
-- `image_align()` is almost 1000 lines... break it up in 3 based on fact that
-  it allows 3 different methods to be used
+Image alignment, A.K.A. image registration. In all, this is the trickiest part 
+of image differencing. Poor alignment will result in all sorts of headaches 
+later, and in particular, the appearance of "dipole"-like artifacts in the 
+final difference image. 
 
 """
 
@@ -25,22 +22,26 @@ import re
 from astropy.io import fits
 from astropy import wcs
 import astropy.units as u 
-from astropy.stats import SigmaClip
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from photutils import Background2D, MedianBackground
-from photutils import make_source_mask, detect_sources, source_properties
+from photutils import detect_sources, source_properties
 
 # amakihi 
+from background import bkgstd
 from plotting import __plot_sources, __plot_align
+
+# a modified version of astroalign which allows the user to set the sigma 
+# threshold for source detection, which sometimes needs to be tweaked
+import astroalign_mod as aa
 
 # disable annoying warnings
 import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
+
 ###############################################################################
-#### IMAGE ALIGNMENT (REGISTRATION) ###########################################
+### UTILITIES #################################################################
 
 def __remove_SIP(header):
     """Removes all SIP-related keywords from a FITS header, in-place.
@@ -68,282 +69,366 @@ def __remove_SIP(header):
     header["CTYPE2"] = header["CTYPE2"][:-4] # get rid of -SIP
 
 
-def image_align(source_file, template_file, mask_file=None, 
-                imsegm=True, astrometry=False, doublealign=False,
-                per_upper=0.95, exclusion=0.05, nsources=50,
-                thresh_sigma=3.0, pixelmin=10, etamax=2.0, 
-                bkgsubbed=False, astrom_sigma=8.0, psf_sigma=5.0, 
-                keep=False, 
-                sep_max=2.0, ncrossmatch=8,
-                wcs_transfer=True,
-                plot_sources=False, plot_align=None, scale=None, 
-                circ_color="#fe01b1",
-                write=True, output_im=None, output_mask=None):
-    """    
-    WIP: during transfer of WCS header from PS1 to CFHT, WCS becomes nonsense 
+def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
+                     im_type, eta, exclu, per, nsources):
+    """
+    Arguments
+    ---------
+    data
+    data_thresh
+    data_std
+    data_pixmin
+    data_mask
+    im_type
+    eta
+    exclu
+    per
+    nsources
     
-    Input: 
-        general:
-        - science image (source) to register
-        - template image (target) to match source to
-        - mask file for the SOURCE image (optional; default None)
+    Returns
+    -------
+    array_like
+        List of newly-found control points
+    """
+    
+    segm_data = detect_sources(data, 
+                               data_thresh*data_std, 
+                               npixels=data_pixmin,
+                               mask=data_mask)          
+    # use the segmentation image to get the source properties 
+    cat = source_properties(data, segm_data, mask=data_mask)
+    try:
+        tbl = cat.to_table()
+    except ValueError:
+        print(f"{im_type} image contains no sources. Exiting.")
+        return        
+    # restrict elongation  
+    tbl = tbl[(tbl["elongation"] <= eta)]
+    # remove sources at image edges
+    xc = tbl["xcentroid"].value; yc = tbl["ycentroid"].value
+    xedge_min = [min(x, data.shape[1]-x) for x in xc]
+    yedge_min = [min(y, data.shape[0]-y) for y in yc]
+    tbl["xedge_min"] = xedge_min
+    tbl["yedge_min"] = yedge_min
+    keep = [(s["xedge_min"]>exclu*data.shape[1]) and
+            (s["yedge_min"]>exclu*data.shape[0]) for s in tbl]
+    tbl = tbl[keep]        
+    # pick at most <nsources> sources below the <per_upper> flux percentile
+    tbl["sum/area"] = tbl["source_sum"].data/tbl["area"].data
+    tbl.sort("sum/area") # sort by flux
+    tbl.reverse() # biggest to smallest
+    start = int((1-per)*len(tbl))
+    end = min((len(tbl)-1), (start+nsources))
+    tbl = tbl[start:end]   
+    # get the list
+    source_list = np.array([[tbl['xcentroid'].data[i], 
+                             tbl['ycentroid'].data[i]] for i in 
+        range(len(tbl['xcentroid'].data))])
+    
+    return source_list
+
+
+def __control_points_astrometry():
+    """
+    """
+    pass
+
+###############################################################################
+### ALIGNMENT WITH ASTROALIGN PACKAGE #########################################
+
+## using image segmentation ###################################################
+
+def image_align_imsegm(science_file, template_file, 
+                       mask_file=None,
+                       sciexclu=0.05, tmpexclu=0.05, sciper=0.95, tmpper=0.95, 
+                       nsources=50,
+                       thresh_sigma=3.0, pixelmin=10, etamax=2.0,
+                       doublealign=False,
+                       sep_max=2.0, ncrossmatch=8,
+                       wcs_transfer=True,
+                       plot_sources=False, 
+                       plot_align=False,
+                       scale="linear", circ_color="#fe01b1",
+                       write=True, output_im=None, output_mask=None):
+    """Align a science image to a template image, using image segmentation (via
+    `photutils`) for source extraction and `astroalign` for alignment.
+    
+    Arguments
+    ---------
+    science_file, template_file :  str
+        Science and template fits file names
+    mask_file : str, optional
+        Mask fits file name (default None)
+    sciexclu, tmpexclu : float, optional
+        Fraction of the image edges from which to exclude sources during 
+        matching for the science and template images (default 0.05)
+    sciper, tmpper : float, optional
+        Upper flux percentile beyond which to exclude sources (default 0.95)
+    nsources : int, optional
+        Maximum number of sources to use in asterism-matching (default 50)
+    thresh_sigma : float or array_like, optional
+        Sigma threshold for source detection with image segmentation (default
+        3.0; can be length-2 array to assign different values for science and
+        template)
+    pixelmin : float or array_like, optional
+        *Minimum* pixel area of an isophote to be considered a source (default
+        10; can be length-2 array to assign different values for science and
+        template)
+    etamax : float or array_like, optional
+        *Maximum* allowed elongation for an isophote to be considered a source 
+        (default 2.0; can be length-2 array to assign different values for 
+        science and template)
+    doublealign : bool, optional
+        Whether to perform a second iteration of alignment for fine-tuning (see 
+        notes for details; default False)
+    sep_max : float, optional
+        *Maximum* allowed on-sky separation (in arcsec) to cross-match a source 
+        in the science image to the template during double alignment (default 
+        2.0)
+    ncrossmatch : int, optional
+        Required number of cross-matched sources to proceed with double 
+        alignment (default 8)
+    wcs_transfer : bool, optional
+        Whether to attempt to transfer WCS coordinates from the template to the 
+        newly-aligned image (default False)
+    plot_sources : bool, optional
+        Whether to plot sources detected in the science and template images, 
+        side-by-side, for visual inspection (default False)
+    plot_align : bool, optional
+        Whether to plot the final aligned science image (default False)
+    scale : {"linear", "log", "asinh"}
+        Scale to apply to the plots (default "linear")
+    circ_color : str, optional
+        Color for the circles drawn around detected sources (default "#fe01b1 
+        --> bright pink; only relevant if `plot_sources == True`)
+    write : bool, optional
+        Whether to write *both* outputs (the aligned image and mask image from
+        the image registration footprint) (default True)
+    output_im : str, optional
+        Name for output aligned image fits file (default 
+        `science_file.replace(".fits", "_align.fits")`)
+    output_mask : str, optional
+        Name for output mask fits file (default 
+        `science_file.replace(".fits", "_align_mask.fits")`)        
         
-        source detection:
-        - use image segmentation for source detection and provide astroalign 
-          with a list of x, y coordinates if True (optional; default True)
-        - use astrometry.net (specifically, image2xy) for source detection and 
-          provide astroalign with a list of x, y coordinates if True (optional; 
-          default False; overriden by imsegm if imsegm=True)
-        - attempt a second, more refined alignment by cross-matching sources 
-          from the two images and using the correspondence to build a new 
-          transform (optional; default False)
-        - flux percentile upper limit (optional; default 0.95 = 95%; can be 
-          set to a list to specify different values for science and template
-          images)
-        - no. of sources to keep for asterism-matching (optional; default 50;
-          astroalign will not accept any more than 50)
-        - the fraction of the top/bottom/left/right-most edges from which to 
-          exclude sources during matching (optional; default 0.05; can be 
-          set to a list to specify different values for science and 
-          template images)
+    Returns
+    -------
+    align_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the aligned science image 
+    mask_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the final mask       
         
-        if imsegm=True (default):
-        - sigma threshold for source detection with image segmentation 
-          (optional; default 3.0; can pass a list to specify a different 
-          threshold for source and template)
-        - *minimum* number of isophote pixels, i.e. area (optional; default 10;
-          can pass a list to specify a different area for source and template)
-        - *maximum* allowed elongation for sources found by image segmentation 
-          (optional; default 2.0; setting this to None sets no maximum; 
-          can pass a list to specify different maximum elongation for source 
-          and template)   
+    Notes
+    -----
+    **Uses a slightly modified version of astroalign.**
 
-        if astrometry=True (and imsegm=False):
-        - whether the input source and template files have been background-
-          subtracted (optional; default False; can be set to a list to specify
-          that the science image is background-subtracted and the template is
-          not or vice-versa)
-        - sigma threshold for image2xy source detection in the source/template 
-          (optional; default 8.0 which sets the threshold to 8.0 for both; can
-          pass a list to specify a different threshold for source and template)
-        - the sigma of the Gaussian PSF of the source/template (optional; 
-          default 5.0 which sets the sigma to 5.0 for both; can pass a list to
-          specify a different width for source and template)
-        - whether to keep the source list files after running image2xy 
-          (optional; default False)   
-
-        if doublealign=True (and imsegm=True):
-        - maximum allowed on-sky separation (in arcsec) to cross-match a source 
-          in the science image and another in the template (optional; default 
-          2.0")
-        - required no. of cross-matched sources to do double alignment 
-          (optional; default 8)
-
-        transferring WCS:
-        - whether to try transferring the WCS solution of the template image 
-          to the science image (optional; default True)
-          
-        plotting:
-        - whether to plot the sources detected in the science image and 
-          and template image, if astrometry was used (optional; default False)
-        - whether to plot the aligned image data (optional; default False)
-        - scale to apply to the plot(s) (optional; default None (linear); 
-          options are "linear", "log", "asinh")
-        - color for the circles around the sources in the source detection 
-          image (optional; default "#fe01b1" ~ bright pink; only relevant if 
-          plot_sources=True)
+    This function does a lot. Step by step: 
         
-        writing:
-        - whether to write the outputs to .fits files (optional; default True) 
-        - names for the output aligned image and image mask (both optional; 
-          defaults set below)
+    1. Uses image segmentation to find "control points" (sources) in the 
+       science and template images
+    2. Rejects sources very close to the image edges (limits set by user, 
+       see `sciexclu` and `tmpexclu`)
+    3. Rejects sources below some minimum isophotal area `pixelmin`
+    4. Rejects sources with elongation above `etamax`
+    5. Rejects sources above some upper flux percentile (set by user, see 
+       `sciper` and `tmpper`)
+    6. Retains at most `nsources` control points
+    7. **Control points are passed to astroalign**, which finds invariants
+       between the source and template control point sets and computes the 
+       affine transformation which aligns the source image to the template 
+       image, and then applies this transformation to the science image
+    8. **Optional (if doublealign == True)**: With the newly aligned image 
+       and WCS coordinates in both science and template images, constructs
+       pairs of sources at the same coordinates, and computes another 
+       transformation which respects these pairs to fine-tune the alignment
+       
     
-    Uses either image segmentation (default) or astrometry.net's image2xy to 
-    find a set of x, y control points in the source and target images. Then,
-    - excludes sources very close to the border as set by the user
-    - if using image segmentation, imposes a minimum isophote area and maximum 
-      source elongation for each source
-    - rejects sources above some upper flux percentile as set by the user
-    - selects as many sources as possible (maximum set by user, can not exceed
-      50) as control points 
-    
-    These control points are then passed to astroalign, which finds the 
-    invariants between the source control point set and target control point 
-    set to compute the affine transformation which aligns the source image with 
-    the target image. Applies this transformation to the science image. 
-    
-    Alternatively, can allow astroalign to do all of the above steps on its own 
-    with no supervision. 
-    
-    *** Uses a slightly modified version of astroalign.
-    
-    NOTE: image2xy has a hard time doing basic background subtraction when an 
-    image has nans in it. Before trying alignment with an image which contains
-    nans, it is suggested to set all nans to 0 instead.
-    
-    Output: the aligned image and a bad pixel mask
-
     **TO-DO:**
     
     - Allow naming of output plots
+    - Fix: During transfer of WCS header from PS1 to CFHT, WCS becomes nonsense
 
     """
-    
-    # a modified version of astroalign which allows the user to set the sigma 
-    # threshold for source detection, which sometimes needs to be tweaked
-    import astroalign_mod as aa
-    
+    #########
+    ### setup
+    #########
     ## load in data
-    source = fits.getdata(source_file)
+    science = fits.getdata(science_file)
     template = fits.getdata(template_file)
-    source_hdr = fits.getheader(source_file)
+    science_hdr = fits.getheader(science_file)
     template_hdr = fits.getheader(template_file)
 
     ## build up masks, apply them
-    mask = np.logical_or(source==0, np.isnan(source)) # mask zeros/nans in src 
+    mask = np.logical_or(science==0, np.isnan(science)) # mask zeros/nans in sci
     if mask_file: # if a mask is provided
         mask = np.logical_or(mask, fits.getdata(mask_file))
-    source = np.ma.masked_where(mask, source)  
+    science = np.ma.masked_where(mask, science)  
     
-    tmpmask = np.logical_or(template==0, np.isnan(template)) # in template
-    template = np.ma.masked_where(tmpmask, template)
+    template_mask = np.logical_or(template==0, np.isnan(template)) # in template
+    template = np.ma.masked_where(template_mask, template)
 
-    # check if input upper flux percentile is list or single value 
-    if not(type(per_upper) in [float,int]):
-        sciper = per_upper[0]
-        tmpper = per_upper[1]
+    # check if input thresh_sigma is a list or single value 
+    if not(type(thresh_sigma) in [float,int]):
+        scithresh = thresh_sigma[0]
+        tmpthresh = thresh_sigma[1]
     else:
-        sciper = tmpper = per_upper
-    # check if input exclusion fraction is list or single value 
-    if not(type(exclusion) in [float,int]):
-        sciexclu = exclusion[0]
-        tmpexclu = exclusion[1]
+        scithresh = tmpthresh = thresh_sigma
+    # check if input pixelmin is list or single value 
+    if not(type(pixelmin) in [float,int]):
+        scipixmin = pixelmin[0]
+        tmppixmin = pixelmin[1]
     else:
-        sciexclu = tmpexclu = exclusion
-        
+        scipixmin = tmppixmin = pixelmin
+    # check if input etamax is list or single value 
+    if not(type(etamax) in [float,int]):
+        scieta = etamax[0]
+        tmpeta = etamax[1]
+    else:
+        scieta = tmpeta = etamax
+
     # check input nsources
     if nsources > 50:
         print("The number of sources used for matching cannot exceed 50 --> "+
               "setting limit to 50")
         nsources = 50
+    
+    ###########################################################################
+    ## get background standard deviation for science/template image (if needed)
+    ###########################################################################
+    try: # science 
+        scistd = float(science_hdr['BKGSTD'])
+    except KeyError:
+        scistd = bkgstd(science, mask)
+        if scistd == None:
+            return
 
-    ###########################################################################
-    ### OPTION 1: use image segmentation to find sources in the source and #### 
-    ### template, find the transformation using these sources as control ######
-    ### points, and apply the transformation to the source image ##############
-    ###########################################################################
-    if imsegm:  
-        # check if input thresh_sigma is a list or single value 
-        if not(type(thresh_sigma) in [float,int]):
-            scithresh = thresh_sigma[0]
-            tmpthresh = thresh_sigma[1]
-        else:
-            scithresh = tmpthresh = thresh_sigma
-        # check if input pixelmin is list or single value 
-        if not(type(pixelmin) in [float,int]):
-            scipixmin = pixelmin[0]
-            tmppixmin = pixelmin[1]
-        else:
-            scipixmin = tmppixmin = pixelmin
-        # check if input etamax is list or single value 
-        if not(type(etamax) in [float,int]):
-            scieta = etamax[0]
-            tmpeta = etamax[1]
-        else:
-            scieta = tmpeta = etamax
+    try: # template
+        tmpstd = float(template_hdr['BKGSTD']) 
+    except KeyError:
+        tmpstd = bkgstd(template, template_mask)
+        if tmpstd == None:
+            return
         
-        #################################################################
-        ## get background standard deviation for source image (if needed)
-        #################################################################
-        try: 
-            scistd = float(source_hdr['BKGSTD']) 
-        except KeyError:
-            # use crude image segmentation to find sources above SNR=3, build a 
-            # source mask, and estimate the background RMS 
-            if mask_file: # load a bad pixel mask if one is present 
-                source_mask = make_source_mask(source, snr=3, npixels=5, 
-                                               dilate_size=15, mask=mask)
-                # combine the bad pixel mask and source mask 
-                rough_mask = np.logical_or(mask, source_mask)
-            else: 
-                source_mask = make_source_mask(source, snr=3, npixels=5, 
-                                               dilate_size=15)
-                rough_mask = source_mask            
-            # estimate the background standard deviation
-            try:
-                sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
-            except TypeError: # in old astropy, "maxiters" was "iters"
-                sigma_clip = SigmaClip(sigma=3, iters=5)            
-            try:
-                bkg = Background2D(source, (50,50), filter_size=(5,5), 
-                                   sigma_clip=sigma_clip, 
-                                   bkg_estimator=MedianBackground(), 
-                                   mask=rough_mask)
-            except ValueError:
-                e = sys.exc_info()
-                print("\nWhile attempting background estimation on the "+
-                      "science image, the following error was raised: "+
-                      f"\n{str(e[0])}\n{str(e[1])}\n--> exiting.")
-                return
-            
-            scistd = bkg.background_rms    
+    #####################################################
+    ## find control points in science and template images  
+    #####################################################
+    science_list, scitbl = __control_points(data=science, 
+                                            data_thresh=scithresh, 
+                                            data_std=scistd, 
+                                            data_pixmin=scipixmin, 
+                                            data_mask=mask, 
+                                            im_type="science", 
+                                            eta=scieta, exclu=sciexclu, 
+                                            per=sciper, nsources=nsources)
 
-        ###################################################################
-        ## get background standard deviation for template image (if needed)
-        ###################################################################
-        try: 
-            tmpstd = float(template_hdr['BKGSTD']) 
-        except KeyError:
-            # use crude image segmentation to find sources above SNR=3, build a 
-            # source mask, and estimate the background RMS 
-            source_mask = make_source_mask(template, snr=3, npixels=5, 
-                                           dilate_size=15, mask=tmpmask)
-            rough_mask = np.logical_or(source_mask, tmpmask)            
-            # estimate the background standard deviation
-            try:
-                sigma_clip = SigmaClip(sigma=3, maxiters=5) # sigma clipping
-            except TypeError: # in old astropy, "maxiters" was "iters"
-                sigma_clip = SigmaClip(sigma=3, iters=5)   
-            try:
-                bkg = Background2D(template, (50,50), filter_size=(5,5), 
-                                   sigma_clip=sigma_clip, 
-                                   bkg_estimator=MedianBackground(), 
-                                   mask=rough_mask)   
-            except ValueError:
-                e = sys.exc_info()
-                print("\nWhile attempting background estimation on the "+
-                      "template image, the following error was raised: "+
-                      f"\n{str(e[0])}\n{str(e[1])}\n--> exiting.")
-                return
+    template_list, tmptbl = __control_points(data=template, 
+                                             data_thresh=tmpthresh, 
+                                             data_std=tmpstd, 
+                                             data_pixmin=tmppixmin, 
+                                             data_mask=template_mask,
+                                             im_type="template", 
+                                             eta=tmpeta, exclu=tmpexclu, 
+                                             per=tmpper, nsources=nsources)
 
-            tmpstd = bkg.background_rms
+    ########################################################
+    ## plot the sources attempting to be matched, if desired
+    ########################################################
+    if plot_sources:
+        sourceplot = science_file.replace(".fits", 
+                                         f"_alignment_sources_{scale}.png")
+        __plot_sources(science_data=science, 
+                       template_data=template, 
+                       science_hdr=science_hdr, 
+                       template_hdr=template_hdr, 
+                       science_list=science_list, 
+                       template_list=template_list, 
+                       scale=scale, 
+                       color=circ_color, 
+                       output=sourceplot)      
+
+    ####################
+    ## align the images!
+    ####################
+    try: 
+        print(f"\nAttempting to match {len(science_list)} sources in the "+
+              f"science image to {len(template_list)} in the template")                      
+        # find the transform using the control points
+        tform, __ = aa.find_transform(science_list, template_list)
+        # apply the transform
+        img_aligned, footprint = aa.apply_transform(tform, science,
+                                                    template,
+                                                    propagate_mask=True)
+        print("\nSUCCESS\n")
+    except aa.MaxIterError: # if cannot match images, try flipping 
+        print("Max iterations exceeded; flipping the image...")
+        xsize = fits.getdata(science_file).shape[1]
+        ysize = fits.getdata(science_file).shape[0]
+        science_list = [[xsize,ysize]-coords for coords in 
+                        science_list.copy()]
+        science = np.flip(science, axis=0)
+        science = np.flip(science, axis=1)
             
-        ######################################
-        ## find control points in source image  
-        ######################################
-        segm_source = detect_sources(source, 
-                                     scithresh*scistd, 
-                                     npixels=scipixmin,
-                                     mask=mask)          
-        # use the segmentation image to get the source properties 
-        cat_source = source_properties(source, segm_source, mask=mask)
         try:
-            scitbl = cat_source.to_table()
+            tform, __ = aa.find_transform(science_list, template_list)
+            img_aligned, footprint = aa.apply_transform(tform, science,
+                                                        template,
+                                                        propagate_mask=True)
+            print("\nSUCCESS\n")
+        except aa.MaxIterError: # still too many iterations 
+            print("Max iterations exceeded while trying to find "+
+                  "acceptable transformation. Exiting.")
+            return
+        
+    except aa.TooFewStarsError: # not enough stars in source/template
+        print("Reference stars in source/template image are less than "+
+              "the minimum value (3). Exiting.")
+        return
+    
+    except Exception: # any other exceptions
+        e = sys.exc_info()
+        print("\nWhile calling astroalign, some error other than "+
+              "MaxIterError or TooFewStarsError was raised: "+
+              f"\n{str(e[0])}\n{str(e[1])}")
+        return
+    
+    
+    ##########################################################
+    ### align them again, this time cross-matching sources 1:1
+    ########################################################## 
+    # using the while loop here is bad practice, I think...
+    while doublealign:
+        print("\nAttempting a second iteration of alignment...")
+        
+        # build new mask
+        mask = np.logical_or(img_aligned==0, np.isnan(img_aligned))
+        mask = np.logical_or(mask, footprint)
+        
+        science_new = img_aligned.copy()
+        science_new = np.ma.masked_where(mask, science_new)  
+        segm_science = detect_sources(science_new, 
+                                      scithresh*scistd, 
+                                      npixels=scipixmin,
+                                      mask=mask)          
+        # use the segmentation image to get the source properties 
+        cat_science = source_properties(science_new, segm_science, mask=mask)
+        try:
+            scitbl = cat_science.to_table()
         except ValueError:
-            print("source image contains no sources. Exiting.")
+            print("science image contains no sources. Exiting.")
             return        
         # restrict elongation  
         scitbl = scitbl[(scitbl["elongation"] <= scieta)]
-        # remove sources in leftmost/rightmost/topmost/bottommost edge of image
-        xc = scitbl["xcentroid"].value; yc = scitbl["ycentroid"].value
-        xedge_min = [min(x, source.shape[1]-x) for x in xc]
-        yedge_min = [min(y, source.shape[0]-y) for y in yc]
+        # remove sources in edges of image
+        xc = scitbl["xcentroid"].value
+        yc = scitbl["ycentroid"].value
+        xedge_min = [min(x, science_new.shape[1]-x) for x in xc]
+        yedge_min = [min(y, science_new.shape[0]-y) for y in yc]
         scitbl["xedge_min"] = xedge_min
         scitbl["yedge_min"] = yedge_min
-        keep = [(s["xedge_min"]>sciexclu*source.shape[1]) and
-                (s["yedge_min"]>sciexclu*source.shape[0]) for s in scitbl]
+        keep = [(s["xedge_min"]>sciexclu*science_new.shape[1]) and
+            (s["yedge_min"]>sciexclu*science_new.shape[0]) for s in scitbl]
         scitbl = scitbl[keep]        
-        # pick at most <nsources> sources below the <per_upper> flux percentile
+        # pick at most <nsources> sources below <per_upper>
         scitbl["sum/area"] = scitbl["source_sum"].data/scitbl["area"].data
         scitbl.sort("sum/area") # sort by flux
         scitbl.reverse() # biggest to smallest
@@ -351,432 +436,603 @@ def image_align(source_file, template_file, mask_file=None,
         end = min((len(scitbl)-1), (start+nsources))
         scitbl = scitbl[start:end]   
         # get the list
-        source_list = np.array([[scitbl['xcentroid'].data[i], 
+        science_list = np.array([[scitbl['xcentroid'].data[i], 
                                  scitbl['ycentroid'].data[i]] for i in 
-                               range(len(scitbl['xcentroid'].data))]) 
+                                 range(len(scitbl['xcentroid'].data))])
+        
+        # get ra, dec for all of the sources to allow cross-matching 
+        xsci = [s[0] for s in science_list]
+        ysci = [s[1] for s in science_list]
+        xtmp = [t[0] for t in template_list]
+        ytmp = [t[1] for t in template_list]
+        wtmp = wcs.WCS(template_hdr)
+        rasci, decsci = wtmp.all_pix2world(xsci, ysci, 1)       
+        ratmp, dectmp = wtmp.all_pix2world(xtmp, ytmp, 1) 
+        scicoords = SkyCoord(rasci*u.deg, decsci*u.deg, frame="icrs")
+        tmpcoords = SkyCoord(ratmp*u.deg, dectmp*u.deg, frame="icrs")            
+        # cross-match
+        idxs, idxt, d2d, d3d = tmpcoords.search_around_sky(scicoords,
+                                                           sep_max*u.arcsec)
+        scitbl_new = scitbl[idxs]; tmptbl_new = tmptbl[idxt]
+        
+        # if no cross-matching was possible...
+        if len(scitbl_new) == 0:
+            print('\nWas not able to cross-match any sources in the '+
+                  'science and template images for separation '+
+                  f'< {sep_max:.2f}". New solution not obtained.')
+            doublealign = False
+            break
+        elif len(scitbl_new) < ncrossmatch: # or too few sources 
+            # 8 is arbitrary atm
+            print(f'\nWas only able to cross-match {len(scitbl_new):d} '+
+                  f'< {ncrossmatch:d} sources in the science and template '+
+                  f'images for separation < {sep_max:.2f}". '+
+                  'New solution not obtained.')
+            doublealign = False
+            break
+        
+        # otherwise, keep going
+        print(f'\nFound {len(scitbl_new)} sources in the science image '+
+              'with a 1:1 match to a source in the template within '+
+              f'< {sep_max:.2f}", with average separation '+
+              f'{np.mean(d2d.value*3600):.2f}"')
+        
+        # new list of sources 
+        science_list_new = np.array([[scitbl_new['xcentroid'].data[i], 
+                scitbl_new['ycentroid'].data[i]] for i in range(
+                len(scitbl_new['xcentroid'].data))])            
+        template_list_new = np.array([[tmptbl_new['xcentroid'].data[i], 
+                tmptbl_new['ycentroid'].data[i]] for i in range(
+                len(tmptbl_new['xcentroid'].data))])
 
-        ########################################
-        ## find control points in template image
-        ########################################
-        segm_tmp = detect_sources(template, 
-                                  tmpthresh*tmpstd, 
-                                  npixels=tmppixmin,
-                                  mask=tmpmask)          
-        # use the segmentation image to get the source properties 
-        cat_tmp = source_properties(template, segm_tmp, mask=tmpmask)
-        try:
-            tmptbl = cat_tmp.to_table()
-        except ValueError:
-            print("template image contains no sources. Exiting.")
-            return        
-        # restrict elongation  
-        tmptbl = tmptbl[(tmptbl["elongation"] <= tmpeta)] 
-        # remove sources in leftmost/rightmost/topmost/bottommost edge of image
-        xc = tmptbl["xcentroid"].value; yc = tmptbl["ycentroid"].value
-        xedge_min = [min(x, template.shape[1]-x) for x in xc]
-        yedge_min = [min(y, template.shape[0]-y) for y in yc]
-        tmptbl["xedge_min"] = xedge_min
-        tmptbl["yedge_min"] = yedge_min
-        keep = [(t["xedge_min"]>tmpexclu*template.shape[1]) and
-                (t["yedge_min"]>tmpexclu*template.shape[0]) for t in tmptbl]
-        tmptbl = tmptbl[keep] 
-        # pick at most <nsources> sources below the <per_upper> flux percentile
-        tmptbl["sum/area"] = tmptbl["source_sum"].data/tmptbl["area"].data
-        tmptbl.sort("sum/area") # sort by flux
-        tmptbl.reverse() # biggest to smallest
-        start = int((1-tmpper)*len(tmptbl))
-        end = min((len(tmptbl)-1), (start+nsources))
-        tmptbl = tmptbl[start:end] 
-        # get the list
-        template_list = np.array([[tmptbl['xcentroid'].data[i], 
-                                   tmptbl['ycentroid'].data[i]] for i in 
-                                 range(len(tmptbl['xcentroid'].data))]) 
-
-        ########################################################
-        ## show the sources attempting to be matched, if desired
-        ########################################################
-        if plot_sources:
-            sourceplot = source_file.replace(".fits", 
-                                             f"_alignment_sources_{scale}.png")
-            __plot_sources(source_data=source, 
-                           template_data=template, 
-                           source_hdr=source_hdr, 
-                           template_hdr=template_hdr, 
-                           source_list=source_list, 
-                           template_list=template_list, 
-                           scale=scale, 
-                           color=circ_color, 
-                           output=sourceplot)      
-
-        ###################
-        ## align the images
-        ###################
+        # for bugtesting
+        print(science_list_new[:5])
+        print(template_list_new[:5])
+        
         try: 
-            print(f"\nAttempting to match {len(source_list)} sources in the "+
-                  f"science image to {len(template_list)} in the template")                      
+            print("\nAttempting to match...")                     
             # find the transform using the control points
-            tform, __ = aa.find_transform(source_list, template_list)
+            tform = aa.estimate_transform('affine', science_list_new, 
+                                          template_list_new)
             # apply the transform
-            img_aligned, footprint = aa.apply_transform(tform, source,
+            img_aligned, footprint = aa.apply_transform(tform, science_new,
                                                         template,
                                                         propagate_mask=True)
             print("\nSUCCESS\n")
+            break
         except aa.MaxIterError: # if cannot match images, try flipping 
-            print("Max iterations exceeded; flipping the image...")
-            xsize = fits.getdata(source_file).shape[1]
-            ysize = fits.getdata(source_file).shape[0]
-            source_list = [[xsize,ysize]-coords for coords in 
-                           source_list.copy()]
-            source = np.flip(source, axis=0)
-            source = np.flip(source, axis=1)
-                
-            try:
-                tform, __ = aa.find_transform(source_list, template_list)
-                img_aligned, footprint = aa.apply_transform(tform, source,
-                                                            template,
-                                                           propagate_mask=True)
-                print("\nSUCCESS\n")
-            except aa.MaxIterError: # still too many iterations 
-                print("Max iterations exceeded while trying to find "+
-                      "acceptable transformation. Exiting.")
-                return
+            print("Max iterations exceeded. New solution not obtained.")
+            break
             
         except aa.TooFewStarsError: # not enough stars in source/template
-            print("Reference stars in source/template image are less than "+
-                  "the minimum value (3). Exiting.")
-            return
+            print("Reference stars in source/template image are less "+
+                  "than the minimum value (3). New solution not obtained.")
+            break
         
         except Exception: # any other exceptions
             e = sys.exc_info()
             print("\nWhile calling astroalign, some error other than "+
                   "MaxIterError or TooFewStarsError was raised: "+
-                  f"\n{str(e[0])}\n{str(e[1])}")
-            return
-        
-        
-        ##########################################################
-        ### align them again, this time cross-matching sources 1:1
-        ##########################################################
-        
-        # using the while loop here is bad practice, I think
-        while doublealign:
-            print("\nAttempting a second iteration of alignment...")
-            
-            # build new mask
-            mask = np.logical_or(img_aligned==0, np.isnan(img_aligned))
-            mask = np.logical_or(mask, footprint)
-            
-            source_new = img_aligned.copy()
-            source_new = np.ma.masked_where(mask, source_new)  
-            segm_source = detect_sources(source_new, 
-                                         scithresh*scistd, 
-                                         npixels=scipixmin,
-                                         mask=mask)          
-            # use the segmentation image to get the source properties 
-            cat_source = source_properties(source_new, segm_source, mask=mask)
-            try:
-                scitbl = cat_source.to_table()
-            except ValueError:
-                print("source image contains no sources. Exiting.")
-                return        
-            # restrict elongation  
-            scitbl = scitbl[(scitbl["elongation"] <= scieta)]
-            # remove sources in edges of image
-            xc = scitbl["xcentroid"].value
-            yc = scitbl["ycentroid"].value
-            xedge_min = [min(x, source_new.shape[1]-x) for x in xc]
-            yedge_min = [min(y, source_new.shape[0]-y) for y in yc]
-            scitbl["xedge_min"] = xedge_min
-            scitbl["yedge_min"] = yedge_min
-            keep = [(s["xedge_min"]>sciexclu*source_new.shape[1]) and
-                (s["yedge_min"]>sciexclu*source_new.shape[0]) for s in scitbl]
-            scitbl = scitbl[keep]        
-            # pick at most <nsources> sources below <per_upper>
-            scitbl["sum/area"] = scitbl["source_sum"].data/scitbl["area"].data
-            scitbl.sort("sum/area") # sort by flux
-            scitbl.reverse() # biggest to smallest
-            start = int((1-sciper)*len(scitbl))
-            end = min((len(scitbl)-1), (start+nsources))
-            scitbl = scitbl[start:end]   
-            # get the list
-            source_list = np.array([[scitbl['xcentroid'].data[i], 
-                                     scitbl['ycentroid'].data[i]] for i in 
-                                     range(len(scitbl['xcentroid'].data))])
-            
-            # get ra, dec for all of the sources to allow cross-matching 
-            xsci = [s[0] for s in source_list]
-            ysci = [s[1] for s in source_list]
-            xtmp = [t[0] for t in template_list]
-            ytmp = [t[1] for t in template_list]
-            wtmp = wcs.WCS(template_hdr)
-            rasci, decsci = wtmp.all_pix2world(xsci, ysci, 1)       
-            ratmp, dectmp = wtmp.all_pix2world(xtmp, ytmp, 1) 
-            scicoords = SkyCoord(rasci*u.deg, decsci*u.deg, frame="icrs")
-            tmpcoords = SkyCoord(ratmp*u.deg, dectmp*u.deg, frame="icrs")            
-            # cross-match
-            idxs, idxt, d2d, d3d = tmpcoords.search_around_sky(scicoords,
-                                                              sep_max*u.arcsec)
-            scitbl_new = scitbl[idxs]; tmptbl_new = tmptbl[idxt]
-            
-            # if no cross-matching was possible...
-            if len(scitbl_new) == 0:
-                print('\nWas not able to cross-match any sources in the '+
-                      'science and template images for separation '+
-                      f'< {sep_max:.2f}". New solution not obtained.')
-                doublealign=False
-                break
-            elif len(scitbl_new) < ncrossmatch: # or too few sources 
-                # 8 is arbitrary atm
-                print(f'\nWas only able to cross-match {len(scitbl_new):d} '+
-                      f'< {ncrossmatch:d} sources in the science and template '+
-                      f'images for separation < {sep_max:.2f}". '+
-                      'New solution not obtained.')
-                doublealign=False
-                break
-            
-            # otherwise, keep going
-            print(f'\nFound {len(scitbl_new)} sources in the science image '+
-                  'with a 1:1 match to a source in the template within '+
-                  f'< {sep_max:.2f}", with average separation '+
-                  f'{np.mean(d2d.value*3600):.2f}"')
-            
-            # new list of sources 
-            source_list_new = np.array([[scitbl_new['xcentroid'].data[i], 
-                    scitbl_new['ycentroid'].data[i]] for i in range(
-                    len(scitbl_new['xcentroid'].data))])            
-            template_list_new = np.array([[tmptbl_new['xcentroid'].data[i], 
-                    tmptbl_new['ycentroid'].data[i]] for i in range(
-                    len(tmptbl_new['xcentroid'].data))])
+                  f"\n{str(e[0])}\n{str(e[1])}")         
+            break
 
-            # for bugtesting
-            print(source_list_new[:5])
-            print(template_list_new[:5])
-            
-            try: 
-                print("\nAttempting to match...")                     
-                # find the transform using the control points
-                tform = aa.estimate_transform('affine', source_list_new, 
-                                              template_list_new)
-                # apply the transform
-                img_aligned, footprint = aa.apply_transform(tform, source_new,
-                                                            template,
-                                                        propagate_mask=True)
-                print("\nSUCCESS\n")
-                break
-            except aa.MaxIterError: # if cannot match images, try flipping 
-                print("Max iterations exceeded. New solution not obtained.")
-                break
-                
-            except aa.TooFewStarsError: # not enough stars in source/template
-                print("Reference stars in source/template image are less "+
-                      "than the minimum value (3). New solution not obtained.")
-                break
-            
-            except Exception: # any other exceptions
-                e = sys.exc_info()
-                print("\nWhile calling astroalign, some error other than "+
-                      "MaxIterError or TooFewStarsError was raised: "+
-                      f"\n{str(e[0])}\n{str(e[1])}")         
-                break
-              
-
-    ###########################################################################
-    ### OPTION 2: use astrometry.net to find the sources, find the transform, #
-    ### and then apply the transform ##########################################
-    ###########################################################################
-    elif astrometry:  
-        # check if input bkgsubbed bool is list or single value
-        if not(type(bkgsubbed) == bool):
-            source_bkgsub = bkgsubbed[0]
-            tmp_bkgsub = bkgsubbed[1]
-        else:
-            source_bkgsub = tmp_bkgsub = bkgsubbed
-        # check if input astrometry significance sigma is list or single value 
-        if not(type(astrom_sigma) in [float,int]):
-            source_sig = astrom_sigma[0]
-            tmp_sig = astrom_sigma[1]
-        else:
-            source_sig = tmp_sig = astrom_sigma
-        # check if input astrometry PSF sigma is list or single value 
-        if not(type(psf_sigma) in [float,int]):
-            source_psf = psf_sigma[0]
-            tmp_psf = psf_sigma[1]
-        else:
-            source_psf = tmp_psf = psf_sigma
-           
-        # -O --> overwrite
-        # -p --> source significance 
-        # -w --> estimated PSF sigma 
-        # -s 10 --> size of the median filter to apply to the image is 10x10
-        # -m 10000 --> max object size for deblending is 10000 pix**2
-        
-        ######################################
-        ## find control points in source image 
-        ######################################
-        options = f" -O -p {source_sig} -w {source_psf} -s 10 -m 10000"
-        if source_bkgsub: options = f"{options} -b" # no need for subtraction
-        run(f"image2xy {options} {source_file}", shell=True)    
-        source_list_file = source_file.replace(".fits", ".xy.fits")
-        source_list = Table.read(source_list_file)
-        if len(source_list) == 0: # if no sources found 
-            print("\nNo sources found with astrometry.net in the source "+
-                  "image, so image alignment cannot be obtained. Exiting.")
-            return
-        # pick at most <nsources> sources below the <per_upper> flux percentile
-        source_list.sort('FLUX') # sort by flux
-        source_list.reverse() # biggest to smallest
-        start = int((1-sciper)*len(source_list))
-        end = min((len(source_list)-1), (start+nsources))
-        source_list = source_list[start:end]   
-        source_list = np.array([[source_list['X'][i], 
-                                 source_list['Y'][i]] for i in 
-                               range(len(source_list['X']))]) 
-        # remove sources in leftmost/rightmost/topmost/bottommost edge of image
-        source_list = [s for s in source_list.copy() if (
-                (min(s[0], source.shape[1]-s[0])>sciexclu*source.shape[1]) and
-                (min(s[1], source.shape[0]-s[1])>sciexclu*source.shape[0]))]
-        
-        ########################################    
-        ## find control points in template image
-        ########################################
-        options = f" -O -p {tmp_sig} -w {tmp_psf} -s 10 -m 10000"
-        if tmp_bkgsub: options = f"{options} -b" # no need for subtraction
-        run(f"image2xy {options} {template_file}", shell=True)    
-        template_list_file = template_file.replace(".fits", ".xy.fits")        
-        template_list = Table.read(template_list_file)
-        if len(template_list) == 0: # if no sources found 
-            print("\nNo sources found with astrometry.net in the template "+
-                  "image, so image alignment cannot be obtained. Exiting.")
-            return
-        # pick at most <nsources> sources below the <per_upper> flux percentile
-        template_list.sort('FLUX') # sort by flux 
-        template_list.reverse() # biggest to smallest
-        start = int((1-tmpper)*len(template_list))
-        end = min((len(template_list)-1), (start+nsources))
-        template_list = template_list[start:end]  
-        template_list = np.array([[template_list['X'][i], 
-                                   template_list['Y'][i]] for i in 
-                                 range(len(template_list['X']))])
-        # remove sources in leftmost/rightmost/topmost/bottommost edge of image
-        template_list = [t for t in template_list.copy() if (
-            (min(t[0], template.shape[1]-t[0])>tmpexclu*template.shape[1]) and
-            (min(t[1], template.shape[0]-t[1])>tmpexclu*template.shape[0]))]
+    #######################
+    ### make the final mask
+    #######################
+    # mask 0s / nans AND mask outside the footprint of the image registration
+    # (the mask should propagate via astroalign, but not sure if it does...)
+    mask = np.logical_or(img_aligned==0, np.isnan(img_aligned))
+    mask = np.logical_or(mask, footprint)
     
-        if keep:
-            print("\nKeeping the source list files for the science and "+
-                  "template images. They have been written to:")
-            print(f"{source_list_file}\n{template_list_file}")
-        else:
-            run(f"rm {source_list_file}", shell=True) # not needed
-            run(f"rm {template_list_file}", shell=True) 
+    ######################################
+    ### plot the aligned image, if desired
+    ######################################
+    if plot_align: 
+        alignplot = science_file.replace(".fits", 
+                                    f"_astroalign_{scale}.png")
+        __plot_align(template_hdr=template_hdr, 
+                     img_aligned=img_aligned, 
+                     mask=mask, 
+                     scale=scale, 
+                     output=alignplot)
+    
+    #####################################################
+    ### finish editing the header, transfer WCS if needed
+    #####################################################
+    # set header for new aligned fits file 
+    hdr = fits.getheader(science_file)
+    # make a note that astroalign was successful
+    hdr["IMREG"] = ("astroalign", "image registration software")  
+    try: 
+        hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
+    except KeyError:
+        pass
+    
+    if wcs_transfer: # try to transfer the template WCS 
+        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
+        w = wcs.WCS(template_hdr)    
+        # if no SIP transformations in header, need to update 
+        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
+            __remove_SIP(hdr) # remove -SIP and remove related headers 
+            # if old-convention headers (used in e.g. PS1), need to update 
+            # not sure if this is helping 
+            #if 'PC001001' in template_header: 
+            #    hdr['PC001001'] = template_header['PC001001']
+            #    hdr['PC001002'] = template_header['PC001002']
+            #    hdr['PC002001'] = template_header['PC002001']
+            #    hdr['PC002002'] = template_header['PC002002']
+            #    del hdr["CD1_1"]
+            #    del hdr["CD1_2"]
+            #    del hdr["CD2_1"]
+            #    del hdr["CD2_2"]   
+        hdr.update((w.to_fits(relax=False))[0].header) # update     
 
-        ########################################################
-        ## show the sources attempting to be matched, if desired
-        ########################################################
-        if plot_sources:
-            if not scale: scale = "linear"
-            sourceplot = source_file.replace(".fits", 
-                                             f"_alignment_sources_{scale}.png")
-            __plot_sources(source_data=source, 
-                           template_data=template, 
-                           source_hdr=source_hdr, 
-                           template_hdr=template_hdr, 
-                           source_list=source_list, 
-                           template_list=template_list, 
-                           scale=scale, 
-                           color=circ_color, 
-                           output=sourceplot)    
+        # build the final header
+        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
+        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
+        
+    align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
+    mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
+    
+    #################################
+    ### write (if desired) and return
+    #################################
+    if write: # if we want to write the aligned fits file and the mask 
+        if not(output_im): # if no output name given, set default
+            output_im = science_file.replace(".fits", "_align.fits")
+        if not (output_mask): 
+            output_mask = science_file.replace(".fits", "_align_mask.fits")
             
-        ###################
-        ## align the images
-        ###################
-        try: 
-            print(f"\nAttempting to match {len(source_list)} sources in the "+
-                  f"science image to {len(template_list)} in the template")                      
-            # find the transform using the control points
+        align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
+        mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
+    
+    return align_hdu, mask_hdu
+
+
+## using astrometry.net #######################################################
+
+def image_align_astrometry(science_file, template_file,
+                           mask_file=None,
+                           sciexclu=0.05, tmpexclu=0.05, 
+                           sciper=0.95, tmpper=0.95,
+                           nsources=50,
+                           bkgsubbed=False,
+                           astrom_sigma=8.0,
+                           psf_sigma=5.0,
+                           keep=False,
+                           wcs_transfer=True,
+                           plot_sources=False, 
+                           plot_align=False,
+                           scale="linear", circ_color="#fe01b1",
+                           write=True, output_im=None, output_mask=None):
+    """Align a science image to a template image, using `astrometry.net` for 
+    source extraction and `astroalign` for alignment.
+
+    Arguments
+    ---------
+    science_file, template_file :  str
+        Science and template fits file names
+    mask_file : str, optional
+        Mask fits file name (default None)
+    sciexclu, tmpexclu : float, optional
+        Fraction of the image edges from which to exclude sources during 
+        matching for the science and template images (default 0.05)
+    sciper, tmpper : float, optional
+        Upper flux percentile beyond which to exclude sources (default 0.95)
+    nsources : int, optional
+        Maximum number of sources to use in asterism-matching (default 50)
+    bkgsubbed : bool or array_like, optional
+        Whether the images have already been background-subtracted (default
+        False; can be length-2 array to assign different bools for science 
+        and template)
+    astrom_sigma : float or array_like, optional
+        Detection significance when using `image2xy` in `astrometry.net` to 
+        find sources (default 8.0, can be length-2 array to assign different
+        values for science and template)
+    psf_sigma : float or array_like
+        sigma of the approximate Gaussian PSF of the images (default 5.0; can 
+        be length-2 array to assign different values for science and template)
+    keep : bool, optional
+        Whether to keep the source list files (`.xy.fits` files; default False)
+    wcs_transfer : bool, optional
+        Whether to attempt to transfer WCS coordinates from the template to the 
+        newly-aligned image (default False)
+    plot_sources : bool, optional
+        Whether to plot sources detected in the science and template images, 
+        side-by-side, for visual inspection (default False)
+    plot_align : bool, optional
+        Whether to plot the final aligned science image (default False)
+    scale : {"linear", "log", "asinh"}
+        Scale to apply to the plots (default "linear")
+    circ_color : str, optional
+        Color for the circles drawn around detected sources (default "#fe01b1 
+        --> bright pink; only relevant if `plot_sources == True`)
+    write : bool, optional
+        Whether to write *both* outputs (the aligned image and mask image from
+        the image registration footprint) (default True)
+    output_im : str, optional
+        Name for output aligned image fits file (default 
+        `science_file.replace(".fits", "_align.fits")`)
+    output_mask : str, optional
+        Name for output mask fits file (default 
+        `science_file.replace(".fits", "_align_mask.fits")`)    
+
+    Notes
+    -----
+    **Uses a slightly modified version of astroalign.**
+    
+    This function does a lot. Step by step: 
+        
+    1. Uses `image2xy` of `astrometry.net` to find "control points" (sources) 
+       in the science and template images 
+    2. Retains at most `nsources` control points
+    3. **Control points are passed to astroalign**, which finds invariants
+       between the source and template control point sets and computes the 
+       affine transformation which aligns the source image to the template 
+       image, and then applies this transformation to the science image
+
+    **Note:** `image2xy` has a hard time doing basic background subtraction 
+    when an image has nans in it. Before trying alignment with an image which 
+    contains nans, it is suggested to set all nans to 0 instead.       
+    
+    **TO-DO:**
+    
+    - Allow naming of output plots
+    - Fix: During transfer of WCS header from PS1 to CFHT, WCS becomes nonsense
+
+    """
+
+    #########
+    ### setup
+    #########
+    ## load in data
+    science = fits.getdata(science_file)
+    template = fits.getdata(template_file)
+    science_hdr = fits.getheader(science_file)
+    template_hdr = fits.getheader(template_file)
+
+    ## build up masks, apply them
+    mask = np.logical_or(science==0, np.isnan(science)) # mask zeros/nans in sci
+    if mask_file: # if a mask is provided
+        mask = np.logical_or(mask, fits.getdata(mask_file))
+    science = np.ma.masked_where(mask, science)  
+    
+    template_mask = np.logical_or(template==0, np.isnan(template)) # in template
+    template = np.ma.masked_where(template_mask, template)
+
+    # check if input bkgsubbed bool is list or single value
+    if not(type(bkgsubbed) == bool):
+        science_bkgsub = bkgsubbed[0]
+        tmp_bkgsub = bkgsubbed[1]
+    else:
+        science_bkgsub = tmp_bkgsub = bkgsubbed
+    # check if input astrometry significance sigma is list or single value 
+    if not(type(astrom_sigma) in [float,int]):
+        science_sig = astrom_sigma[0]
+        tmp_sig = astrom_sigma[1]
+    else:
+        science_sig = tmp_sig = astrom_sigma
+    # check if input astrometry PSF sigma is list or single value 
+    if not(type(psf_sigma) in [float,int]):
+        science_psf = psf_sigma[0]
+        tmp_psf = psf_sigma[1]
+    else:
+        science_psf = tmp_psf = psf_sigma
+       
+    # -O --> overwrite
+    # -p --> source significance 
+    # -w --> estimated PSF sigma 
+    # -s 10 --> size of the median filter to apply to the image is 10x10
+    # -m 10000 --> max object size for deblending is 10000 pix**2
+    
+    ######################################
+    ## find control points in source image 
+    ######################################
+    options = f" -O -p {science_sig} -w {science_psf} -s 10 -m 10000"
+    if science_bkgsub: options = f"{options} -b" # no need for subtraction
+    run(f"image2xy {options} {science_file}", shell=True)    
+    science_list_file = science_file.replace(".fits", ".xy.fits")
+    science_list = Table.read(science_list_file)
+    if len(science_list) == 0: # if no sources found 
+        print("\nNo sources found with astrometry.net in the source "+
+              "image, so image alignment cannot be obtained. Exiting.")
+        return
+    # pick at most <nsources> sources below the <per_upper> flux percentile
+    science_list.sort('FLUX') # sort by flux
+    science_list.reverse() # biggest to smallest
+    start = int((1-sciper)*len(science_list))
+    end = min((len(science_list)-1), (start+nsources))
+    science_list = science_list[start:end]   
+    science_list = np.array([[science_list['X'][i], 
+                              science_list['Y'][i]] for i in 
+                            range(len(science_list['X']))]) 
+    # remove sources in leftmost/rightmost/topmost/bottommost edge of image
+    science_list = [s for s in science_list.copy() if (
+            (min(s[0], science.shape[1]-s[0])>sciexclu*science.shape[1]) and
+            (min(s[1], science.shape[0]-s[1])>sciexclu*science.shape[0]))]
+    
+    ########################################    
+    ## find control points in template image
+    ########################################
+    options = f" -O -p {tmp_sig} -w {tmp_psf} -s 10 -m 10000"
+    if tmp_bkgsub: options = f"{options} -b" # no need for subtraction
+    run(f"image2xy {options} {template_file}", shell=True)    
+    template_list_file = template_file.replace(".fits", ".xy.fits")        
+    template_list = Table.read(template_list_file)
+    if len(template_list) == 0: # if no sources found 
+        print("\nNo sources found with astrometry.net in the template "+
+              "image, so image alignment cannot be obtained. Exiting.")
+        return
+    # pick at most <nsources> sources below the <per_upper> flux percentile
+    template_list.sort('FLUX') # sort by flux 
+    template_list.reverse() # biggest to smallest
+    start = int((1-tmpper)*len(template_list))
+    end = min((len(template_list)-1), (start+nsources))
+    template_list = template_list[start:end]  
+    template_list = np.array([[template_list['X'][i], 
+                               template_list['Y'][i]] for i in 
+                             range(len(template_list['X']))])
+    # remove sources in leftmost/rightmost/topmost/bottommost edge of image
+    template_list = [t for t in template_list.copy() if (
+        (min(t[0], template.shape[1]-t[0])>tmpexclu*template.shape[1]) and
+        (min(t[1], template.shape[0]-t[1])>tmpexclu*template.shape[0]))]
+
+    if keep:
+        print("\nKeeping the source list files for the science and "+
+              "template images. They have been written to:")
+        print(f"{science_list_file}\n{template_list_file}")
+    else:
+        run(f"rm {science_list_file}", shell=True) # not needed
+        run(f"rm {template_list_file}", shell=True) 
+
+    ########################################################
+    ## plot the sources attempting to be matched, if desired
+    ########################################################
+    if plot_sources:
+        sourceplot = science_file.replace(".fits", 
+                                         f"_alignment_sources_{scale}.png")
+        __plot_sources(science_data=science, 
+                       template_data=template, 
+                       science_hdr=science_hdr, 
+                       template_hdr=template_hdr, 
+                       science_list=science_list, 
+                       template_list=template_list, 
+                       scale=scale, 
+                       color=circ_color, 
+                       output=sourceplot)    
+        
+    ###################
+    ## align the images
+    ###################
+    try: 
+        print(f"\nAttempting to match {len(science_list)} sources in the "+
+              f"science image to {len(template_list)} in the template")                      
+        # find the transform using the control points
+        tform, __ = aa.find_transform(science_list, template_list)
+        # apply the transform
+        img_aligned, footprint = aa.apply_transform(tform, science,
+                                                    template,
+                                                    propagate_mask=True)
+        print("\nSUCCESS\n")
+    except aa.MaxIterError: # if cannot match images, try flipping 
+        print("Max iterations exceeded; flipping the image...")
+        xsize = fits.getdata(science_file).shape[1]
+        ysize = fits.getdata(science_file).shape[0]
+        source_list = [[xsize,ysize]-coords for coords in 
+                       science_list.copy()]
+        science = np.flip(science, axis=0)
+        science = np.flip(science, axis=1)
+            
+        try:
             tform, __ = aa.find_transform(source_list, template_list)
-            # apply the transform
-            img_aligned, footprint = aa.apply_transform(tform, source,
+            print(tform)
+            img_aligned, footprint = aa.apply_transform(tform, science,
                                                         template,
                                                         propagate_mask=True)
             print("\nSUCCESS\n")
-        except aa.MaxIterError: # if cannot match images, try flipping 
-            print("Max iterations exceeded; flipping the image...")
-            xsize = fits.getdata(source_file).shape[1]
-            ysize = fits.getdata(source_file).shape[0]
-            source_list = [[xsize,ysize]-coords for coords in 
-                           source_list.copy()]
-            source = np.flip(source, axis=0)
-            source = np.flip(source, axis=1)
-                
-            try:
-                tform, __ = aa.find_transform(source_list, template_list)
-                print(tform)
-                img_aligned, footprint = aa.apply_transform(tform, source,
-                                                            template,
-                                                           propagate_mask=True)
-                print("\nSUCCESS\n")
-            except aa.MaxIterError: # still too many iterations 
-                print("Max iterations exceeded while trying to find "+
-                      "acceptable transformation. Exiting.")
-                return
-            
-        except aa.TooFewStarsError: # not enough stars in source/template
-            print("Reference stars in source/template image are less than "+
-                  "the minimum value (3). Exiting.")
+        except aa.MaxIterError: # still too many iterations 
+            print("Max iterations exceeded while trying to find "+
+                  "acceptable transformation. Exiting.")
             return
         
-        except Exception: # any other exceptions
-            e = sys.exc_info()
-            print("\nWhile calling astroalign, some error other than "+
-                  "MaxIterError or TooFewStarsError was raised: "+
-                  f"\n{str(e[0])}\n{str(e[1])}")
-            return
+    except aa.TooFewStarsError: # not enough stars in source/template
+        print("Reference stars in source/template image are less than "+
+              "the minimum value (3). Exiting.")
+        return
+    
+    except Exception: # any other exceptions
+        e = sys.exc_info()
+        print("\nWhile calling astroalign, some error other than "+
+              "MaxIterError or TooFewStarsError was raised: "+
+              f"\n{str(e[0])}\n{str(e[1])}")
+        return
+
+
+    #######################
+    ### make the final mask
+    #######################
+    # mask 0s / nans AND mask outside the footprint of the image registration
+    # (the mask should propagate via astroalign, but not sure if it does...)
+    mask = np.logical_or(img_aligned==0, np.isnan(img_aligned))
+    mask = np.logical_or(mask, footprint)
+    
+    ######################################
+    ### plot the aligned image, if desired
+    ######################################
+    if plot_align: 
+        alignplot = science_file.replace(".fits", 
+                                    f"_astroalign_{scale}.png")
+        __plot_align(template_hdr=template_hdr, 
+                     img_aligned=img_aligned, 
+                     mask=mask, 
+                     scale=scale, 
+                     output=alignplot)
+    
+    #####################################################
+    ### finish editing the header, transfer WCS if needed
+    #####################################################
+    # set header for new aligned fits file 
+    hdr = fits.getheader(science_file)
+    # make a note that astroalign was successful
+    hdr["IMREG"] = ("astroalign", "image registration software")  
+    try: 
+        hdr["PIXSCAL1"] = template_hdr["PIXSCAL1"] # pixscale of TEMPLATE
+    except KeyError:
+        pass
+    
+    if wcs_transfer: # try to transfer the template WCS 
+        mjdobs, dateobs = hdr["MJD-OBS"], hdr["DATE-OBS"] # store temporarily
+        w = wcs.WCS(template_hdr)    
+        # if no SIP transformations in header, need to update 
+        if not("SIP" in template_hdr["CTYPE1"]) and ("SIP" in hdr["CTYPE1"]):
+            __remove_SIP(hdr) # remove -SIP and remove related headers 
+            # if old-convention headers (used in e.g. PS1), need to update 
+            # not sure if this is helping 
+            #if 'PC001001' in template_header: 
+            #    hdr['PC001001'] = template_header['PC001001']
+            #    hdr['PC001002'] = template_header['PC001002']
+            #    hdr['PC002001'] = template_header['PC002001']
+            #    hdr['PC002002'] = template_header['PC002002']
+            #    del hdr["CD1_1"]
+            #    del hdr["CD1_2"]
+            #    del hdr["CD2_1"]
+            #    del hdr["CD2_2"]   
+        hdr.update((w.to_fits(relax=False))[0].header) # update     
+
+        # build the final header
+        hdr["MJD-OBS"] = mjdobs # get MJD-OBS of SCIENCE image
+        hdr["DATE-OBS"] = dateobs # get DATE-OBS of SCIENCE image
+        
+    align_hdu = fits.PrimaryHDU(data=img_aligned, header=hdr)
+    mask_hdu = fits.PrimaryHDU(data=mask.astype(int), header=hdr)
+    
+    #################################
+    ### write (if desired) and return
+    #################################
+    if write: # if we want to write the aligned fits file and the mask 
+        if not(output_im): # if no output name given, set default
+            output_im = science_file.replace(".fits", "_align.fits")
+        if not (output_mask): 
+            output_mask = science_file.replace(".fits", "_align_mask.fits")
+            
+        align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
+        mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
+    
+    return align_hdu, mask_hdu
+
+
+## "unsupervised", pure astroalign ############################################
+
+def image_align(science_file, template_file, mask_file=None, 
+                thresh_sigma=3.0,
+                wcs_transfer=True,
+                plot_align=None, scale=None, 
+                write=True, output_im=None, output_mask=None):
+    """Align a science image to a template image using `astroalign` for **all** 
+    steps, including source extraction and the final alignment.
+    
+    Arguments
+    ---------
+    science_file, template_file :  str
+        Science and template fits file names
+    mask_file : str, optional
+        Mask fits file name (default None)
+    thresh_sigma : float or array_like, optional
+        Sigma threshold for source detection within astroalign (default 3.0)
+    wcs_transfer : bool, optional
+        Whether to attempt to transfer WCS coordinates from the template to the 
+        newly-aligned image (default False)
+    plot_align : bool, optional
+        Whether to plot the final aligned science image (default False)
+    scale : {"linear", "log", "asinh"}
+        Scale to apply to the plots (default "linear")
+    write : bool, optional
+        Whether to write *both* outputs (the aligned image and mask image from
+        the image registration footprint) (default True)
+    output_im : str, optional
+        Name for output aligned image fits file (default 
+        `science_file.replace(".fits", "_align.fits")`)
+    output_mask : str, optional
+        Name for output mask fits file (default 
+        `science_file.replace(".fits", "_align_mask.fits")`)
+    
+    Returns
+    -------
+    align_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the aligned science image 
+    mask_hdu : astropy.io.fits.PrimaryHDU
+        New HDU (image + header) of the final mask
+
+    Notes
+    ------
+    **Uses a slightly modified version of astroalign.**
+    
+    **TO-DO:**
+    
+    - Allow naming of output plot
+    - Fix: During transfer of WCS header from PS1 to CFHT, WCS becomes nonsense
+
+    """
+    
+    ## load in data
+    science = fits.getdata(science_file)
+    template = fits.getdata(template_file)
+    #science_hdr = fits.getheader(science_file)
+    template_hdr = fits.getheader(template_file)
+
+    ## build up masks, apply them
+    mask = np.logical_or(science==0, np.isnan(science)) # mask zeros/nans in sci
+    if mask_file: # if a mask is provided
+        mask = np.logical_or(mask, fits.getdata(mask_file))
+    science = np.ma.masked_where(mask, science)  
+    
+    template_mask = np.logical_or(template==0, np.isnan(template)) # in template
+    template = np.ma.masked_where(template_mask, template)
 
     ###########################################################################
-    ### OPTION 3: let astroalign handle everything ############################
-    ###########################################################################
-    else:        
-        try: 
-            # find control points using image segmentation, find the transform,
-            # and apply the transform
-            img_aligned, footprint = aa.register(source, template,
+    ## let astroalign handle everything
+    try: 
+        # find control points using image segmentation, find the transform,
+        # and apply the transform
+        img_aligned, footprint = aa.register(science, template,
+                                             propagate_mask=True,
+                                             thresh=thresh_sigma)
+    except aa.MaxIterError: # if cannot match images, try flipping 
+        print("\nMax iterations exceeded; flipping the image...")
+        science = np.flip(science, axis=0)
+        science = np.flip(science, axis=1)
+            
+        try:
+            img_aligned, footprint = aa.register(science, template, 
                                                  propagate_mask=True,
                                                  thresh=thresh_sigma)
-        except aa.MaxIterError: # if cannot match images, try flipping 
-            print("\nMax iterations exceeded; flipping the image...")
-            source = np.flip(source, axis=0)
-            source = np.flip(source, axis=1)
-                
-            try:
-                img_aligned, footprint = aa.register(source, template, 
-                                                     propagate_mask=True,
-                                                     thresh=thresh_sigma)
-            except aa.MaxIterError: # still too many iterations 
-                print("\nMax iterations exceeded while trying to find "+
-                      "acceptable transformation. Exiting.\n")
-                return
-            
-        except aa.TooFewStarsError: # not enough stars in source/template
-            print("\nReference stars in source/template image are less than "+
-                  "the minimum value (3). Exiting.")
+        except aa.MaxIterError: # still too many iterations 
+            print("\nMax iterations exceeded while trying to find "+
+                  "acceptable transformation. Exiting.\n")
             return
         
-        except Exception: # any other exceptions
-            e = sys.exc_info()
-            print("\nWhile calling astroalign, some error other than "+
-                  "MaxIterError or TooFewStarsError was raised: "+
-                  f"\n{str(e[0])}\n{str(e[1])}")
-            return
-        
-    # build the new mask 
+    except aa.TooFewStarsError: # not enough stars in source/template
+        print("\nReference stars in source/template image are less than "+
+              "the minimum value (3). Exiting.")
+        return
+    
+    except Exception: # any other exceptions
+        e = sys.exc_info()
+        print("\nWhile calling astroalign, some error other than "+
+              "MaxIterError or TooFewStarsError was raised: "+
+              f"\n{str(e[0])}\n{str(e[1])}")
+        return
+
+    ###########################################################################        
+    ## build the new mask 
     # mask pixels==0 or nan AND mask the footprint of the image registration
     # the mask should propagate via astroalign, but not sure if it does...
     mask = np.logical_or(img_aligned==0, np.isnan(img_aligned))
     mask = np.logical_or(mask, footprint)
     
-    if plot_align: # plot the aligned image, if desired
-        alignplot = source_file.replace(".fits", 
+    ## plot the aligned image, if desired
+    if plot_align: 
+        alignplot = science_file.replace(".fits", 
                                     f"_astroalign_{scale}.png")
         __plot_align(template_hdr=template_hdr, 
                      img_aligned=img_aligned, 
@@ -785,7 +1041,7 @@ def image_align(source_file, template_file, mask_file=None,
                      output=alignplot)
     
     ## set header for new aligned fits file 
-    hdr = fits.getheader(source_file)
+    hdr = fits.getheader(science_file)
     # make a note that astroalign was successful
     hdr["IMREG"] = ("astroalign", "image registration software")  
     try: 
@@ -821,15 +1077,17 @@ def image_align(source_file, template_file, mask_file=None,
     
     if write: # if we want to write the aligned fits file and the mask 
         if not(output_im): # if no output name given, set default
-            output_im = source_file.replace(".fits", "_align.fits")
+            output_im = science_file.replace(".fits", "_align.fits")
         if not (output_mask): 
-            output_mask = source_file.replace(".fits", "_align_mask.fits")
+            output_mask = science_file.replace(".fits", "_align_mask.fits")
             
         align_hdu.writeto(output_im, overwrite=True, output_verify="ignore")
         mask_hdu.writeto(output_mask, overwrite=True, output_verify="ignore")
     
     return align_hdu, mask_hdu
 
+###############################################################################
+### ALIGNMENT WITH IMAGE_REGISTRATION PACKAGE #################################
 
 def image_align_morph(source_file, template_file, mask_file=None, 
                       flip=False, maxoffset=30.0, wcs_transfer=True, 
@@ -922,8 +1180,8 @@ def image_align_morph(source_file, template_file, mask_file=None,
 
     ## build up and apply a mask
     srcmask = np.logical_or(source==0, np.isnan(source)) # zeros/nans in source
-    tmpmask = np.logical_or(template==0,np.isnan(template)) # in template 
-    mask = np.logical_or(srcmask, tmpmask)
+    template_mask = np.logical_or(template==0,np.isnan(template)) # in template 
+    mask = np.logical_or(srcmask, template_mask)
     
     if mask_file: # if a mask is provided
         maskdata = fits.getdata(mask_file) # load it in

@@ -33,7 +33,7 @@ It also acts as a crude python wrapper for hotpants
 
 **Important:** This software makes use of a slightly modified version of the 
 `astroalign` software developed by Martin Beroiz and the TOROS Dev Team 
-(https://github.com/toros-astro/astroalign) in the form of my own script 
+(https://github.com/quatrope/astroalign) in the form of my own script 
 `astroalign_mod.py`. I claim absolutely no ownership of this software. All
 modifications are described in that script.
 """
