@@ -3,7 +3,7 @@
 """
 Created on Fri Dec 25 17:14:47 2020
 @author: Nicholas Vieira
-@referenceims.py
+@templates.py
 
 This module enables downloading reference images (i.e. templates) to be used in
 image differencing. Templates can be downloaded from each survey in the 
