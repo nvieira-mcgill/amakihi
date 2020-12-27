@@ -175,14 +175,6 @@
 &#64;author: Nicholas Vieira
 &#64;amakihi.py</p>
 <p>Big module which handles all of the actual image differencing.</p>
-<p><strong>Essential dependencies:</strong></p>
-<ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">astropy</span></code> (used extensively)</li>
-<li><code class="docutils literal notranslate"><span class="pre">photutils</span></code> (used extensively)</li>
-<li><code class="docutils literal notranslate"><span class="pre">astrometry.net</span></code> (used extensively, but can be ignored in favour of
-source detection with <cite>photutils</cite>’ <cite>image_segmentation</cite> instead)</li>
-<li><code class="docutils literal notranslate"><span class="pre">hotpants</span></code> (essential for image subtraction via <cite>hotpants</cite>, duh)</li>
-</ul>
 <p><strong>References:</strong></p>
 <dl class="docutils">
 <dt>[1] Alard, C., &amp; Lupton, R. H. 1998, ApJ, 503, 325</dt>
@@ -407,6 +399,9 @@ to <cite>build_ePSF_imsegm()</cite> only if <cite>param_estimate = True</cite>)<
 <p>High Order Transformation of Psf ANd Template Subtraction
 Based (hotpants) is based on the method of “optimal image subtraction” of
 Alard &amp; Lupton 1998 <a class="footnote-reference" href="#id3" id="id2">[1]</a> .</p>
+<p>Note that this wrapper does not implement <em>all</em> settings which can be
+specified by the user when running hotpants directly from the command line,
+but does include most of them (and all of the most important ones).</p>
 <p class="rubric">References</p>
 <table class="docutils footnote" frame="void" id="id3" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
