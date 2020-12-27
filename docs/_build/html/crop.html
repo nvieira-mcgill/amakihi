@@ -1,0 +1,387 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>crop module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="imalign module" href="imalign.html" />
+    <link rel="prev" title="background module" href="background.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>crop module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/crop.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-crop">
+<span id="crop-module"></span><h1>crop module<a class="headerlink" href="#module-crop" title="Permalink to this headline">¶</a></h1>
+<p>Created on Fri Dec 25 17:24:56 2020
+&#64;author: Nicholas Vieira
+&#64;crop.py</p>
+<p>This module enables cropping (and optionally writing) fits images by either WCS
+or pixel coords.</p>
+<p><strong>TO-DO:</strong></p>
+<ul class="simple">
+<li>Proper warnings in <cite>crop_frac()</cite></li>
+<li>Run lots of tests in general</li>
+</ul>
+<dl class="function">
+<dt id="crop.crop_WCS">
+<code class="descclassname">crop.</code><code class="descname">crop_WCS</code><span class="sig-paren">(</span><em>source_file</em>, <em>ra</em>, <em>dec</em>, <em>size</em>, <em>mode='truncate'</em>, <em>write=True</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#crop.crop_WCS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crop an image based on some central WCS coordinates of interest.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>source_file</strong> (<em>str</em>) – Filename for a single fits file</li>
+<li><strong>ra, dec</strong> (<em>float</em>) – Right Ascension, Declination to center on, in decimal degrees</li>
+<li><strong>size</strong> (<em>float</em>) – Size of the box (in pixels) to crop</li>
+<li><strong>mode</strong> (<em>{“truncate”, “extend”}, optional</em>) – Mode to apply if the requested crop lies outside of the image bounds
+(default “truncate”, see notes for details)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the output to a .fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>source_file.replace(“.fits”, “_crop.fits”)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) with the image cropped and header partially
+updated</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Crops the image of the fits file to a box of size <cite>pixels</cite> pix centered on
+RA and Dec <cite>ra, dec</cite>. If given box extends beyond bounds of image, there
+are two possibilities:</p>
+<ul class="simple">
+<li><cite>mode = “truncate”</cite> –&gt; Cropped image will be rectangular rather than
+square, and truncated at the bounds</li>
+<li><cite>mode = “extend”</cite> –&gt; Re-center the crop on a new set of coords such that
+the output cropped image is still a square</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="crop.crop_frac">
+<code class="descclassname">crop.</code><code class="descname">crop_frac</code><span class="sig-paren">(</span><em>source_file, frac_hori=[0, 1], frac_vert=[0, 1], write=True, output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#crop.crop_frac" title="Permalink to this definition">¶</a></dt>
+<dd><p>Crop a .fits file’s image according to some horizontal and vertical
+fraction of interest, and optionally write it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fits_file</strong> (<em>str</em>) – Filename for a single fits file</li>
+<li><strong>frac_hori, frac_vert</strong> (<em>array_like, optional</em>) – Horizontal and vertical fractions of the image to crop (default [0, 1]
+for both, in which case no cropping is performed)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the output to a .fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>source_file.replace(“.fits”, “_crop.fits”)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) with the image cropped and header partially
+updated</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>The following would crop to select the bottom right corner of the image and
+write it to a new file “bar.fits”:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">crop_frac</span><span class="p">(</span><span class="s2">&quot;foo.fits&quot;</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;bar.fits&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="crop.crop_half">
+<code class="descclassname">crop.</code><code class="descname">crop_half</code><span class="sig-paren">(</span><em>source_file</em>, <em>ra</em>, <em>dec</em>, <em>write=True</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#crop.crop_half" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given some Right Ascension and Declination, find the half of the image
+which contains these coordinates, crop to select that half, and optionally
+write it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fits_file</strong> (<em>str</em>) – Filename for a single fits file</li>
+<li><strong>ra, dec</strong> (<em>float</em>) – Right Ascension, Declination of interest</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the output to a .fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>source_file.replace(“.fits”, “_crop.fits”)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) with the image cropped and header partially
+updated</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>For a given, RA, Dec, finds the half of the image in which these coords
+are found. This can be the top half, bottom half, or a box centered on the
+center of the overall image. Then crops the image. Best for images with an
+aspect ratio of around 2:1 (e.g. MegaCam CCDs) such that the output crop is
+approximately square.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="crop.crop_octant">
+<code class="descclassname">crop.</code><code class="descname">crop_octant</code><span class="sig-paren">(</span><em>source_file</em>, <em>ra</em>, <em>dec</em>, <em>write=True</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#crop.crop_octant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given some Right Ascension and Declination, find the octant of the image
+which contains these coordinates, crop to select that octant, and
+optionally write it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fits_file</strong> (<em>str</em>) – Filename for a single fits file</li>
+<li><strong>ra, dec</strong> (<em>float</em>) – Right Ascension, Declination of interest</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the output to a .fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>source_file.replace(“.fits”, “_crop.fits”)</cite></li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) with the image cropped and header partially
+updated</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>For a given, RA, Dec, finds the octant-sized ~square of the image in which
+these coords are found. Then crops the image to this octant. Best for
+images with an aspect ratio of around 2:1 (e.g. MegaCam CCDs) such that
+the output crop is approximately square.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="imalign.html" class="btn btn-neutral float-right" title="imalign module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="background.html" class="btn btn-neutral float-left" title="background module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

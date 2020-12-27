@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 
 # Sphinx documentation
-docs/_build/
+#docs/_build/
 
 # Particular to amakihi
 CADC_LOGIN.md

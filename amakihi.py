@@ -527,6 +527,10 @@ def hotpants(science_file, template_file,
     Based (hotpants) is based on the method of "optimal image subtraction" of 
     Alard & Lupton 1998 [1]_ .
     
+    Note that this wrapper does not implement *all* settings which can be 
+    specified by the user when running hotpants directly from the command line,
+    but does include most of them (and all of the most important ones).
+    
     References
     ----------
     .. [1] Alard, C., & Lupton, R. H. 1998, ApJ, 503, 325

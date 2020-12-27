@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>amakihi module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="astroalign_mod module" href="astroalign_mod.html" />
+    <link rel="prev" title="amakihi" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>amakihi module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/amakihi.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-amakihi">
+<span id="amakihi-module"></span><h1>amakihi module<a class="headerlink" href="#module-amakihi" title="Permalink to this headline">¶</a></h1>
+<p>Created on Thu Aug  1 13:58:03 2019
+&#64;author: Nicholas Vieira
+&#64;amakihi.py</p>
+<p>Big module which handles all of the actual image differencing.</p>
+<p><strong>Essential dependencies:</strong></p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">astropy</span></code> (used extensively)</li>
+<li><code class="docutils literal notranslate"><span class="pre">photutils</span></code> (used extensively)</li>
+<li><code class="docutils literal notranslate"><span class="pre">astrometry.net</span></code> (used extensively, but can be ignored in favour of
+source detection with <cite>photutils</cite>’ <cite>image_segmentation</cite> instead)</li>
+<li><code class="docutils literal notranslate"><span class="pre">hotpants</span></code> (essential for image subtraction via <cite>hotpants</cite>, duh)</li>
+</ul>
+<p><strong>References:</strong></p>
+<dl class="docutils">
+<dt>[1] Alard, C., &amp; Lupton, R. H. 1998, ApJ, 503, 325</dt>
+<dd><a class="reference external" href="https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract">https://ui.adsabs.harvard.edu/abs/1998ApJ…503..325A/abstract</a></dd>
+</dl>
+<dl class="function">
+<dt id="amakihi.get_substamps">
+<code class="descclassname">amakihi.</code><code class="descname">get_substamps</code><span class="sig-paren">(</span><em>science_file</em>, <em>template_file</em>, <em>sci_mask_file=None</em>, <em>tmp_mask_file=None</em>, <em>thresh_sigma=3.0</em>, <em>etamax=2.0</em>, <em>areamax=400.0</em>, <em>sepmax=5.0</em>, <em>mode='mean'</em>, <em>output=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.get_substamps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get and write a substamps file containing the coordinates of good
+sources for hotpants which are present in both the science and template
+images.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>science_file, template_file</strong> (<em>str</em>) – Science and template images fits files</li>
+<li><strong>sci_mask_file</strong> (<em>str, optional</em>) – Fits files for bad pixel masks for the science and template images
+(default None for both)</li>
+<li><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma to use in setting the threshold for source detection via image
+segmentation (default 3.0)</li>
+<li><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for hotpants (default 2.0)</li>
+<li><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed pixel area for an isophote to be considered a good
+source for hotpants (default 400.0)</li>
+<li><strong>sepmax</strong> (<em>float, optional</em>) – <em>Maximum</em> on-sky separation (arcsec) of sources between the science and
+template images to be designated as a source present in both (default
+5.0)</li>
+<li><strong>mode</strong> (<em>{“mean”, “science”, “template”}, optional</em>) – Coordinate system to use for the output (xi, yi) pairs (default “mean”,
+see notes for details)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output ascii text file (default
+<cite>science_file.replace(“.fits”, “_substamps.txt”)</cite>)</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A tuple containing the tables of source coordinates (“xcentroid”,
+“ycentroid”) for the science and reference images</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">tuple of astropy.table.Table objects</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>For both the science and template image, finds sources via image
+segmentation and selects those which are not overly elongated (to filter
+out galaxies) or overly large (to filter out saturated stars). Then
+compares the science and template images, finds sources in common, and
+writes these to an ascii text file in the form</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;x1 y1&#39;</span>
+<span class="s1">&#39;x2 y2&#39;</span>
+<span class="s1">&#39;x3 y3&#39;</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>Where the exact coordinates are determined by the setting for <cite>mode</cite>. If
+<cite>mode == “mean”</cite>, the coordinates will be the average of the science and
+template image; if <cite>mode == “science”</cite> or <cite>mode == “template”</cite>, the
+coordinates will be those of the science or template image, respectively.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="amakihi.param_estimate">
+<code class="descclassname">amakihi.</code><code class="descname">param_estimate</code><span class="sig-paren">(</span><em>science_file</em>, <em>template_file</em>, <em>mask_file=None</em>, <em>sci_epsf_file=None</em>, <em>tmp_epsf_file=None</em>, <em>thresh_sigma=3.0</em>, <em>pixelmin=20</em>, <em>etamax=1.4</em>, <em>areamax=400.0</em>, <em>cutout=35</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.param_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a rough estimate for the parameters of the Gaussian basis kernel
+which should be used by <cite>hotpants</cite> given some input science and template
+images, and whether to convolve the science or template image during
+differencing. <strong>However, see notes</strong>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>science_file, template_file</strong> (<em>str</em>) – Science and template images fits files</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Bad pixel mask fits file (default None)</li>
+<li><strong>sci_epsf_file</strong> (<em>str, optional</em>) – Fits file containing the science and template images’ ePSFs,
+respectively (default None for both, in which case ePSF will be
+estimated here with <cite>build_ePSF()</cite>)</li>
+<li><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+3.0)</li>
+<li><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20; passed to <cite>build_ePSF_imsegm()</cite> only
+if needed)</li>
+<li><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4; passed to
+<cite>build_ePSF_imsegm()</cite> only if needed)</li>
+<li><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 400.0, passed
+to <cite>build_ePSF_imsegm()</cite> only if needed)</li>
+<li><strong>cutout</strong> (<em>int, optional</em>) – Cutout size around each star in pixels (default 35; must be <strong>odd</strong>;
+rounded <strong>down</strong> if even; passed to <cite>build_ePSF_imsegm()</cite> only if
+needed)</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
+<li><strong>convolve</strong> (<em>{“t”, “i”}</em>) – String indicating whether to convolve the template (t) or science
+image (i) during image differencing with <cite>hotpants</cite></li>
+<li><strong>gaussian</strong> (<em>dict</em>) – Dictionary containing the parameters of the Gaussian basis kernel
+to use during image differencing with <cite>hotpants</cite></li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p><strong>Not stable right now.</strong> Messes up when science and reference have very
+similar PSFs (which is often the case and in fact what we want).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="amakihi.hotpants">
+<code class="descclassname">amakihi.</code><code class="descname">hotpants</code><span class="sig-paren">(</span><em>science_file</em>, <em>template_file</em>, <em>sci_mask_file=None</em>, <em>tmp_mask_file=None</em>, <em>substamps_file=None</em>, <em>param_estimate=False</em>, <em>iu=None</em>, <em>tu=None</em>, <em>il=None</em>, <em>tl=None</em>, <em>lsigma=5.0</em>, <em>hsigma=5.0</em>, <em>gd=None</em>, <em>ig=None</em>, <em>ir=None</em>, <em>tg=None</em>, <em>tr=None</em>, <em>ng=None</em>, <em>rkernel=10</em>, <em>nrx=1</em>, <em>nry=1</em>, <em>nsx=10</em>, <em>nsy=10</em>, <em>nss=3</em>, <em>rss=None</em>, <em>ssig=3.0</em>, <em>norm='i'</em>, <em>convi=False</em>, <em>convt=False</em>, <em>bgo=0</em>, <em>ko=1</em>, <em>output=None</em>, <em>mask_write=False</em>, <em>conv_write=False</em>, <em>kern_write=False</em>, <em>noise_write=False</em>, <em>noise_scale_write=False</em>, <em>maskout=None</em>, <em>convout=None</em>, <em>kerout=None</em>, <em>noiseout=None</em>, <em>noisescaleout=None</em>, <em>v=1</em>, <em>log=None</em>, <em>plot=True</em>, <em>plotname=None</em>, <em>scale='linear'</em>, <em>target_large=None</em>, <em>target_small=None</em>, <em>thresh_sigma=3.0</em>, <em>pixelmin=20</em>, <em>etamax=1.4</em>, <em>areamax=500.0</em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.hotpants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper for the hotpants image differencing software <a class="footnote-reference" href="#id3" id="id1">[1]</a>, adapted
+primarily for use with the Canada-France-Hawaii Telescope (CFHT) MegaCam
+instrument.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>science_file, template_file</strong> (<em>str</em>) – Science image and template image fits files</li>
+<li><strong>sci_mask_file, tmp_mask_file</strong> (<em>str, optional</em>) – Masks of pixels to ignore in the science and template images (fits
+files; default None)</li>
+<li><strong>substamps_file</strong> (<em>str, optional</em>) – Text file containing the locations of substamps (default None)</li>
+<li><strong>param_estimate</strong> (<em>bool, optional</em>) – Whether to try and estimate the optimal parameters of the Gaussian
+basis kernel and whether to convolve the template or science image
+(default False; <strong>recommended to keep it this way</strong> - not reliable)</li>
+<li><strong>iu, tu, il, tl</strong> (<em>float, optional</em>) – Upper (u) and lower (l) ADU limits for the science image (i) and
+template image (t) (default None, in which case these limits are set
+according to args <cite>lsigma</cite>, <cite>hsigma</cite>)</li>
+<li><strong>lsigma, hsigma</strong> (<em>float, optional</em>) – Number of standard deviations away from the background at which to
+place the lower and upper ADU limits (default 5.0, but only used if
+<cite>tu</cite>, <cite>tl</cite>, <cite>iu</cite>, <cite>il</cite> are not given)</li>
+<li><strong>gd</strong> (<em>str, optional</em>) – String of form “xmin xmax ymin ymax” indicating the region in which
+pixels are good (e.g. “150 1000 200 800” to trim the edges of some
+1000x1000 image; default None –&gt; use whole image)</li>
+<li><strong>ig, ir, tg, tr</strong> (<em>float, optional</em>) – Gain (g) and readnoise (r) for the science image (i) and template (t)
+(default None, in which case values are extracted from headers if
+present; if not present, default is <cite>ig = tg = 1</cite>, <cite>ir = tr = 0</cite>)</li>
+<li><strong>ng</strong> (<em>str, optional</em>) – String of form “ngauss degree0 sigma0 … degreeN sigmaN”, where
+N=ngauss-1, “ngauss” is the number of Gaussians in the basis kernel,
+degreej is the degree of the polynomial attached to the jth Gaussian,
+and sigmaj is the width of the jth Gaussian (default
+“3 6.0 0.7 4.0 1.5 2.0 3.0”, which is a mixture of 3 Gaussians with
+widths 0.7, 1.5, 3.0 respectively and polynomials of order 6, 4, 2,
+respectively). <strong>This is the most important setting.</strong></li>
+<li><strong>rkernel</strong> (<em>float, optional</em>) – FWHM of the convolution kernel (default, 10.0)</li>
+<li><strong>nrx, nry</strong> (<em>int, optional</em>) – Number of regions in the x and y directions, respectively (defaul 1 for
+both)</li>
+<li><strong>nsx, nsy</strong> (<em>int, optional</em>) – Number of stamps in each region in the x and y directions, respectively
+(default 10 for both)</li>
+<li><strong>nss</strong> (<em>int, optional</em>) – Number of centroids (i.e. sources) to extract within each stamp
+(default 3)</li>
+<li><strong>rss</strong> (<em>float, optional</em>) – Half-width of the substamp for centroid extraction (default
+<cite>2.5*rkernel</cite>, which is 25.0 for default <cite>rkernel</cite>)</li>
+<li><strong>ssig</strong> (<em>float, optional</em>) – Sigma threshold for sigma clipping (default 3.0)</li>
+<li><strong>norm</strong> (<em>{“i”, “t”, “u”}, optional</em>) – Normalization to use for final difference image, where “i” is the
+science image, “t” the template, and “u” the unconvolved science image
+or template depending on which was convolved (default “i”)</li>
+<li><strong>convi</strong> (<em>bool, optional</em>) – Whether to force convolution of the science image (default False)</li>
+<li><strong>convt</strong> (<em>bool, optional</em>) – Whether to force convolution of the template image (default False)</li>
+<li><strong>bgo</strong> (<em>int, optional</em>) – Order of spatial variations in the background (default 0)</li>
+<li><strong>ko</strong> (<em>int, optional</em>) – Order of spatial variations in the kernel (default 1)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Output difference image file name (default
+<cite>science_file.replace(“.fits”, “_subtracted.fits”)</cite>)</li>
+<li><strong>mask_write</strong> (<em>bool, optional</em>) – Whether to write the bad pixel mask (default False)</li>
+<li><strong>conv_write</strong> (<em>bool, optional</em>) – Whether to write the convolved image (default False)</li>
+<li><strong>kern_write</strong> (<em>bool, optional</em>) – Whether to write the kernel image (default False)</li>
+<li><strong>noise_write</strong> (<em>bool, optional</em>) – Whether to write the noise image (default False)</li>
+<li><strong>noise_scale_write</strong> (<em>bool, optional</em>) – Whether to write the <em>scaled difference</em> noise image (default False)</li>
+<li><strong>maskout</strong> (<em>str, optional</em>) – Name for the output bad pixel mask if <cite>mask_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_submask.fits”)</cite>)</li>
+<li><strong>convout</strong> (<em>str, optional</em>) – Name for output convolved image if <cite>conv_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_conv.fits”)</cite>)</li>
+<li><strong>kernout</strong> (<em>str, optional</em>) – Name for output kernel if <cite>kern_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_kernel.fits”)</cite>)</li>
+<li><strong>noiseout</strong> (<em>str, optional</em>) – Name for output noise image if <cite>noise_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_noise.fits”)</cite>)</li>
+<li><strong>noisecaleout</strong> (<em>str, optional</em>) – Name for output noise <em>scaled difference</em> image if
+<cite>noise_scale_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_noise_scaled.fits”)</cite>)</li>
+<li><strong>v</strong> (<em>{0, 1, 2}, optional</em>) – Level of verbosity, where 0 is least and 2 is most (default 1)</li>
+<li><strong>log</strong> (<em>str, optional</em>) – Name for a logfile in which to store STDERR (default None)</li>
+<li><strong>plot</strong> (<em>bool, optional</em>) – Whether to plot the final difference image (default True)</li>
+<li><strong>plotname</strong> (<em>str, optional</em>) – Name for the output figure (default
+<cite>output.replace(“.fits”, “_hotpants.png”)</cite>)</li>
+<li><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to the plot (default “linear”)</li>
+<li><strong>target_large</strong> (<em>array_like</em>) – [ra, dec] for some target of interest (e.g. a potential transient)
+at which to draw a large crosshair (default None)</li>
+<li><strong>target_small</strong> (<em>array_like</em>) – [ra, dec] for some other target of interest (e.g. the candidate host
+galaxy of some target of interest) at which to draw a small crosshair
+(default None)</li>
+<li><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+3.0)</li>
+<li><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20; passed to <cite>build_ePSF_imsegm()</cite> only
+if <cite>param_estimate = True</cite>)</li>
+<li><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4; passed to
+<cite>build_ePSF_imsegm()</cite> only if <cite>param_estimate = True</cite>)</li>
+<li><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 500.0, passed
+to <cite>build_ePSF_imsegm()</cite> only if <cite>param_estimate = True</cite>)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) for the difference image</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>For more details, see: <a class="reference external" href="https://github.com/acbecker/hotpants">https://github.com/acbecker/hotpants</a></p>
+<p>High Order Transformation of Psf ANd Template Subtraction
+Based (hotpants) is based on the method of “optimal image subtraction” of
+Alard &amp; Lupton 1998 <a class="footnote-reference" href="#id3" id="id2">[1]</a> .</p>
+<p class="rubric">References</p>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[1]</td><td><em>(<a class="fn-backref" href="#id1">1</a>, <a class="fn-backref" href="#id2">2</a>)</em> Alard, C., &amp; Lupton, R. H. 1998, ApJ, 503, 325
+<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract">https://ui.adsabs.harvard.edu/abs/1998ApJ…503..325A/abstract</a></td></tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="astroalign_mod.html" class="btn btn-neutral float-right" title="astroalign_mod module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral float-left" title="amakihi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

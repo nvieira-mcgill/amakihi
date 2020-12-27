@@ -1,0 +1,418 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>transient module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="templates module" href="templates.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">transient module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>transient module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/transient.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-transient">
+<span id="transient-module"></span><h1>transient module<a class="headerlink" href="#module-transient" title="Permalink to this headline">¶</a></h1>
+<p>Created on Sat Dec 26 23:33:42 2020
+&#64;author: Nicholas Vieira
+&#64;transient.py</p>
+<p>Transient detection and converting candidate transients to “triplets” for
+further vetting with bogus-real adversarial artificial intelligence (braai).</p>
+<p><strong>TO-DO:</strong></p>
+<ul class="simple">
+<li>Proper docstrings for <cite>transient_detect()</cite>, <cite>transient_triplets()</cite></li>
+</ul>
+<dl class="function">
+<dt id="transient.transient_detect">
+<code class="descclassname">transient.</code><code class="descname">transient_detect</code><span class="sig-paren">(</span><em>sub_file, og_file, ref_file, mask_file=None, thresh_sigma=5.0, pixelmin=20, dipole_width=2.0, dipole_fratio=5.0, etamax=1.8, areamax=300, nsource_max=50, toi=None, toi_sep_min=None, toi_sep_max=None, write=True, output=None, plot_distributions=False, plot_rejections=False, plots=['zoom og', 'zoom ref', 'zoom diff'], pixcoords=False, sub_scale=None, og_scale=None, stampsize=200.0, crosshair_og='#fe019a', crosshair_sub='#5d06e9', title=None, plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#transient.transient_detect" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Inputs:</dt>
+<dd><p class="first">general:
+- subtracted image file
+- original science image file (can be background-subtracted or not)
+- original reference image file (can be background-subtracted or not)
+- a mask file (optional; default None)</p>
+<p>source detection and candidate rejection:
+- sigma threshold for source detection with image segmentation</p>
+<blockquote>
+<div>(optional; default 3.0)</div></blockquote>
+<ul class="simple">
+<li><em>minimum</em> number of isophote pixels, i.e. area (optional; default 20)</li>
+<li><em>maximum</em> allowed separation for any potential dipoles to be
+considered real sources (optional; default 2.0”; setting this to None
+sets no maximum)</li>
+<li><em>maximum</em> allowed flux ratio for dipoles (optional; default 5.0)</li>
+<li><em>maximum</em> allowed elongation for sources found by image segmentation
+(optional; default 1.8; setting this to None sets no maximum)</li>
+<li><em>maximum</em> allowed pixel area for sources (optional; default 300)</li>
+<li><em>maximum</em> allowed total number of transients (optional; default 50;
+setting this to None sets no maximum)</li>
+<li>[ra,dec] for some target of interest (e.g., a candidate host galaxy)
+such that the distance to this target will be computed for every
+candidate transient (optional; default None)</li>
+<li><em>minimum</em> separation between the target of interest and the transient
+(optional; default None; only relevant if TOI is supplied)</li>
+<li><em>maximum</em> separation between the target of interest and the transient
+(optional; default None, only relevant if TOI is supplied)</li>
+</ul>
+<p>writing and plotting:
+- whether to write the source table (optional; default True)
+- name for the output source table (optional; default set below; only</p>
+<blockquote>
+<div>relevant if write=True)</div></blockquote>
+<ul>
+<li><p class="first">whether to plot the histograms of elongation, area, and a scatter
+plot of elongation versus area (optional; default False)</p>
+</li>
+<li><p class="first">whether to plot an image showing all objects in the difference image
+which did not pass candidate vetting and those which did, with
+different markers indicating the reason for rejection (optional;
+default False)</p>
+</li>
+<li><dl class="first docutils">
+<dt>an array of which plots to produce, where valid options are:</dt>
+<dd><ol class="first arabic simple">
+<li>“full” - the full-frame subtracted image</li>
+<li>“zoom og” - postage stamp of the original science image</li>
+<li>“zoom ref” - postage stamp of the original reference image</li>
+</ol>
+<p class="last">(4) “zoom diff” - postage stamp of the subtracted image
+(optional; default is [“zoom og”, “zoom ref”, “zoom diff”])</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>the following are relevant only if plots are requested:
+- whether to use the pixel coord
+- scale to apply to the difference images (optional; default “asinh”;</p>
+<blockquote>
+<div>options are “linear”, “log”, “asinh”)</div></blockquote>
+<ul class="last simple">
+<li>scale to apply to the science/reference images (optional; default
+“asinh”; options are “linear”, “log”, “asinh”)</li>
+<li>size of the transient stamp in pixels (optional; default 200.0)</li>
+<li>colour for crosshair on transient in science/ref images (optional;
+default ~hot pink)</li>
+<li>colour for crosshair on transient in difference images (optional;
+default ~purple-blue)</li>
+<li>a title to include in the titles of all plots AND filenames of all
+plots, except the rejection plot (optional; default None)</li>
+<li>name for the directory in which to store all plots (optional;
+default set below)</li>
+</ul>
+</dd>
+</dl>
+<p>Looks for sources with flux &gt; sigma*std, where std is the standard
+deviation of the good pixels in the subtracted image. Sources must also be
+made up of at least pixelmin pixels. From these, selects sources below some
+elongation limit to try to prevent obvious residuals from being detected as
+sources. For each candidate transient source, optionally plots the full
+subtracted image and “postage stamps” of the transient on the original
+science image, reference image and/or subtracted image.</p>
+<p>Output: a table of sources with their properties (coordinates, area,
+elongation, separation from a target of interest (if relevant), etc.)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="transient.transient_triplets">
+<code class="descclassname">transient.</code><code class="descname">transient_triplets</code><span class="sig-paren">(</span><em>sub_file</em>, <em>og_file</em>, <em>ref_file</em>, <em>tbl</em>, <em>pixcoords=False</em>, <em>size=200</em>, <em>cropmode='extend'</em>, <em>write=True</em>, <em>output=None</em>, <em>plot=False</em>, <em>wide=True</em>, <em>cmap='bone'</em>, <em>title=None</em>, <em>plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#transient.transient_triplets" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Inputs:</dt>
+<dd><ul class="first simple">
+<li>difference image file</li>
+<li>original science image file (can be background-subtracted or not)</li>
+<li>original reference image file (can be background-subtracted or not)</li>
+<li>a table of candidate transient source(s) found with
+transient_detect() or some other tool (can be the name of a table
+file or the table itself)
+note: if pixcoords=False, the table must have at least the columns
+“ra” and “dec”; if pixcoords=True, the table must have at least the
+columns “xcentroid” and “ycentroid”</li>
+<li>whether to use the pixel coordinates of the transients when plotting
+rather than the ra, dec (optional; default False; recommended to use
+in cases where it is not clear that the WCS of the science and
+reference images matches exactly)</li>
+<li>the size of each 2D array in the triplet, i.e. the size of the
+stamp to obtain around the transient(s) (optional; default 200 pix)</li>
+<li>mode to use for crop_WCS (optional; default “extend”; options are
+“truncate” and “extend”)</li>
+<li>whether to write the produced triplet(s) to a .npy file (optional;
+default True)</li>
+<li>name for output .npy file (or some other file) (optional; default
+set below)</li>
+<li>whether to plot all of the triplets (optional; default False)</li>
+</ul>
+<p>only relevant if plot=True:
+- whether to plot the triplets as 3 columns, 1 row (horizontally wide)</p>
+<blockquote>
+<div>or 3 rows, 1 column (vertically tall) (optional; default wide=True)</div></blockquote>
+<ul class="last simple">
+<li>colourmap to apply to all images in the triplet (optional; default
+“bone”)</li>
+<li>a title to include in all plots AND to append to all filenames
+(optional; default None)</li>
+<li>name for the directory in which to store all plots (optional;
+default set below)</li>
+</ul>
+</dd>
+</dl>
+<p>From a table of candidate transients and the corresponding difference,
+science, and reference images, builds a triplet: three “postage stamps”
+around the candidate showing the science image, reference image, and
+difference image. Optionally writes the triplet to a .npy file.</p>
+<p>Output: a numpy array with shape (N, 3, size, size), where N is the number
+of rows in the input table (i.e., no. of candidate transients) and the 3
+sub-arrays represent cropped sections of the science image, reference
+image, and difference image</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="transient.im_contains">
+<code class="descclassname">transient.</code><code class="descname">im_contains</code><span class="sig-paren">(</span><em>im_file</em>, <em>ra</em>, <em>dec</em>, <em>exclusion=None</em><span class="sig-paren">)</span><a class="headerlink" href="#transient.im_contains" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if some coordinates [ra, dec] lie within the bounds of an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>im_file</strong> (<em>str</em>) – Image of interest</li>
+<li><strong>ra, dec</strong> (<em>float</em>) – Right Ascension, Declination of a single source</li>
+<li><strong>exclusion</strong> (<em>float, optional</em>) – Fraction of edge pixels to ignore (default None; see examples)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Whether the coordinates are in the image</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>For a 1000 x 1000 image, to look for a source at (ra, dec) = (180.0, 30.0)
+and ignore the outermost 5% of edge pixels:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">im_contains</span><span class="p">(</span><span class="s2">&quot;foo.fits&quot;</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To <strong>not</strong> ignore any pixels (i.e. consider a set of coordinates to be
+contained even if on the edgemost pixels):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">im_contains</span><span class="p">(</span><span class="s2">&quot;foo.fits&quot;</span><span class="p">,</span> <span class="mf">180.0</span><span class="p">,</span> <span class="mf">30.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="templates.html" class="btn btn-neutral float-left" title="templates module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

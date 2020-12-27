@@ -1,0 +1,485 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>astroalign_mod module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="background module" href="background.html" />
+    <link rel="prev" title="amakihi module" href="amakihi.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>astroalign_mod module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/astroalign_mod.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-astroalign_mod">
+<span id="astroalign-mod-module"></span><h1>astroalign_mod module<a class="headerlink" href="#module-astroalign_mod" title="Permalink to this headline">¶</a></h1>
+<p><strong>Important:</strong> This software has been slighly modified by me (Nicholas Vieira)
+for use in a CFHT image differencing pipeline. <strong>I claim no ownership for this
+software.</strong> The modifications include:</p>
+<ul class="simple">
+<li>An error class for when not enough stars are supplied</li>
+<li>Ability to set the detection threshold when finding sources via image
+segmentation</li>
+</ul>
+<p>Documentation used here is not consistent with that used in the rest of
+<cite>amakihi</cite> as this was not changed from the original <cite>astroalign</cite>.</p>
+<p>The original code can be found at <a class="reference external" href="https://github.com/toros-astro/astroalign">https://github.com/toros-astro/astroalign</a></p>
+<p>And the most up-to-date version of the code at
+<a class="reference external" href="https://github.com/quatrope/astroalign">https://github.com/quatrope/astroalign</a></p>
+<dl class="data">
+<dt id="astroalign_mod.MAX_CONTROL_POINTS">
+<code class="descclassname">astroalign_mod.</code><code class="descname">MAX_CONTROL_POINTS</code><em class="property"> = 50</em><a class="headerlink" href="#astroalign_mod.MAX_CONTROL_POINTS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The maximum control points (stars) to use to build the invariants.</p>
+<p>Default: 50</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="astroalign_mod.PIXEL_TOL">
+<code class="descclassname">astroalign_mod.</code><code class="descname">PIXEL_TOL</code><em class="property"> = 2</em><a class="headerlink" href="#astroalign_mod.PIXEL_TOL" title="Permalink to this definition">¶</a></dt>
+<dd><p>The pixel distance tolerance to assume two invariant points are the same.</p>
+<p>Default: 2</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="astroalign_mod.MIN_MATCHES_FRACTION">
+<code class="descclassname">astroalign_mod.</code><code class="descname">MIN_MATCHES_FRACTION</code><em class="property"> = 0.8</em><a class="headerlink" href="#astroalign_mod.MIN_MATCHES_FRACTION" title="Permalink to this definition">¶</a></dt>
+<dd><p>The minimum fraction of triangle matches to accept a transformation.</p>
+<p>If the minimum fraction yields more than 10 triangles, 10 is used instead.</p>
+<p>Default: 0.8</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="astroalign_mod.NUM_NEAREST_NEIGHBORS">
+<code class="descclassname">astroalign_mod.</code><code class="descname">NUM_NEAREST_NEIGHBORS</code><em class="property"> = 5</em><a class="headerlink" href="#astroalign_mod.NUM_NEAREST_NEIGHBORS" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of nearest neighbors of a given star (including itself) to construct
+the triangle invariants.</p>
+<p>Default: 5</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="astroalign_mod.find_transform">
+<code class="descclassname">astroalign_mod.</code><code class="descname">find_transform</code><span class="sig-paren">(</span><em>source</em>, <em>target</em>, <em>thresh=3.0</em><span class="sig-paren">)</span><a class="headerlink" href="#astroalign_mod.find_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the transform between <code class="docutils literal notranslate"><span class="pre">source</span></code> and <code class="docutils literal notranslate"><span class="pre">target</span></code>.</p>
+<p>Return a SimilarityTransform object <code class="docutils literal notranslate"><span class="pre">T</span></code> that maps pixel x, y indices from
+the source image s = (x, y) into the target (destination) image t = (x, y).
+T contains parameters of the tranformation: <code class="docutils literal notranslate"><span class="pre">T.rotation</span></code>,
+<code class="docutils literal notranslate"><span class="pre">T.translation</span></code>, <code class="docutils literal notranslate"><span class="pre">T.scale</span></code>, <code class="docutils literal notranslate"><span class="pre">T.params</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>source</strong> (<em>array-like</em>) – Either a numpy array of the source image to be
+transformed or an interable of (x, y) coordinates of the target
+control points.</li>
+<li><strong>target</strong> (<em>array-like</em>) – Either a numpy array of the target (destination)
+image or an interable of (x, y) coordinates of the target
+control points.</li>
+<li><strong>thresh</strong> (<em>float</em>) – Sigma for source detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>The transformation object and a tuple of corresponding star positions
+in source and target.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T</span><span class="p">,</span> <span class="p">(</span><span class="n">source_pos_array</span><span class="p">,</span> <span class="n">target_pos_array</span><span class="p">)</span>
+</pre></div>
+</div>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><code class="xref py py-exc docutils literal notranslate"><span class="pre">TypeError</span></code> – If input type of <code class="docutils literal notranslate"><span class="pre">source</span></code> or <code class="docutils literal notranslate"><span class="pre">target</span></code> is not supported.</li>
+<li><code class="xref py py-exc docutils literal notranslate"><span class="pre">Exception</span></code> – If it cannot find more than 3 stars on any input.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astroalign_mod.apply_transform">
+<code class="descclassname">astroalign_mod.</code><code class="descname">apply_transform</code><span class="sig-paren">(</span><em>transform</em>, <em>source</em>, <em>target</em>, <em>fill_value=None</em>, <em>propagate_mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#astroalign_mod.apply_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies the transformation <code class="docutils literal notranslate"><span class="pre">transform</span></code> to <code class="docutils literal notranslate"><span class="pre">source</span></code>.</p>
+<p>The output image will have the same shape as <code class="docutils literal notranslate"><span class="pre">target</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>transform</strong> – A scikit-image <code class="docutils literal notranslate"><span class="pre">SimilarityTransform</span></code> object.</li>
+<li><strong>source</strong> (<em>numpy array</em>) – A 2D numpy array of the source image to be
+transformed.</li>
+<li><strong>target</strong> (<em>numpy array</em>) – A 2D numpy array of the target image. Only used
+to set the output image shape.</li>
+<li><strong>fill_value</strong> (<em>float</em>) – A value to fill in the areas of aligned_image
+where footprint == True.</li>
+<li><strong>propagate_mask</strong> (<em>bool</em>) – Wether to propagate the mask in source.mask
+onto footprint.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple (aligned_image, footprint).
+aligned_image is a numpy 2D array of the transformed source
+footprint is a mask 2D array with True on the regions
+with no pixel information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astroalign_mod.register">
+<code class="descclassname">astroalign_mod.</code><code class="descname">register</code><span class="sig-paren">(</span><em>source</em>, <em>target</em>, <em>fill_value=None</em>, <em>propagate_mask=False</em>, <em>thresh=3.0</em><span class="sig-paren">)</span><a class="headerlink" href="#astroalign_mod.register" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform <code class="docutils literal notranslate"><span class="pre">source</span></code> to coincide pixel to pixel with <code class="docutils literal notranslate"><span class="pre">target</span></code>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>source</strong> (<em>numpy array</em>) – A 2D numpy array of the source image to be
+transformed.</li>
+<li><strong>target</strong> (<em>numpy array</em>) – A 2D numpy array of the target image. Only used
+to set the output image shape.</li>
+<li><strong>fill_value</strong> (<em>float</em>) – A value to fill in the areas of aligned_image
+where footprint == True.</li>
+<li><strong>propagate_mask</strong> (<em>bool</em>) – Wether to propagate the mask in source.mask
+onto footprint.
+thresh (float): Sigma for source detection</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A tuple (aligned_image, footprint).
+aligned_image is a numpy 2D array of the transformed source
+footprint is a mask 2D array with True on the regions
+with no pixel information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="astroalign_mod.estimate_transform">
+<code class="descclassname">astroalign_mod.</code><code class="descname">estimate_transform</code><span class="sig-paren">(</span><em>ttype</em>, <em>src</em>, <em>dst</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#astroalign_mod.estimate_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate 2D geometric transformation parameters.</p>
+<p>You can determine the over-, well- and under-determined parameters
+with the total least-squares method.</p>
+<p>Number of source and destination coordinates must match.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first">
+<li><p class="first"><strong>ttype</strong> (<em>{‘euclidean’, similarity’, ‘affine’, ‘piecewise-affine’,              ‘projective’, ‘polynomial’}</em>) – Type of transform.</p>
+</li>
+<li><p class="first"><strong>kwargs</strong> (<em>array or int</em>) –</p>
+<p>Function parameters (src, dst, n, angle):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>NAME / TTYPE        FUNCTION PARAMETERS
+&#39;euclidean&#39;         `src, `dst`
+&#39;similarity&#39;        `src, `dst`
+&#39;affine&#39;            `src, `dst`
+&#39;piecewise-affine&#39;  `src, `dst`
+&#39;projective&#39;        `src, `dst`
+&#39;polynomial&#39;        `src, `dst`, `order` (polynomial order,
+                                          default order is 2)
+</pre></div>
+</div>
+<p>Also see examples below.</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>tform</strong> – Transform object containing the transformation parameters and providing
+access to forward and inverse transformation functions.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><code class="xref py py-class docutils literal notranslate"><span class="pre">GeometricTransform</span></code></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">skimage</span> <span class="k">import</span> <span class="n">transform</span> <span class="k">as</span> <span class="n">tf</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># estimate transformation parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">12</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">20</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tform</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">estimate_transform</span><span class="p">(</span><span class="s1">&#39;similarity&#39;</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">tform</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">tform</span><span class="p">(</span><span class="n">src</span><span class="p">)),</span> <span class="n">src</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># warp image using the estimated transformation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">skimage</span> <span class="k">import</span> <span class="n">data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">image</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">camera</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">warp</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">inverse_map</span><span class="o">=</span><span class="n">tform</span><span class="o">.</span><span class="n">inverse</span><span class="p">)</span> <span class="c1"># doctest: +SKIP</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># create transformation with explicit parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tform2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">SimilarityTransform</span><span class="p">(</span><span class="n">scale</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">translation</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># unite transformations, applied in order from left to right</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tform3</span> <span class="o">=</span> <span class="n">tform</span> <span class="o">+</span> <span class="n">tform2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">tform3</span><span class="p">(</span><span class="n">src</span><span class="p">),</span> <span class="n">tform2</span><span class="p">(</span><span class="n">tform</span><span class="p">(</span><span class="n">src</span><span class="p">)))</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="astroalign_mod.matrix_transform">
+<code class="descclassname">astroalign_mod.</code><code class="descname">matrix_transform</code><span class="sig-paren">(</span><em>coords</em>, <em>matrix</em><span class="sig-paren">)</span><a class="headerlink" href="#astroalign_mod.matrix_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply 2D matrix transform.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>coords</strong> (<em>(N, 2) array</em>) – x, y coordinates to transform</li>
+<li><strong>matrix</strong> (<em>(3, 3) array</em>) – Homogeneous transformation matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>coords</strong> – Transformed coordinates.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">(N, 2) array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="exception">
+<dt id="astroalign_mod.MaxIterError">
+<em class="property">exception </em><code class="descclassname">astroalign_mod.</code><code class="descname">MaxIterError</code><a class="headerlink" href="#astroalign_mod.MaxIterError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="background.html" class="btn btn-neutral float-right" title="background module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="amakihi.html" class="btn btn-neutral float-left" title="amakihi module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

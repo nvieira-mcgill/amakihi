@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ePSF module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="imalign module" href="imalign.html" />
+    <link rel="prev" title="crop module" href="crop.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ePSF module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>ePSF module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/ePSF.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-ePSF">
+<span id="epsf-module"></span><h1>ePSF module<a class="headerlink" href="#module-ePSF" title="Permalink to this headline">¶</a></h1>
+<p>Created on Sat Dec 26 14:59:35 2020
+&#64;author: Nicholas Vieira
+&#64;ePSF.py</p>
+<dl class="function">
+<dt id="ePSF.ePSF_FWHM">
+<code class="descclassname">ePSF.</code><code class="descname">ePSF_FWHM</code><span class="sig-paren">(</span><em>epsf_data</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#ePSF.ePSF_FWHM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the full width at half max (FWHM) of a 2D ePSF.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>epsf_data</strong> (<em>str OR np.ndarray</em>) – Filename for a fits file containing the ePSF data <strong>OR</strong> the 2D array
+representing the ePSF directly</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default Faulse)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">FWHM of the input ePSF</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="ePSF.build_ePSF_imsegm">
+<code class="descclassname">ePSF.</code><code class="descname">build_ePSF_imsegm</code><span class="sig-paren">(</span><em>image_file</em>, <em>mask_file=None</em>, <em>nstars=40</em>, <em>thresh_sigma=5.0</em>, <em>pixelmin=20</em>, <em>etamax=1.4</em>, <em>areamax=500</em>, <em>cutout=35</em>, <em>write=True</em>, <em>output=None</em>, <em>plot=False</em>, <em>output_plot=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#ePSF.build_ePSF_imsegm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the effective Point-Spread Function using a sample of stars from
+some image acquired via image segmentation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>image_file</strong> (<em>str</em>) – Filename for a <strong>background-subtracted</strong> image</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Filename for a mask file (default None)</li>
+<li><strong>nstars</strong> (<em>int, optional</em>) – <em>Maximum</em> number of stars to use in building the ePSF (default 40;
+set to None to impose no limit)</li>
+<li><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+5.0)</li>
+<li><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20)</li>
+<li><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4)</li>
+<li><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 500)</li>
+<li><strong>cutout</strong> (<em>int, optional</em>) – Cutout size around each star in pixels (default 35; must be <strong>odd</strong>;
+rounded <strong>down</strong> if even)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the ePSF to a new fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for the output ePSF data fits file (default
+<cite>image_file.replace(“.fits”, “_ePSF.fits”)</cite>)</li>
+<li><strong>plot</strong> (<em>bool, optional</em>) – Whether to plot the newly-built ePSF (default False)</li>
+<li><strong>output_plot</strong> (<em>str, optional</em>) – Name for the output figure (default
+<cite>image_file.replace(“.fits”, “_ePSF.png”)</cite>)</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The ePSF data in a 2D array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Uses image segmentation via <cite>photutils</cite> to obtain a list of sources in the
+image with their x, y coordinates, flux, and background at their
+location. Then uses <cite>EPSFBuilder</cite> to empirically obtain the ePSF of these
+stars. Optionally writes and/or plots the obtained ePSF.</p>
+<p><strong>The ePSF obtained here should not be used in convolutions.</strong> Instead, it
+can serve as a tool for estimating the seeing of an image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ePSF.build_ePSF_astrometry">
+<code class="descclassname">ePSF.</code><code class="descname">build_ePSF_astrometry</code><span class="sig-paren">(</span><em>image_file</em>, <em>mask_file=None</em>, <em>nstars=40</em>, <em>image_source_file=None</em>, <em>astrom_sigma=5.0</em>, <em>psf_sigma=5.0</em>, <em>alim=10000</em>, <em>lowper=0.6</em>, <em>highper=0.9</em>, <em>keep=False</em>, <em>cutout=35</em>, <em>write=True</em>, <em>output=None</em>, <em>plot=False</em>, <em>output_plot=None</em>, <em>verbose=False</em><span class="sig-paren">)</span><a class="headerlink" href="#ePSF.build_ePSF_astrometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the effective Point-Spread Function using a sample of stars from
+some image acquired via the <cite>image2xy</cite> tool of <cite>astrometry.net</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>image_file</strong> (<em>str</em>) – Filename for a <strong>background-subtracted</strong> image</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Filename for a mask file (default None)</li>
+<li><strong>nstars</strong> (<em>int, optional</em>) – <em>Maximum</em> number of stars to use in building the ePSF (default 40;
+set to None to impose no limit)</li>
+<li><strong>image_source_file</strong> (<em>str, optional</em>) – Filename for a <cite>.xy.fits</cite> file containing detected sources with their
+pixel coordinates and <strong>background-subtracted</strong> flux (default None, in
+which case a new such file is produced)</li>
+<li><strong>astrom_sigma</strong> (<em>float, optional</em>) – Detection significance when using <cite>image2xy</cite> in <cite>astrometry.net</cite> to
+find sources (default 5.0)</li>
+<li><strong>psf_sigma</strong> (<em>float, optional</em>) – Sigma of the approximate Gaussian PSF of the images (default 5.0)</li>
+<li><strong>alim</strong> (<em>int, optional</em>) – <em>Maximum</em> allowed source area in square pixels for <cite>astrometry.net</cite>,
+above which sources will be deblended (default 10000)</li>
+<li><strong>lowper, highper</strong> (<em>float, optional</em>) – Lower and upper flux percentiles (as a fraction between 0 and 1) such
+that sources outside the corresponding flux range will be excluded from
+ePSF building (default 0.6 and 0.9, respectively)</li>
+<li><strong>keep</strong> (<em>bool, optional</em>) – Whether to keep the source list file (<cite>.xy.fits</cite> files; default False)</li>
+<li><strong>cutout</strong> (<em>int, optional</em>) – Cutout size around each star in pixels (default 35; must be <strong>odd</strong>;
+rounded <strong>down</strong> if even)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the ePSF to a new fits file (default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for the output ePSF data fits file (default
+<cite>image_file.replace(“.fits”, “_ePSF.fits”)</cite>)</li>
+<li><strong>plot</strong> (<em>bool, optional</em>) – Whether to plot the newly-built ePSF (default False)</li>
+<li><strong>output_plot</strong> (<em>str, optional</em>) – Name for the output figure (default
+<cite>image_file.replace(“.fits”, “_ePSF.png”)</cite>)</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The ePSF data in a 2D array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Uses <cite>astrometry.net</cite> to obtain a list of sources in the image with their
+x, y coordinates, flux, and background at their location. (If a list of
+sources has already been obtained <cite>solve-field</cite> or <cite>image2xy</cite>, this can
+be input). Finally, selects stars between the <cite>lowper</cite> th and <cite>highper</cite>
+percentile fluxes.</p>
+<p>Finally, uses <cite>EPSFBuilder</cite> to empirically obtain the ePSF of these stars.
+Optionally writes and/or plots the obtained ePSF.</p>
+<p><strong>The ePSF obtained here should not be used in convolutions.</strong> Instead, it
+can serve as a tool for estimating the seeing of an image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ePSF.convolve_self">
+<code class="descclassname">ePSF.</code><code class="descname">convolve_self</code><span class="sig-paren">(</span><em>image_file</em>, <em>mask_file=None</em>, <em>thresh_sigma=5.0</em>, <em>pixelmin=20</em>, <em>etamax=1.4</em>, <em>areamax=500</em>, <em>cutout=35</em>, <em>psf_fwhm_max=7.0</em>, <em>kernel='gauss'</em>, <em>alpha=1.5</em>, <em>write=True</em>, <em>output=None</em>, <em>plot=False</em>, <em>output_plot=None</em>, <em>verbose=True</em><span class="sig-paren">)</span><a class="headerlink" href="#ePSF.convolve_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>Using a sample of stars detected by image segmentation, construct the
+ePSF of an image (using <cite>build_ePSF_imsegm()</cite>), fit the ePSF with a
+Gaussian or Moffat kernel, and then convolve the image with this kernel.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>image_file</strong> (<em>str</em>) – Filename for a <strong>background-subtracted</strong> image</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Filename for a mask file (default None)</li>
+<li><strong>nstars</strong> (<em>int, optional</em>) – <em>Maximum</em> number of stars to use in building the ePSF (default 40;
+set to None to impose no limit)</li>
+<li><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+5.0)</li>
+<li><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20)</li>
+<li><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4)</li>
+<li><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 500)</li>
+<li><strong>cutout</strong> (<em>int, optional</em>) – Cutout size around each star in pixels (default 35; must be <strong>odd</strong>;
+rounded <strong>down</strong> if even)</li>
+<li><strong>psf_fwhm_max</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed ePSF FWHM in pixels such that function will exit if
+the FWHM exceeds this value (default 7.0)</li>
+<li><strong>kernel</strong> (<em>{“gauss”, “moffat”}, optional</em>) – Type of kernel to fit to the ePSF, where this kernel will then be
+convolved with the input image (default “gauss”)</li>
+<li><strong>alpha</strong> (<em>float, optional</em>) – Alpha parameter (power) for te Moffat kernel (default 1.5)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the newly-convolved image to a new fits file (default
+True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for the output convolved image (default
+<cite>image_file.replace(“.fits”, “_selfconv.fits”)</cite>)</li>
+<li><strong>plot</strong> (<em>bool, optional</em>) – Whether to plot the newly-convolved image (default False)</li>
+<li><strong>output_plot</strong> (<em>str, optional</em>) – Name for the output figure (default
+<cite>image_file.replace(“.fits”, “_selfconv.png”)</cite>)</li>
+<li><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default True)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Fits HDU for the newly-convolved image</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Finds the ePSF of the input image and finds the FWHM (and thus sigma) of
+the ePSF. Then builds a Gaussian with this sigma and convolves the input
+image with the Gaussian, <strong>or</strong> builds a Moffat distribution with half the
+ePSF FWHM as the core width and convolves the image with the Moffat.</p>
+<p>Effectively tries to increase the size of the image’s ePSF by sqrt(2).
+Useful as a preparation for image differencing when sigma_template &gt;
+sigma_science.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="imalign.html" class="btn btn-neutral float-right" title="imalign module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="crop.html" class="btn btn-neutral float-left" title="crop module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

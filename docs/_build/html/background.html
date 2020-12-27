@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>background module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="crop module" href="crop.html" />
+    <link rel="prev" title="astroalign_mod module" href="astroalign_mod.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>background module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/background.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-background">
+<span id="background-module"></span><h1>background module<a class="headerlink" href="#module-background" title="Permalink to this headline">¶</a></h1>
+<p>Created on Fri Dec 25 21:57:05 2020
+&#64;author: Nicholas Vieira
+&#64;background.py</p>
+<p>Background estimation and subtraction.</p>
+<dl class="function">
+<dt id="background.bkgsub">
+<code class="descclassname">background.</code><code class="descname">bkgsub</code><span class="sig-paren">(</span><em>im_file</em>, <em>mask_file=None</em>, <em>bkg_box=(5</em>, <em>5)</em>, <em>bkg_filt=(5</em>, <em>5)</em>, <em>plot_bkg=False</em>, <em>plot_bkgsubbed=False</em>, <em>scale_bkg='linear'</em>, <em>scale_bkgsubbed='linear'</em>, <em>write=True</em>, <em>output=None</em><span class="sig-paren">)</span><a class="headerlink" href="#background.bkgsub" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subtract the background from an image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>im_file</strong> (<em>str</em>) – Filename for image of interest</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Filename for bad pixels mask (default None)</li>
+<li><strong>bkg_box</strong> (<em>tuple, optional</em>) – Sizes of box along each axis in which background is estimated (default
+(5,5))</li>
+<li><strong>bkg_filt</strong> (<em>tuple, optional</em>) – Size of the median filter pre-applied to the background before
+background estimation (default (5,5) where (1,1) –&gt; no filtering)</li>
+<li><strong>plot_bkg</strong> (<em>bool, optional</em>) – Whether to plot BACKGROUND image (default False)</li>
+<li><strong>plot_bkgsubbed</strong> (<em>bool, optional</em>) – Whether to plot background-SUBTRACTED image (default False)</li>
+<li><strong>scale_bkg</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to BACKGROUND image plot (default “linear”)</li>
+<li><strong>scale_bkgsubbed</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to background-SUBTRACTED image plot (default “linear”)</li>
+<li><strong>write</strong> (<em>bool, optional</em>) – Whether to write the background-SUBTRACTED image to a fits file
+(default True)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>im_file.replace(“.fits”, “_bkgsub.fits”)</cite>)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New HDU (image + header) with the image background-subtracted</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">astropy.io.fits.PrimaryHDU</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p><strong>TO-DO:</strong></p>
+<ul class="simple">
+<li>Allow naming of output plots</li>
+</ul>
+</dd></dl>
+
+<dl class="function">
+<dt id="background.bkgstd">
+<code class="descclassname">background.</code><code class="descname">bkgstd</code><span class="sig-paren">(</span><em>im_data</em>, <em>mask</em><span class="sig-paren">)</span><a class="headerlink" href="#background.bkgstd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the RMS standard deviation of the background in the <cite>im_data</cite>
+image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>im_data</strong> (<em>array_like</em>) – Image data</li>
+<li><strong>mask</strong> (<em>array_like</em>) – Mask to apply to image</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">RMS standard deviation of the background image</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">np.ndarray</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="crop.html" class="btn btn-neutral float-right" title="crop module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="astroalign_mod.html" class="btn btn-neutral float-left" title="astroalign_mod module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

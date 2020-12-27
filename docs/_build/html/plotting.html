@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html4" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>plotting module &mdash; amakihi  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="query_2MASS module" href="query_2MASS.html" />
+    <link rel="prev" title="masking module" href="masking.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">plotting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">amakihi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">amakihi</a> &raquo;</li>
+        
+      <li>plotting module</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/plotting.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-plotting">
+<span id="plotting-module"></span><h1>plotting module<a class="headerlink" href="#module-plotting" title="Permalink to this headline">¶</a></h1>
+<p>Created on Fri Dec 25 21:38:44 2020
+&#64;author: Nicholas Vieira
+&#64;plotting.py</p>
+<p>Utility functions for plotting various quantities/arrays/images. <strong>Sections:</strong></p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">background</span></code> module</li>
+<li><code class="docutils literal notranslate"><span class="pre">masking</span></code> module</li>
+<li><code class="docutils literal notranslate"><span class="pre">imalign</span></code> module</li>
+<li><code class="docutils literal notranslate"><span class="pre">ePSF</span></code> module</li>
+<li><code class="docutils literal notranslate"><span class="pre">hotpants</span></code> module</li>
+<li><code class="docutils literal notranslate"><span class="pre">transient</span></code> module</li>
+</ul>
+<dl class="function">
+<dt id="plotting.plot_image">
+<code class="descclassname">plotting.</code><code class="descname">plot_image</code><span class="sig-paren">(</span><em>im_file</em>, <em>mask_file=None</em>, <em>scale='linear'</em>, <em>cmap='bone'</em>, <em>label=None</em>, <em>title=None</em>, <em>output=None</em>, <em>target_large=None</em>, <em>target_small=None</em>, <em>crosshair_large='black'</em>, <em>crosshair_small='#fe019a'</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot an image of any kind, with lots of options.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>im_file</strong> (<em>str</em>) – Filename for fits image of interest</li>
+<li><strong>mask_file</strong> (<em>str, optional</em>) – Filename for mask fits image (default None)</li>
+<li><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to use for the image (default “linear”)</li>
+<li><strong>cmap</strong> (<em>str, optional</em>) – Colourmap to use for the image (default “bone”)</li>
+<li><strong>label</strong> (<em>str, optional</em>) – Label to apply to the colorbar (default None, in which case will be
+ADU, log(ADU), or asinh(ADU) depending on <cite>scale</cite>)</li>
+<li><strong>title</strong> (<em>str, optional</em>) – Title for the image (default None)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output figure (default
+<cite>im_file.replace(“.fits”, f”_{scale}.png”)</cite>)</li>
+<li><strong>target_large</strong> (<em>array_like, optional</em>) – [ra, dec] for a target at which to place a large crosshair (default
+None)</li>
+<li><strong>target_small</strong> (<em>array_like, optional</em>) – [ra, dec] for a target at which to place a small crosshair (default
+None)</li>
+<li><strong>crosshair_large</strong> (<em>str, optional</em>) – Color for the large crosshair (default “black”)</li>
+<li><strong>crosshair_small</strong> (<em>str, optional</em>) – Color for the small crosshair (default “#fe019a” –&gt; ~ hot pink)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plotting.plot_transient_stamp">
+<code class="descclassname">plotting.</code><code class="descname">plot_transient_stamp</code><span class="sig-paren">(</span><em>im_file</em>, <em>target</em>, <em>size=200.0</em>, <em>cropmode='truncate'</em>, <em>scale=None</em>, <em>cmap='bone'</em>, <em>crosshairs='#fe019a'</em>, <em>label=None</em>, <em>title=None</em>, <em>output=None</em>, <em>toi=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient_stamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a “postage stamp” around a transient source of interest, where the
+input image can be the science, reference, difference, or whatever image.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>im_file</strong> (<em>str</em>) – Filename for fits image of interest</li>
+<li><strong>target</strong> (<em>array_like</em>) – [ra, dec] of transient source of interest</li>
+<li><strong>size</strong> (<em>float, optional</em>) – Pixel size of the box to crop around the transient (default 200.0)</li>
+<li><strong>cropmode</strong> (<em>{“truncate”, “extend”}</em>) – Mode to use for <cite>crop_WCS()</cite> (when cropping to select the transient) if
+the crop goes out of bounds (default “truncate”)</li>
+<li><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to use for the image (default “linear”)</li>
+<li><strong>cmap</strong> (<em>str, optional</em>) – Colourmap to use for the image (default “bone”)</li>
+<li><strong>crosshairs</strong> (<em>str, optional</em>) – Color for the crosshair(s) (default “#fe019a” –&gt; ~ hot pink)</li>
+<li><strong>label</strong> (<em>str, optional</em>) – Label to apply to the colorbar (default None, in which case will be
+ADU, log(ADU), or asinh(ADU) depending on <cite>scale</cite>)</li>
+<li><strong>title</strong> (<em>str, optional</em>) – Title for the image (default None)</li>
+<li><strong>output</strong> (<em>str, optional</em>) – Name for output figure (default
+<cite>im_file.replace(“.fits”, f”_{scale}.png”)</cite>)</li>
+<li><strong>toi</strong> (<em>array_like, optional</em>) – [ra, dec] of some other source of interest such as a candidate host
+galaxy for the transient such that another crosshair is plotted at its
+location (default None)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="plotting.plot_transient">
+<code class="descclassname">plotting.</code><code class="descname">plot_transient</code><span class="sig-paren">(</span><em>sub_file, og_file, ref_file, tbl, pixcoords=False, toi=None, plots=['zoom og', 'zoom ref', 'zoom diff'], sub_scale='asinh', og_scale=None, stampsize=200.0, crosshair_og='#fe019a', crosshair_sub='#5d06e9', title_append=None, plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sub_file</strong> (<em>str</em>) – Difference image fits filename</li>
+<li><strong>og_file</strong> (<em>str</em>) – Original science image fits filename (does not need to be background-
+subtracted)</li>
+<li><strong>ref_file</strong> (<em>str</em>) – Reference image fits filename (does not need to be background-
+subtracted)</li>
+<li><strong>tbl</strong> (<em>str or astropy.table.Table</em>) – Table of candidate transient source(s) found with <cite>transient_detect()</cite>
+or some other tool (can be a filename or the table itself)</li>
+<li><strong>pixcoords</strong> (<em>bool, optional</em>) – Whether to use the <em>pixel</em> coordinates of the transient(s) when
+plotting rather than the WCS coordinates (default False; see notes)</li>
+<li><strong>toi</strong> (<em>array_like, optional</em>) – [ra, dec] of some other source of interest such as a candidate host
+galaxy for the transient such that another crosshair is plotted at its
+location (default None)</li>
+<li><strong>plots</strong> (<em>array_like, optional</em>) – Array indicating which plots to produce, where options are “full”,
+“zoom og”, “zoom ref”, “zoom diff” (default
+[“zoom og”, “zoom ref”, “zoom diff”]; see notes)</li>
+<li><strong>sub_scale</strong> (<em>{“asinh”, “linear”, “log”}, optional</em>) – Scale to use for the difference image (default “asinh”)</li>
+<li><strong>og_scale</strong> (<em>{“asinh”, “linear”, “log”}, optional</em>) – Scale to use for the science/reference images (default “asinh”)</li>
+<li><strong>stampsize</strong> (<em>float, optional</em>) – Pixel size of the box to crop around the transient(s) (default 200.0)</li>
+<li><strong>crosshair_og</strong> (<em>str, optional</em>) – Color for the crosshair in the science/reference image (default
+“#fe019a” –&gt; ~ hot pink)</li>
+<li><strong>crosshair_sub</strong> (<em>str, optional</em>) – Color for the crosshair in the difference image (default
+“#5d06e9” –&gt; ~ purple-blue)</li>
+<li><strong>title_append</strong> (<em>str, optional</em>) – A “title” to include in all plots’ titles <strong>and</strong> the filenames of all
+saved figures (default None)</li>
+<li><strong>plotdir</strong> (<em>str, optional</em>) – Name of directory in which to save plots (default None, in which case
+the stamps will be saved in the directory containing the corresponding
+fits image)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>If <cite>pixcoords == False</cite>, <cite>tbl</cite> must contain <em>at least</em> the columns <em>ra</em> and
+<em>dec</em>. If true, must contain <em>at least</em> the columns <em>xcentroid</em> and
+<em>ycentroid</em>. It is recommended to use the pixel coordinates (i.e. set
+<cite>pixcoords = True</cite>) when the quality of the astrometric solution for the
+science or reference images cannot be assured.</p>
+<p>When indicating which plots to produce via the <cite>plots</cite> argument (an
+<cite>array_like</cite>), the options are:</p>
+<ol class="arabic simple">
+<li>“full” - the full-frame subtracted image</li>
+<li>“zoom og” - postage stamp of the original science image</li>
+<li>“zoom ref” - postage stamp of the original reference image</li>
+<li>“zoom diff” - postage stamp of the subtracted image</li>
+</ol>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="query_2MASS.html" class="btn btn-neutral float-right" title="query_2MASS module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="masking.html" class="btn btn-neutral float-left" title="masking module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicholas Vieira
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
