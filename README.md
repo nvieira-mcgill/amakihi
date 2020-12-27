@@ -24,7 +24,7 @@ Named after the ʻamakihi, a species of Hawaiian honeycreeper.
 
 Documentation
 =============
-WIP.
+Detailed documentation for all modules can be found [here](https://amakihi.readthedocs.io/en/latest/). In the future, example scripts/notebooks will be added.
 
 Installation
 ============
