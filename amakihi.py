@@ -7,15 +7,6 @@ Created on Thu Aug  1 13:58:03 2019
 
 Big module which handles all of the actual image differencing. 
 
-**Essential dependencies:**
-
-- ``astropy`` (used extensively)
-- ``photutils`` (used extensively)
-- ``astrometry.net`` (used extensively, but can be ignored in favour of 
-  source detection with `photutils`' `image_segmentation` instead)
-- ``hotpants`` (essential for image subtraction via `hotpants`, duh)
-
-
 **References:**
 
 [1] Alard, C., & Lupton, R. H. 1998, ApJ, 503, 325
