@@ -173,12 +173,12 @@
 <p>Created on Sat Dec 26 23:33:42 2020
 &#64;author: Nicholas Vieira
 &#64;transient.py</p>
-<p>Transient detection and converting candidate transients to “triplets” for
-further vetting with bogus-real adversarial artificial intelligence (braai).</p>
-<p><strong>TO-DO:</strong></p>
-<ul class="simple">
-<li>Proper docstrings for <cite>transient_detect()</cite>, <cite>transient_triplets()</cite></li>
-</ul>
+<p>Transient detection, vetting, and converting candidate transients to
+“triplets”. This represents the final step in an image differencing and
+transient detection pipeline. You can then use your favourite machine learning
+algorithm to further vet the candidates. I use bogus-real adversarial
+artificial intelligence <code class="docutils literal notranslate"><span class="pre">braai</span></code> (<a class="reference external" href="https://github.com/dmitryduev/braai">https://github.com/dmitryduev/braai</a>), which
+is an example of a “real-bogus” classifier.</p>
 <dl class="function">
 <dt id="transient.transient_detect">
 <code class="descclassname">transient.</code><code class="descname">transient_detect</code><span class="sig-paren">(</span><em>sub_file, og_file, ref_file, mask_file=None, thresh_sigma=5.0, pixelmin=20, dipole_width=2.0, dipole_fratio=5.0, etamax=1.8, areamax=300.0, nsource_max=50, toi=None, toi_sep_min=None, toi_sep_max=None, write=True, output=None, plot_distributions=False, plot_rejections=False, plots=['zoom og', 'zoom ref', 'zoom diff'], pixcoords=False, sub_scale=None, og_scale=None, stampsize=200.0, crosshair_og='#fe019a', crosshair_sub='#5d06e9', title_append=None, plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#transient.transient_detect" title="Permalink to this definition">¶</a></dt>
@@ -252,9 +252,9 @@ interest, etc.)</p>
 </tbody>
 </table>
 <p class="rubric">Notes</p>
-<p>Looks for sources with flux &gt; <cite>thresh_sigma`*std, where std is the standard
+<p>Finds sources with flux &gt; <cite>thresh_sigma</cite> * std, where std is the standard
 deviation of the good pixels in the subtracted image. Sources must also be
-made up of at least `pixelmin</cite> pixels. From these, selects sources within
+made up of at least <cite>pixelmin</cite> pixels. From these, selects sources within
 some elongation limit <cite>etamax</cite> to try to prevent obvious residuals from
 being detected as sources. Also vets according to some maximum allowed
 pixel area <cite>areamax</cite>. Finally, if more than <cite>nsource_max</cite> sourcs remain,
@@ -342,10 +342,6 @@ science or reference images cannot be assured.</p>
 science, and reference images, builds a triplet: three “postage stamps”
 around the candidate showing the science image, reference image, and
 difference image. Optionally writes the triplet to a .npy file.</p>
-<p>Output: a numpy array with shape (N, 3, size, size), where N is the number
-of rows in the input table (i.e., no. of candidate transients) and the 3
-sub-arrays represent cropped sections of the science image, reference
-image, and difference image</p>
 </dd></dl>
 
 <dl class="function">

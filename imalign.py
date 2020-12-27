@@ -1089,9 +1089,6 @@ def image_align_morph(science_file, template_file, mask_file=None,
                       write=True, output_im=None, output_mask=None):
     """Align a science image to a template image using `image_registration`, 
     which relies on image morphology rather than cross-matching control points.
-    
-    WIP: WCS header of aligned image doesn't always seem correct for alignment
-         with non-CFHT templates
          
     Input:
         - science image (source) to register

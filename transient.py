@@ -5,13 +5,12 @@ Created on Sat Dec 26 23:33:42 2020
 @author: Nicholas Vieira
 @transient.py
 
-Transient detection and converting candidate transients to "triplets" for 
-further vetting with bogus-real adversarial artificial intelligence (braai).
-
-**TO-DO:**
-
-- Proper docstrings for `transient_detect()`, `transient_triplets()`
-
+Transient detection, vetting, and converting candidate transients to 
+"triplets". This represents the final step in an image differencing and 
+transient detection pipeline. You can then use your favourite machine learning
+algorithm to further vet the candidates. I use bogus-real adversarial 
+artificial intelligence ``braai`` (https://github.com/dmitryduev/braai), which
+is an example of a "real-bogus" classifier.
 """
 
 # misc
@@ -143,7 +142,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
 
     Notes
     -----    
-    Looks for sources with flux > `thresh_sigma`*std, where std is the standard 
+    Finds sources with flux > `thresh_sigma` * std, where std is the standard 
     deviation of the good pixels in the subtracted image. Sources must also be 
     made up of at least `pixelmin` pixels. From these, selects sources within 
     some elongation limit `etamax` to try to prevent obvious residuals from 
@@ -449,11 +448,6 @@ def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False,
     science, and reference images, builds a triplet: three "postage stamps"
     around the candidate showing the science image, reference image, and 
     difference image. Optionally writes the triplet to a .npy file.
-    
-    Output: a numpy array with shape (N, 3, size, size), where N is the number 
-    of rows in the input table (i.e., no. of candidate transients) and the 3 
-    sub-arrays represent cropped sections of the science image, reference 
-    image, and difference image
     """
 
     # check if table is a filename or pre-loaded table
