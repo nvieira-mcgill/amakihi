@@ -38,8 +38,7 @@ from astropy import wcs
 # amakihi modules for querying
 import query_PS1
 import query_DECaLS
-try: import query_CFIS # bandaid fix because ReadTheDocs can't install lxml
-except: pass 
+import query_CFIS 
 import query_2MASS
 
 # disable annoying warnings

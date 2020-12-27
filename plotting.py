@@ -169,7 +169,7 @@ def plot_image(im_file, mask_file=None,
 
 
 def plot_transient_stamp(im_file, target, size=200.0, cropmode="truncate", 
-                         scale=None, cmap="bone", crosshairs="#fe019a",
+                         scale="asinh", cmap="bone", crosshairs="#fe019a",
                          label=None, title=None, 
                          output=None, 
                          toi=None):
@@ -301,11 +301,12 @@ def plot_transient(sub_file, og_file, ref_file, tbl,
                    pixcoords=False,
                    toi=None, 
                    plots=["zoom og", "zoom ref", "zoom diff"], 
-                   sub_scale="asinh", og_scale=None, 
+                   sub_scale="asinh", og_scale="asinh", 
                    stampsize=200.0, 
                    crosshair_og="#fe019a", crosshair_sub="#5d06e9", 
                    title_append=None, plotdir=None):
-    """
+    """Plot a candidate transient source, with tons of options. 
+    
     Arguments
     ---------
     sub_file : str
@@ -329,8 +330,7 @@ def plot_transient(sub_file, og_file, ref_file, tbl,
     plots : array_like, optional
         Array indicating which plots to produce, where options are "full", 
         "zoom og", "zoom ref", "zoom diff" (default 
-        ["zoom og", "zoom ref", "zoom diff"]; see notes)
-    
+        ["zoom og", "zoom ref", "zoom diff"]; see notes)    
     sub_scale : {"asinh", "linear", "log"}, optional
         Scale to use for the difference image (default "asinh")
     og_scale : {"asinh", "linear", "log"}, optional
@@ -434,7 +434,8 @@ def plot_transient(sub_file, og_file, ref_file, tbl,
             plot_image(im_file=sub_file, 
                        scale=sub_scale, 
                        cmap="coolwarm", 
-                       label="", title=title, 
+                       label="", 
+                       title=title, 
                        output=full_output, 
                        target_large=toi,
                        target_small=[targets_sci[0][n], targets_sci[1][n]],
@@ -1146,7 +1147,7 @@ def __plot_rejected(sub_file,
     plt.close()
 
 
-def __plot_distributions(og_file, tbl, etamax, areamax, title):
+def __plot_distributions(og_file, tbl, etamax, areamax, title_append):
     """Produces informative plots showing the distributions of elongation
     and area (size) for candidates identified by `transient_detect()`.
     
@@ -1157,8 +1158,11 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title):
     tbl : astropy.table.Table
         Table of all candidate sources, with no vetting performed yet
     etamax : float
+        *Maximum* elongation imposed during vetting
     areamax : float
-    title : str
+        *Maximum* pixel area imposed during vetting
+    title_append : str
+        A "title" to include in the plot's title **and** filename
     """
     
     ## candidates ELONGATION distribution as a histogram
@@ -1191,9 +1195,9 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title):
              fontsize=20)
     plt.legend(loc=[1.03, 0.32], fancybox=True, fontsize=13)
     
-    if title:
-        plt.title(f"{title}: elongation distribution", fontsize=13)
-        plt.savefig(og_file.replace(".fits", f"_{title}_elongs.png"), 
+    if title_append:
+        plt.title(f"{title_append}: elongation distribution", fontsize=13)
+        plt.savefig(og_file.replace(".fits", f"_{title_append}_elongs.png"), 
                     bbox_inches="tight")
     else:
         plt.title("elongation distribution", fontsize=13)
@@ -1229,9 +1233,9 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title):
              fontsize=13, bbox=dict(facecolor="white", alpha=0.5))
     plt.legend(loc=[1.03, 0.32], fancybox=True, fontsize=13)
     
-    if title:
-        plt.title(f"{title}: area distribution", fontsize=13)
-        plt.savefig(og_file.replace(".fits", f"_{title}_areas.png"), 
+    if title_append:
+        plt.title(f"{title_append}: area distribution", fontsize=13)
+        plt.savefig(og_file.replace(".fits", f"_{title_append}_areas.png"), 
                     bbox_inches="tight")
     else:
         plt.title("area distribution")
@@ -1280,10 +1284,10 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title):
         
     plt.legend(loc=[1.03,0.62], fancybox=True, fontsize=13) # legend 
 
-    if title:
-        plt.title(f"{title}: elongations and areas", fontsize=13)
+    if title_append:
+        plt.title(f"{title_append}: elongations and areas", fontsize=13)
         plt.savefig(og_file.replace(".fits", 
-                                    f"_{title}_elongs_areas.png"), 
+                                    f"_{title_append}_elongs_areas.png"), 
                     bbox_inches="tight")
     else:
         plt.title("elongations and areas", fontsize=13)
@@ -1293,7 +1297,7 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title):
 
 
 def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,  
-                   wide=True, cmap="bone", title=None, plotdir=None):
+                   wide=True, cmap="bone", title_append=None, plotdir=None):
     """Plot a single [science image, reference image, difference image] 
     triplet.
     
@@ -1317,7 +1321,7 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
         rows, 1 column (`wide == False`) (default True)
     cmap : str, optional
         Colormap to apply to all images in the triplet (default "bone")
-    title : str, optional
+    title_append : str, optional
         A "title" to include in the plot's title **and** filename (default 
         None)
     plotdir : str, optional
@@ -1388,12 +1392,13 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
         ax3.set_xlabel("RA (J2000)", fontsize=16)
     
     ## titles, output filenames
-    if title:
+    if title_append:
         if wide: # title above the middle image 
-            ax2.set_title(title, fontsize=15)
+            ax2.set_title(title_append, fontsize=15)
         else: # title above the topmost image
-            ax.set_title(title, fontsize=15)
-        output = og_file.replace(".fits", f"_{title}_candidate{nstr}.png")
+            ax.set_title(title_append, fontsize=15)
+        output = og_file.replace(".fits", 
+                                 f"_{title_append}_candidate{nstr}.png")
     else:
         output = og_file.replace(".fits", f"_candidate{nstr}.png")   
         

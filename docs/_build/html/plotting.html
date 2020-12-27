@@ -216,7 +216,7 @@ None)</li>
 
 <dl class="function">
 <dt id="plotting.plot_transient_stamp">
-<code class="descclassname">plotting.</code><code class="descname">plot_transient_stamp</code><span class="sig-paren">(</span><em>im_file</em>, <em>target</em>, <em>size=200.0</em>, <em>cropmode='truncate'</em>, <em>scale=None</em>, <em>cmap='bone'</em>, <em>crosshairs='#fe019a'</em>, <em>label=None</em>, <em>title=None</em>, <em>output=None</em>, <em>toi=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient_stamp" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">plotting.</code><code class="descname">plot_transient_stamp</code><span class="sig-paren">(</span><em>im_file</em>, <em>target</em>, <em>size=200.0</em>, <em>cropmode='truncate'</em>, <em>scale='asinh'</em>, <em>cmap='bone'</em>, <em>crosshairs='#fe019a'</em>, <em>label=None</em>, <em>title=None</em>, <em>output=None</em>, <em>toi=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient_stamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot a “postage stamp” around a transient source of interest, where the
 input image can be the science, reference, difference, or whatever image.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -249,8 +249,9 @@ location (default None)</li>
 
 <dl class="function">
 <dt id="plotting.plot_transient">
-<code class="descclassname">plotting.</code><code class="descname">plot_transient</code><span class="sig-paren">(</span><em>sub_file, og_file, ref_file, tbl, pixcoords=False, toi=None, plots=['zoom og', 'zoom ref', 'zoom diff'], sub_scale='asinh', og_scale=None, stampsize=200.0, crosshair_og='#fe019a', crosshair_sub='#5d06e9', title_append=None, plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient" title="Permalink to this definition">¶</a></dt>
-<dd><table class="docutils field-list" frame="void" rules="none">
+<code class="descclassname">plotting.</code><code class="descname">plot_transient</code><span class="sig-paren">(</span><em>sub_file, og_file, ref_file, tbl, pixcoords=False, toi=None, plots=['zoom og', 'zoom ref', 'zoom diff'], sub_scale='asinh', og_scale='asinh', stampsize=200.0, crosshair_og='#fe019a', crosshair_sub='#5d06e9', title_append=None, plotdir=None</em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_transient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot a candidate transient source, with tons of options.</p>
+<table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">

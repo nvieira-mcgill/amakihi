@@ -42,7 +42,7 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 def transient_detect(sub_file, og_file, ref_file, mask_file=None, 
                      thresh_sigma=5.0, pixelmin=20, 
                      dipole_width=2.0, dipole_fratio=5.0,
-                     etamax=1.8, areamax=300, nsource_max=50, 
+                     etamax=1.8, areamax=300.0, nsource_max=50, 
                      toi=None, toi_sep_min=None, toi_sep_max=None,
                      write=True, output=None, 
                      plot_distributions=False,
@@ -51,80 +51,123 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                      pixcoords=False,
                      sub_scale=None, og_scale=None, stampsize=200.0, 
                      crosshair_og="#fe019a", crosshair_sub="#5d06e9",
-                     title=None, plotdir=None):
-    """        
-    Inputs:
-        general:
-        - subtracted image file
-        - original science image file (can be background-subtracted or not)
-        - original reference image file (can be background-subtracted or not)
-        - a mask file (optional; default None)
-        
-        source detection and candidate rejection:
-        - sigma threshold for source detection with image segmentation 
-          (optional; default 3.0)
-        - *minimum* number of isophote pixels, i.e. area (optional; default 20)
-        - *maximum* allowed separation for any potential dipoles to be 
-          considered real sources (optional; default 2.0"; setting this to None
-          sets no maximum) 
-        - *maximum* allowed flux ratio for dipoles (optional; default 5.0)
-        - *maximum* allowed elongation for sources found by image segmentation 
-          (optional; default 1.8; setting this to None sets no maximum)
-        - *maximum* allowed pixel area for sources (optional; default 300)
-        - *maximum* allowed total number of transients (optional; default 50; 
-          setting this to None sets no maximum)
-        - [ra,dec] for some target of interest (e.g., a candidate host galaxy)
-          such that the distance to this target will be computed for every 
-          candidate transient (optional; default None)
-        - *minimum* separation between the target of interest and the transient
-          (optional; default None; only relevant if TOI is supplied)
-        - *maximum* separation between the target of interest and the transient 
-          (optional; default None, only relevant if TOI is supplied)
-          
-        writing and plotting:
-        - whether to write the source table (optional; default True)
-        - name for the output source table (optional; default set below; only 
-          relevant if write=True)
-        - whether to plot the histograms of elongation, area, and a scatter 
-          plot of elongation versus area (optional; default False)
-        - whether to plot an image showing all objects in the difference image
-          which did not pass candidate vetting and those which did, with 
-          different markers indicating the reason for rejection (optional; 
-          default False)
-        - an array of which plots to produce, where valid options are:
-              (1) "full" - the full-frame subtracted image
-              (2) "zoom og" - postage stamp of the original science image 
-              (3) "zoom ref" - postage stamp of the original reference image
-              (4) "zoom diff" - postage stamp of the subtracted image 
-              (optional; default is ["zoom og", "zoom ref", "zoom diff"]) 
-        
-        
-        the following are relevant only if plots are requested:
-        - whether to use the pixel coord
-        - scale to apply to the difference images (optional; default "asinh"; 
-          options are "linear", "log", "asinh")
-        - scale to apply to the science/reference images (optional; default
-          "asinh"; options are "linear", "log", "asinh")
-        - size of the transient stamp in pixels (optional; default 200.0)
-        - colour for crosshair on transient in science/ref images (optional; 
-          default ~hot pink)
-        - colour for crosshair on transient in difference images (optional;
-          default ~purple-blue)     
-        - a title to include in the titles of all plots AND filenames of all 
-          plots, except the rejection plot (optional; default None)
-        - name for the directory in which to store all plots (optional; 
-          default set below)
-    
-    Looks for sources with flux > sigma*std, where std is the standard 
+                     title_append=None, plotdir=None):
+    """
+
+    Arguments
+    ---------
+    sub_file : str
+        Difference image fits filename
+    og_file : str
+        Original science image fits filename (does not need to be background-
+        subtracted)
+    ref_file : str
+        Reference image fits filename (does not need to be background-
+        subtracted)
+    mask_file : str, optional
+        Mask image fits filename (default None)
+    thresh_sigma : float, optional
+        Sigma threshold for source detection with image segmentation (default
+        5.0)
+    pixelmin : float, optional
+        *Minimum* pixel area of an isophote to be considered a potential 
+        transient (default 20)   
+    dipole_width : float, optional
+        *Maximum* allowed width (in arcsec) for a source to be considered a 
+        potential dipole residual from image differencing (default 2.0)
+    dipole_fratio : float, optional
+        *Maximum* allowed ratio of brightness between the brighter and dimmer
+        of the two "poles" for a source to be a considered a potential dipole
+        residual from image differencing (default 5.0)
+    etamax : float, optional
+        *Maximum* allowed elongation for an isophote to be considered a 
+        potential transient (default 1.8)
+    areamax : float, optional
+        *Maximum* allowed area (in square pixels) for an isophote to be 
+        considered a potential transient (default 300.0) 
+    nsource_max : int, optional
+        If more than `nsource_max` sources pass all vetting, the image 
+        registration was probably of poor quality, and so the function exits 
+        (default 50)
+    toi : array_like, optional
+        [ra, dec] for some target of interest (e.g. a candidate host galaxy) 
+        such that only transients within some distance of this target are 
+        considered (see `toi_sep_min`, `toi_sep_max`; default None)
+    toi_sep_min, toi_sep_max : float, optional
+        *Minimum* and *maximum* allowed separation from the `toi` for a source
+        to be considered valid (default None)
+    write : bool, optional
+        Whether to write the table of candidate sources (default True)
+    output : str, optional
+        Name for output table (default 
+        `og_file.replace(".fits", "_candidates.fits")`) 
+    plot_distributions : bool, optional
+        Whether to plot informative distributions of the elongation and area of
+        the candidate transients (default False)
+    plot_rejections : bool, optional
+        Whether to plot a version of the difference image where accepted/
+        rejected sources are labelled with markers (default False)
+    plots : array_like, optional
+        Array indicating which plots to produce, where options are "full", 
+        "zoom og", "zoom ref", "zoom diff" (default 
+        ["zoom og", "zoom ref", "zoom diff"], see notes)         
+    pixcoords : bool, optional
+        Whether to use the *pixel* coordinates of the transient(s) when 
+        plotting rather than the WCS coordinates (default False)    
+    sub_scale : {"asinh", "linear", "log"}, optional
+        Scale to use for the difference image (default "asinh")
+    og_scale : {"asinh", "linear", "log"}, optional
+        Scale to use for the science/reference images (default "asinh")
+    stampsize : float, optional
+        Pixel size of the box to crop around the transient(s) (default 200.0)
+    crosshair_og : str, optional
+        Color for the crosshair in the science/reference image (default 
+        "#fe019a" --> ~ hot pink)   
+    crosshair_sub : str, optional
+        Color for the crosshair in the difference image (default 
+        "#5d06e9" --> ~ purple-blue) 
+    title_append : str, optional
+        A "title" to include in all plots' titles **and** the filenames of all
+        saved figures (default None)
+    plotdir : str, optional
+        Name of directory in which to save plots (default None, in which case
+        the stamps will be saved in the directory containing the corresponding
+        fits image)
+
+    Returns
+    -------
+    astropy.table.Table
+        An astropy table containing vetted sources with their properties 
+        (coordinates, area, elongation, separation from some target of 
+        interest, etc.)
+
+    Notes
+    -----    
+    Looks for sources with flux > `thresh_sigma`*std, where std is the standard 
     deviation of the good pixels in the subtracted image. Sources must also be 
-    made up of at least pixelmin pixels. From these, selects sources below some 
-    elongation limit to try to prevent obvious residuals from being detected as 
-    sources. For each candidate transient source, optionally plots the full 
-    subtracted image and "postage stamps" of the transient on the original 
-    science image, reference image and/or subtracted image. 
+    made up of at least `pixelmin` pixels. From these, selects sources within 
+    some elongation limit `etamax` to try to prevent obvious residuals from 
+    being detected as sources. Also vets according to some maximum allowed 
+    pixel area `areamax`. Finally, if more than `nsource_max` sourcs remain, 
+    the image registration was probably faulty, and so the function terminates.
     
-    Output: a table of sources with their properties (coordinates, area, 
-    elongation, separation from a target of interest (if relevant), etc.)
+    Optionally plots informative figures showing the elongation distribution
+    and area distribution of all sources (included those which are rejected).
+    
+    For each candidate transient source, also optionally plots the full 
+    subtracted image and "postage stamps" of the transient on the original 
+    science image, reference image and/or subtracted image. When indicating 
+    which plots to produce via the `plots` argument (an `array_like`), the 
+    options are: 
+        
+    1. "full" - the full-frame subtracted image
+    2. "zoom og" - postage stamp of the original science image 
+    3. "zoom ref" - postage stamp of the original reference image
+    4. "zoom diff" - postage stamp of the subtracted image 
+
+    If performing any of this plotting, it is recommended to use the pixel 
+    coordinates (i.e. set `pixcoords = True`) when the quality of the 
+    astrometric solution for the science or reference images cannot be assured.
     """
     
     data = fits.getdata(sub_file) # subfile data
@@ -174,7 +217,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     if plot_distributions:
         __plot_distributions(og_file=og_file, tbl=tbl, 
                              etamax=etamax, areamax=areamax, 
-                             title=title)
+                             title_append=title_append)
 
     
     ### CANDIDATE VETTING #####################################################
@@ -269,7 +312,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         if len(tbl) > nsource_max:
            print(f"\nSourceCatalog contains {len(tbl)} sources across the "+
                  f"entire image, which is above the limit of {nsource_max}. "+
-                 "The subtraction may have large image_registration errors. "+
+                 "The subtraction may have large image registration errors. "+
                  "Exiting.")
            return    
 
@@ -326,49 +369,81 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                        sub_scale=sub_scale, og_scale=og_scale, 
                        stampsize=stampsize, 
                        crosshair_og=crosshair_og, crosshair_sub=crosshair_sub, 
-                       title_append=title, plotdir=plotdir)    
+                       title_append=title_append, plotdir=plotdir)    
     return tbl
 
 
 def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False, 
                        size=200, 
                        cropmode="extend", write=True, output=None,
-                       plot=False, wide=True, cmap="bone", title=None, 
-                       plotdir=None):
-    """    
-    Inputs:
-        - difference image file
-        - original science image file (can be background-subtracted or not)
-        - original reference image file (can be background-subtracted or not)
-        - a table of candidate transient source(s) found with 
-          transient_detect() or some other tool (can be the name of a table 
-          file or the table itself)
-          note: if pixcoords=False, the table must have at least the columns 
-          "ra" and "dec"; if pixcoords=True, the table must have at least the 
-          columns "xcentroid" and "ycentroid"
-        - whether to use the pixel coordinates of the transients when plotting 
-          rather than the ra, dec (optional; default False; recommended to use
-          in cases where it is not clear that the WCS of the science and 
-          reference images matches exactly)         
-        - the size of each 2D array in the triplet, i.e. the size of the 
-          stamp to obtain around the transient(s) (optional; default 200 pix)
-        - mode to use for crop_WCS (optional; default "extend"; options are
-          "truncate" and "extend")
-        - whether to write the produced triplet(s) to a .npy file (optional; 
-          default True)
-        - name for output .npy file (or some other file) (optional; default 
-          set below)
-        - whether to plot all of the triplets (optional; default False)
+                       plot=False, wide=True, cmap="bone", 
+                       title_append=None, plotdir=None):
+    """From some detected and preliminarily vetted transients, produce and 
+    optionally write the final set of triplets.
+    
+    Arguments
+    ---------
+    sub_file : str
+        Difference image fits filename
+    og_file : str
+        Original science image fits filename (does not need to be background-
+        subtracted)
+    ref_file : str
+        Reference image fits filename (does not need to be background-
+        subtracted)   
+    tbl : str or astropy.table.Table
+        Table of candidate transient source(s) found with `transient_detect()` 
+        or some other tool (can be a filename or the table itself)
+    pixcoords : bool, optional
+        Whether to use the *pixel* coordinates of the transient(s) when 
+        plotting rather than the WCS coordinates (default False; see notes)
+    size : float, optional
+        Pixel size of the box to crop around the transient(s) (default 200.0)
+    cropmode : {"extend", "truncate"}, optional
+        Mode to apply when cropping around the transient (default "extend")
+    write : bool, optional
+        Whether to write the produced triplets to a .npy file (default True)
+    output : str, optional
+        Name for output .npy file (default
+        `og_file.replace(".fits", "_candidates_triplets.npy")`)
+    plot : bool, optional
+        Whether to plot **all** of the triplets (default False)
+    wide : bool, optional
+        Whether to plot each triplet as 1 row, 3 columns (`wide == True`) or 3
+        rows, 1 column (`wide == False`) (default True)
+    cmap : str, optional
+        Colormap to apply to all images in the triplets (default "bone")
+    title_append : str, optional
+        A "title" to include in all plots' titles **and** filenames (default 
+        None)
+    plotdir : str, optional
+        Directory in which to save the plots (default is the directory of 
+        `og_file`)
+    
+    Returns
+    -------
+    np.ndarray
+        Array with shape `(N, 3, size, size)`, where `N` is the number of rows 
+        in the input `tbl` (i.e., number of candidate transients), `size` is 
+        the dimension of the box used when cropping around candidates, and the 
+        3 sub-arrays represent cropped sections of the science, reference, 
+        and difference image, in that order
+    
+    Notes
+    ------
+    If `pixcoords == False`, `tbl` must contain *at least* the columns *ra* and
+    *dec*. If true, must contain *at least* the columns *xcentroid* and 
+    *ycentroid*. It is recommended to use the pixel coordinates (i.e. set 
+    `pixcoords = True`) when the quality of the astrometric solution for the 
+    science or reference images cannot be assured.
+    
+    When indicating which plots to produce via the `plots` argument (an 
+    `array_like`), the options are: 
         
-        only relevant if plot=True:
-        - whether to plot the triplets as 3 columns, 1 row (horizontally wide)
-          or 3 rows, 1 column (vertically tall) (optional; default wide=True)
-        - colourmap to apply to all images in the triplet (optional; default 
-          "bone")
-        - a title to include in all plots AND to append to all filenames 
-          (optional; default None)
-        - name for the directory in which to store all plots (optional; 
-          default set below)
+    1. "full" - the full-frame subtracted image
+    2. "zoom og" - postage stamp of the original science image 
+    3. "zoom ref" - postage stamp of the original reference image
+    4. "zoom diff" - postage stamp of the subtracted image 
     
     From a table of candidate transients and the corresponding difference, 
     science, and reference images, builds a triplet: three "postage stamps"
@@ -426,7 +501,8 @@ def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False,
             __plot_triplet(og_file=og_file, 
                            sub_hdu=sub_hdu, og_hdu=og_hdu, ref_hdu=ref_hdu, 
                            n=n, ntargets=ntargets, 
-                           wide=wide, cmap=cmap, title=title, plotdir=plotdir)
+                           wide=wide, cmap=cmap, 
+                           title_append=title_append, plotdir=plotdir)
 
     ## build the final triplet stack, write it (optional)
     triplets = np.stack(triplets) # (3, size, size) --> (N, 3, size, size)   

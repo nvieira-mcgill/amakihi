@@ -36,9 +36,13 @@ Currently, needs to be installed directly from github. May be install-able with 
 - ``numpy``
 - ``scipy``
 - ``matplotlib``
+- [``lxml``](https://lxml.de/) (but only for `query_CFIS`)
 - [``scikit-image``](https://scikit-image.org/)
 - [``astropy``](https://docs.astropy.org/en/stable/)
 - [``photutils``](https://photutils.readthedocs.io/en/stable/)
+
+**Non-Python:**
+
 - [``astrometry.net``](http://astrometry.net/use.html) (can however be ignored in favour of source detection with the image segmentation methods of ``photutils``' instead)
 - [``hotpants``](https://github.com/acbecker/hotpants)
 
