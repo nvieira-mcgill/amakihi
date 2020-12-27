@@ -5,10 +5,7 @@ Created on Thu Aug  1 13:58:03 2019
 @author: Nicholas Vieira
 @amakihi.py 
 
-**Sections:**
-
-- Image differencing with hotpants (https://github.com/acbecker/hotpants)
-
+Big module which handles all of the actual image differencing. 
 
 **Essential dependencies:**
 
@@ -19,10 +16,10 @@ Created on Thu Aug  1 13:58:03 2019
 - ``hotpants`` (essential for image subtraction via `hotpants`, duh)
 
 
-**TO-DO:**
+**References:**
 
-- Proper docstrings for `hotpants()`
-- Move `hotpants` stuff to its own script?
+[1] Alard, C., & Lupton, R. H. 1998, ApJ, 503, 325
+    https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract
 
 """
 
@@ -264,7 +261,7 @@ def param_estimate(science_file, template_file, mask_file=None,
     """Get a rough estimate for the parameters of the Gaussian basis kernel 
     which should be used by `hotpants` given some input science and template 
     images, and whether to convolve the science or template image during 
-    differencing.
+    differencing. **However, see notes**.
     
     Arguments
     ---------
@@ -281,18 +278,20 @@ def param_estimate(science_file, template_file, mask_file=None,
         3.0)
     pixelmin : float, optional
         *Minimum* pixel area of an isophote to be considered a good source for 
-        building the ePSF (default 20; passed to `build_ePSF()` only if needed)
+        building the ePSF (default 20; passed to `build_ePSF_imsegm()` only 
+        if needed)
     etamax : float, optional
         *Maximum* allowed elongation for an isophote to be considered a good 
-        source for building the ePSF (default 1.4; passed to `build_ePSF()` 
-        only if needed)
+        source for building the ePSF (default 1.4; passed to 
+        `build_ePSF_imsegm()` only if needed)
     areamax : float, optional
         *Maximum* allowed area (in square pixels) for an isophote to be 
         considered a good source for building the ePSF (default 400.0, passed 
-        to `build_ePSF()` only if needed)
+        to `build_ePSF_imsegm()` only if needed)
     cutout : int, optional
         Cutout size around each star in pixels (default 35; must be **odd**; 
-        rounded **down** if even; passed to `build_ePSF()` only if needed)
+        rounded **down** if even; passed to `build_ePSF_imsegm()` only if 
+        needed)
     verbose : bool, optional
         Whether to be verbose (default True)
     
@@ -307,10 +306,8 @@ def param_estimate(science_file, template_file, mask_file=None,
         
     Notes
     -----
-    **TO-DO:**
-    
-    - Fix: Not stable right now; messes up when science and reference have 
-      very similar PSFs (which is often the case)
+    **Not stable right now.** Messes up when science and reference have very 
+    similar PSFs (which is often the case and in fact what we want).
     
     """
     
@@ -393,126 +390,156 @@ def hotpants(science_file, template_file,
              v=1, log=None,
              plot=True, plotname=None, scale="linear", 
              target_large=None, target_small=None,
-             thresh_sigma=3.0, pixelmin=20, etamax=1.4, areamax=500):
-    """       
-    hotpants args OR hotpants-related: 
-        basic inputs:
-        - the science image 
-        - the template to match to
-        - a mask of which pixels to ignore in the science image (optional; 
-          default None)
-        - a mask of which pixels to ignore in the template image (optional; 
-          default None)
-        - a text file containing the substamps 'x y' (optional; default None)
-        - whether to compare the science and template ePSFS to estimate the 
-          optimal Gaussian terms, convolution kernel half width, substamp FWHM 
-          to extract around stars, and whether to convolve the science image or 
-          template (optional; default False; overrides the following parameters 
-          if True: ng, rkernel, convi, convt)
-        
-        ADU limits:
-        - the upper (u) and lower (l) ADU limits for the image (i) and 
-          template (t) (optional; defaults set below by lsigma/hsigma)
-        - no. of std. devs away from background at which to place the LOWER 
-          ADU limit (optional; default 5.0)
-        - no. of std. devs away from background at which to place the UPPER
-          ADU limit (optional; default 5.0)
-        
-        good pixels:
-        - good pixels coordinates (optional; default is full image)
-            format: xmin xmax ymin ymax 
-            e.g. gd="150 1000 200 800" 
-        
-        gain, noise:
-        - the gain (g) and readnoise (r) for the image (i) and template (t) 
-          (optional; default is to extract from headers or set gain=1, noise=0
-          if no relevant headers are found)
-        
-        Gaussian terms:
-        - gaussian terms (optional; default set below)
-            format: ngauss degree0 sigma0 ... degreeN sigmaN, N=ngauss-1
-            e.g. 3 6.0 0.7 4.0 1.5 2.0 3.0 (default)
-            where ngauss is the no. of gaussians which compose the kernel, 
-            degreeI is the degree of the Ith polynomial, and sigmaI is the 
-            width of the Ith gaussian
-        
-        convolution kernel:
-        - convolution kernel FWHM (optional; default is 10.0)
-        
-        regions, stamps and substamps:
-        - no. of regions in x direction (optional; default 1)
-        - no. of regions in y direction (optional; default 1)
-        - no. of stamps in each region in x direction (optional; default 10)
-        - no. of stamps in each region in y direction (optional; default 10)
-        - no. of centroids to extract from each stamp (optional; default 3)
-        - half width of substamp around centroids (optional; default is 2.5*
-          rkernel = 25.0 for default rkernel) 
-        
-        sigma clipping, normalization:
-        - sigma threshold for sigma clipping (optional; default 3.0)
-        - normalization term (optional; default 'i' for image; options are 
-          'i' for image, 't' for template, 'u' for unconvolved image/template)
-        
-        convolution of image or template:
-        - force convolve the image (optional; default False)
-        - force convolve the template (optional; default False)
-        
-        background/kernel variation
-        - spatial background variation order (optional; default 0)
-        - spatial kernel variation order (optional; default 1)
-        
-        outputs:
-        - name for the output subtracted image (optional; default set below)
-        - whether to output the bad pixel mask (optional; default False)
-        - whether to output the convolved image (optional; default False)
-        - whether to output the kernel image (optional; default False)
-        - whether to output the noise image (optional; default False)
-        - whether to output the noise *scaled difference* image (optional; 
-          default False)
-        - name for the output bad pixel mask (optional; default set below; only
-          relevant if mask_write=True)
-        - name for the output convolved image (optional; default set below; 
-          only relevant if conv_write=True)
-        - name for the output kernel (optional; default set below; only 
-          relevant if kern_write=True)
-        - name for the output noise image (optional; default set below; only 
-          relevant if noise_write=True)
-        - name for the output noise *scaled difference* image (optional; 
-          default set below, only relevant if noise_scale_write=True)
-        
-        verbosity:
-        - verbosity (optional; default 1; options are 0 - 2 where 0 is least
-          verbose)
-        
-        log file:
-        - a name for a logfile to store STDERR (optional; default None)
-        
-    other args:
-        - plot the subtracted image data (optional; default False)
-        - name for the plot (optional; default set below)
-        - scale to apply to the plot (optional; default None (linear); 
-          options are "linear, "log", "asinh")
-        - target Ra, Dec at which to place crosshair (optional, default None)
-        - target Ra, Dec at which to place smaller crosshair (optional, default 
-          None)
-        
-    args for build_ePSF (iff param_estimate = True):
-        - sigma threshold for source detection with image segmentation 
-          (optional; default 5.0)
-        - *minimum* number of isophotal pixels (optional; default 20)
-        - *maximum* allowed elongation for sources found by image segmentation 
-          (optional; default 1.8)
-        - *maximum* allowed area for sources found by image segmentation 
-          (optional; default 500 pix**2)
+             thresh_sigma=3.0, pixelmin=20, etamax=1.4, areamax=500.0):
+    """Wrapper for the hotpants image differencing software [1]_, adapted
+    primarily for use with the Canada-France-Hawaii Telescope (CFHT) MegaCam
+    instrument.
     
-    A wrapper for hotpants. 
+    Arguments
+    ---------
+    science_file, template_file : str
+        Science image and template image fits files
+    sci_mask_file, tmp_mask_file : str, optional
+        Masks of pixels to ignore in the science and template images (fits 
+        files; default None)
+    substamps_file : str, optional
+        Text file containing the locations of substamps (default None)
+    param_estimate : bool, optional
+        Whether to try and estimate the optimal parameters of the Gaussian 
+        basis kernel and whether to convolve the template or science image 
+        (default False; **recommended to keep it this way** - not reliable)
+    iu, tu, il, tl : float, optional
+        Upper (u) and lower (l) ADU limits for the science image (i) and 
+        template image (t) (default None, in which case these limits are set 
+        according to args `lsigma`, `hsigma`)
+    lsigma, hsigma : float, optional
+        Number of standard deviations away from the background at which to 
+        place the lower and upper ADU limits (default 5.0, but only used if 
+        `tu`, `tl`, `iu`, `il` are not given)
+    gd : str, optional
+        String of form "xmin xmax ymin ymax" indicating the region in which 
+        pixels are good (e.g. "150 1000 200 800" to trim the edges of some 
+        1000x1000 image; default None --> use whole image)
+    ig, ir, tg, tr : float, optional
+        Gain (g) and readnoise (r) for the science image (i) and template (t) 
+        (default None, in which case values are extracted from headers if 
+        present; if not present, default is `ig = tg = 1`, `ir = tr = 0`)
+    ng : str, optional
+        String of form "ngauss degree0 sigma0 ... degreeN sigmaN", where 
+        N=ngauss-1, "ngauss" is the number of Gaussians in the basis kernel,
+        degreej is the degree of the polynomial attached to the jth Gaussian, 
+        and sigmaj is the width of the jth Gaussian (default 
+        "3 6.0 0.7 4.0 1.5 2.0 3.0", which is a mixture of 3 Gaussians with
+        widths 0.7, 1.5, 3.0 respectively and polynomials of order 6, 4, 2, 
+        respectively). **This is the most important setting.**
+    rkernel : float, optional
+        FWHM of the convolution kernel (default, 10.0)
+    nrx, nry : int, optional
+        Number of regions in the x and y directions, respectively (defaul 1 for 
+        both)
+    nsx, nsy : int, optional
+        Number of stamps in each region in the x and y directions, respectively 
+        (default 10 for both)
+    nss : int, optional
+        Number of centroids (i.e. sources) to extract within each stamp 
+        (default 3)
+    rss : float, optional
+        Half-width of the substamp for centroid extraction (default 
+        `2.5*rkernel`, which is 25.0 for default `rkernel`)
+    ssig : float, optional
+        Sigma threshold for sigma clipping (default 3.0)
+    norm : {"i", "t", "u"}, optional
+        Normalization to use for final difference image, where "i" is the 
+        science image, "t" the template, and "u" the unconvolved science image
+        or template depending on which was convolved (default "i")
+    convi : bool, optional
+        Whether to force convolution of the science image (default False)
+    convt : bool, optional
+        Whether to force convolution of the template image (default False)
+    bgo : int, optional
+        Order of spatial variations in the background (default 0)
+    ko : int, optional
+        Order of spatial variations in the kernel (default 1)
+    output : str, optional
+        Output difference image file name (default 
+        `science_file.replace(".fits", "_subtracted.fits")`)
+    mask_write : bool, optional
+        Whether to write the bad pixel mask (default False)
+    conv_write : bool, optional
+        Whether to write the convolved image (default False)
+    kern_write : bool, optional
+        Whether to write the kernel image (default False)
+    noise_write : bool, optional
+        Whether to write the noise image (default False)
+    noise_scale_write : bool, optional
+        Whether to write the *scaled difference* noise image (default False)
+    maskout : str, optional
+        Name for the output bad pixel mask if `mask_write = True` (default
+        `science_file.replace(".fits", "_submask.fits")`)
+    convout : str, optional
+        Name for output convolved image if `conv_write = True` (default 
+        `science_file.replace(".fits", "_conv.fits")`)
+    kernout : str, optional
+        Name for output kernel if `kern_write = True` (default 
+        `science_file.replace(".fits", "_kernel.fits")`)
+    noiseout : str, optional
+        Name for output noise image if `noise_write = True` (default 
+        `science_file.replace(".fits", "_noise.fits")`)
+    noisecaleout : str, optional
+        Name for output noise *scaled difference* image if 
+        `noise_scale_write = True` (default 
+        `science_file.replace(".fits", "_noise_scaled.fits")`)
+    v : {0, 1, 2}, optional
+        Level of verbosity, where 0 is least and 2 is most (default 1)
+    log : str, optional
+        Name for a logfile in which to store STDERR (default None)
+    plot : bool, optional
+        Whether to plot the final difference image (default True)
+    plotname : str, optional
+        Name for the output figure (default 
+        `output.replace(".fits", "_hotpants.png")`)
+    scale : {"linear", "log", "asinh"}, optional
+        Scale to apply to the plot (default "linear")
+    target_large : array_like
+        [ra, dec] for some target of interest (e.g. a potential transient) 
+        at which to draw a large crosshair (default None)
+    target_small : array_like
+        [ra, dec] for some other target of interest (e.g. the candidate host
+        galaxy of some target of interest) at which to draw a small crosshair 
+        (default None)
+    thresh_sigma : float, optional
+        Sigma threshold for source detection with image segmentation (default
+        3.0)
+    pixelmin : float, optional
+        *Minimum* pixel area of an isophote to be considered a good source for 
+        building the ePSF (default 20; passed to `build_ePSF_imsegm()` only 
+        if `param_estimate = True`)
+    etamax : float, optional
+        *Maximum* allowed elongation for an isophote to be considered a good 
+        source for building the ePSF (default 1.4; passed to 
+        `build_ePSF_imsegm()` only if `param_estimate = True`)
+    areamax : float, optional
+        *Maximum* allowed area (in square pixels) for an isophote to be 
+        considered a good source for building the ePSF (default 500.0, passed 
+        to `build_ePSF_imsegm()` only if `param_estimate = True`)
     
-    https://github.com/acbecker/hotpants
-    HOTPANTS: High Order Transformation of Psf ANd Template Subtraction
-    Based on >>> Alard, C., & Lupton, R. H. 1998, ApJ, 503, 325 <<<
-    https://iopscience.iop.org/article/10.1086/305984/pdf 
+    Returns
+    -------
+    astropy.io.fits.PrimaryHDU
+        New HDU (image + header) for the difference image 
     
-    Output: the subtracted image HDU 
+    Notes
+    -----
+    For more details, see: https://github.com/acbecker/hotpants
+    
+    High Order Transformation of Psf ANd Template Subtraction
+    Based (hotpants) is based on the method of "optimal image subtraction" of 
+    Alard & Lupton 1998 [1]_ .
+    
+    References
+    ----------
+    .. [1] Alard, C., & Lupton, R. H. 1998, ApJ, 503, 325
+           https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract
     """
 
     ## load in data 
