@@ -1,6 +1,3 @@
-os
-subprocess
-warnings
 lmxl
 numpy
 scipy
