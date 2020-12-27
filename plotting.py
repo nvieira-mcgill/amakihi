@@ -7,40 +7,27 @@ Created on Fri Dec 25 21:38:44 2020
 
 Utility functions for plotting various quantities/arrays/images. **Sections:**
 
-- background
-- masking
-- imalign
-- epsf
+- ``background`` module
+- ``masking`` module
+- ``imalign`` module
+- ``ePSF`` module
+- ``hotpants`` module
+- ``transient`` module
 
 """
 
 # misc
-#import os
-#import sys
-#from subprocess import run, PIPE, CalledProcessError
 import numpy as np
 import re
-
-# scipy
-#from scipy.ndimage import zoom, binary_dilation, gaussian_filter
 
 # astropy
 from astropy.io import fits
 from astropy import wcs
 from astropy.visualization import simple_norm
 import astropy.units as u 
-from astropy.stats import sigma_clipped_stats#, SigmaClip, 
-                           #gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm)
+from astropy.stats import sigma_clipped_stats
 from astropy.coordinates import SkyCoord
-#from astropy.convolution import convolve_fft, Gaussian2DKernel, Moffat2DKernel
 from astropy.table import Table#, Column
-#from photutils import Background2D, MedianBackground
-#from photutils import make_source_mask, detect_sources, source_properties
-
-## for speedy FFTs
-#import pyfftw
-#import pyfftw.interfaces.numpy_fft as fft # for speedy FFTs
-#pyfftw.interfaces.cache.enable()
 
 # amakihi 
 from crop import crop_WCS
@@ -940,6 +927,92 @@ def __plot_convolve_self(conv, mask, hdr, title, output):
     plt.savefig(output, bbox_inches="tight")
     plt.close()
 
+
+###############################################################################
+### hotpants ##################################################################
+
+def __plot_hotpants(sub, hdr, mean_diff, std_diff, scale,
+                    target_large, target_small, output):
+    """Plot the difference image produced by hotpants.
+    
+    Arguments
+    ---------
+    sub : np.ndarray
+        Difference image
+    hdr : astropy.io.fits.header.Header
+        Science image's header
+    mean_diff : float
+        Mean of the difference image's good pixels
+    std_diff : float
+        Standard deviation of the difference image's good pixels
+    target_large : array_like
+        [ra, dec] for some target of interest (e.g. a potential transient) 
+        at which to draw a large crosshair
+    target_small : array_like
+        [ra, dec] for some other target of interest (e.g. the candidate host
+        galaxy of some target of interest) at which to draw a small crosshair
+    output : str
+        Name for output figure
+    """
+    
+    # set figure dimensions
+    plt.figure(figsize=(14,13))
+    
+    # show WCS      
+    w = wcs.WCS(hdr)
+    ax = plt.subplot(projection=w) 
+    ax.coords["ra"].set_ticklabel(size=15, exclude_overlapping=True)
+    ax.coords["dec"].set_ticklabel(size=15, exclude_overlapping=True)
+    
+    if scale == "linear": # linear scale
+        plt.imshow(sub, cmap='coolwarm', vmin=mean_diff-3*std_diff, 
+                   vmax=mean_diff+3*std_diff, aspect=1, 
+                   interpolation='nearest', origin='lower')
+        #plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
+        
+    elif scale == "log": # log scale
+        sub_log = np.log10(sub)
+        lognorm = simple_norm(sub_log, "log", percent=99.0)
+        plt.imshow(sub_log, cmap='bone', aspect=1, norm=lognorm,
+                   interpolation='nearest', origin='lower')
+        #plt.colorbar(orientation='vertical', fraction=0.046, pad=0.08) 
+        
+    elif scale == "asinh":  # asinh scale
+        sub_asinh = np.arcsinh(sub)
+        asinhnorm = simple_norm(sub, "asinh")
+        plt.imshow(sub_asinh, cmap="viridis", aspect=1, norm=asinhnorm,
+                   interpolation="nearest", origin="lower")
+        
+    cb = plt.colorbar(orientation="vertical", fraction=0.046, pad=0.08)
+    cb.set_label(label="ADU", fontsize=16)
+    cb.ax.tick_params(which='major', labelsize=15)
+        
+    if target_large: # large crosshair
+        ra, dec = target_large
+        plt.gca().plot([ra+10.0/3600.0, ra+5.0/3600.0], [dec,dec], 
+               transform=plt.gca().get_transform('icrs'), linewidth=2, 
+               color="black", marker="")
+        plt.gca().plot([ra, ra], [dec+10.0/3600.0, dec+5.0/3600.0], 
+               transform=plt.gca().get_transform('icrs'),  linewidth=2, 
+               color="black", marker="")
+
+    if target_small: # small crosshair
+        ra, dec = target_small
+        plt.gca().plot([ra-5.0/3600.0, ra-2.5/3600.0], [dec,dec], 
+               transform=plt.gca().get_transform('icrs'), linewidth=2, 
+               color="#fe019a", marker="")
+        plt.gca().plot([ra, ra], [dec-5.0/3600.0, dec-2.5/3600.0], 
+               transform=plt.gca().get_transform('icrs'),  linewidth=2, 
+               color="#fe019a", marker="")
+    
+    plt.xlabel("RA (J2000)", fontsize=16)
+    plt.ylabel("Dec (J2000)", fontsize=16)
+    plt.title(r"$\mathtt{hotpants}$"+" difference image", fontsize=15)
+
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
 ###############################################################################
 ### transient #################################################################
     
@@ -1070,6 +1143,152 @@ def __plot_rejected(sub_file,
     if not(output):
         output = sub_file.replace(".fits", "_rejections.png")
     plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+def __plot_distributions(og_file, tbl, etamax, areamax, title):
+    """Produces informative plots showing the distributions of elongation
+    and area (size) for candidates identified by `transient_detect()`.
+    
+    Arguments
+    ---------
+    og_file : str
+        Science image fits filename
+    tbl : astropy.table.Table
+        Table of all candidate sources, with no vetting performed yet
+    etamax : float
+    areamax : float
+    title : str
+    """
+    
+    ## candidates ELONGATION distribution as a histogram
+    plt.figure()
+    elongs = tbl["elongation"].data
+    nbelow = len(tbl[tbl["elongation"]<etamax])
+    nabove = len(tbl[tbl["elongation"]>etamax])
+    mean, med, std = sigma_clipped_stats(elongs) 
+    plt.hist(elongs, bins=18, range=(min(1,mean-std),max(10,mean+std)), 
+             color="#90e4c1", alpha=0.5)
+             
+    plt.axvline(mean, color="blue", label=r"$\mu$")
+    plt.axvline(mean+std, color="blue", ls="--", 
+                label=r"$\mu$"+"±"+r"$\sigma$")
+    plt.axvline(mean-std, color="blue", ls="--")
+    plt.axvline(etamax, color="red", lw=2.5, label=r"$\eta_{max}$")
+    plt.xlabel("Elongation", fontsize=15)
+    plt.xlim(min(1,mean-std), max(11,mean+std+1))
+    plt.ylabel("Counts", fontsize=15)
+    plt.gca().tick_params(which='major', labelsize=10)
+    plt.grid()
+    
+    textboxstr = r"$\mu - \eta_{max} = $"+"%.2f"%(mean-etamax)+"\n"
+    textboxstr += r"$\eta < \eta_{max} = $"+str(nbelow)+"\n"
+    textboxstr += r"$\eta > \eta_{max} = $"+str(nabove)+"\n"
+    textboxstr += r"$f_{used} = $"+"%.2f"%(nbelow/(nbelow+nabove))
+    plt.text(1.05, 0.66, textboxstr,transform=plt.gca().transAxes, 
+             fontsize=13, bbox=dict(facecolor="white", alpha=0.5))
+    plt.text(0.92, 0.5, r"$\dots$", transform=plt.gca().transAxes, 
+             fontsize=20)
+    plt.legend(loc=[1.03, 0.32], fancybox=True, fontsize=13)
+    
+    if title:
+        plt.title(f"{title}: elongation distribution", fontsize=13)
+        plt.savefig(og_file.replace(".fits", f"_{title}_elongs.png"), 
+                    bbox_inches="tight")
+    else:
+        plt.title("elongation distribution", fontsize=13)
+        plt.savefig(og_file.replace(".fits", "_elongs.png"), 
+                    bbox_inches="tight")            
+    plt.close()
+
+    ## candidates AREA distribution as a histogram  
+    plt.figure()
+    areas = tbl["area"].value
+    nbelow = len(tbl[areas<areamax])
+    nabove = len(tbl[areas>areamax])
+    mean, med, std = sigma_clipped_stats(areas) 
+    plt.hist(areas, bins=20, color="#c875c4", alpha=0.5)
+             
+    plt.axvline(mean, color="red", label=r"$\mu$")
+    plt.axvline(mean+std, color="red", ls="--", 
+                label=r"$\mu$"+"±"+r"$\sigma$")
+    plt.axvline(mean-std, color="red", ls="--")
+    plt.axvline(areamax, color="blue", lw=2.5, label=r"$A_{max}$")
+    plt.xlabel("Area [pix"+r"${}^2$"+"]", fontsize=15)
+    plt.ylabel("Counts", fontsize=15)
+    plt.gca().tick_params(which='major', labelsize=10)
+    plt.grid()
+    plt.xscale("log")
+    plt.yscale("log")
+    
+    textboxstr = r"$\mu - A_{max} = $"+"%.2f"%(mean-areamax)+"\n"
+    textboxstr += r"$A < A_{max} = $"+str(nbelow)+"\n"
+    textboxstr += r"$A > A_{max} = $"+str(nabove)+"\n"
+    textboxstr += r"$f_{used} = $"+"%.2f"%(nbelow/(nbelow+nabove))
+    plt.text(1.05, 0.66, textboxstr,transform=plt.gca().transAxes, 
+             fontsize=13, bbox=dict(facecolor="white", alpha=0.5))
+    plt.legend(loc=[1.03, 0.32], fancybox=True, fontsize=13)
+    
+    if title:
+        plt.title(f"{title}: area distribution", fontsize=13)
+        plt.savefig(og_file.replace(".fits", f"_{title}_areas.png"), 
+                    bbox_inches="tight")
+    else:
+        plt.title("area distribution")
+        plt.savefig(og_file.replace(".fits", "_areas.png"), 
+                    bbox_inches="tight") 
+    plt.close()
+
+    ## elongation versus pixel area
+    plt.figure()    
+    elongsgood = [elongs[i] for i in range(len(elongs)) if (
+                  elongs[i]<etamax and areas[i]<areamax)]
+    areasgood = [areas[i] for i in range(len(elongs)) if (
+                 elongs[i]<etamax and areas[i]<areamax)]
+
+    elongsbad = [elongs[i] for i in range(len(elongs)) if (
+                 elongs[i]>etamax or areas[i]>areamax)]
+    areasbad = [areas[i] for i in range(len(elongs)) if (
+                elongs[i]>etamax or areas[i]>areamax)]
+    
+    # elongation on x axis, area on y axis            
+    plt.scatter(elongsgood, areasgood, marker="o", color="#5ca904", s=12)
+    plt.scatter(elongsbad, areasbad, marker="s", color="#fe019a", s=12)
+    # means and maxima
+    mean, med, std = sigma_clipped_stats(elongs)              
+    plt.axvline(mean, ls="--", color="black", label=r"$\mu$")
+    plt.axvline(etamax, color="#030aa7", lw=2.5, label=r"$\eta_{max}$")
+    mean, med, std = sigma_clipped_stats(areas) 
+    plt.axhline(mean, ls="--", color="black")
+    plt.axhline(areamax, color="#448ee4", lw=2.5, label=r"$A_{max}$")
+    # allowed region of parameter space 
+    rect = ptc.Rectangle((0,0), etamax, areamax, fill=False, 
+                         hatch="//", lw=0.5, color="black")
+    plt.gca().add_patch(rect)
+    # labels, scales 
+    plt.gca().tick_params(which='major', labelsize=10)
+    plt.xlabel("Elongation", fontsize=15)
+    plt.ylabel("Area [pix"+r"${}^2$"+"]", fontsize=15)    
+    plt.xscale("log")
+    plt.yscale("log")
+    
+    # fraction of sources which are used 
+    f_used = len(elongsgood)/(len(elongsgood)+len(elongsbad))
+    textboxstr = r"$f_{used} = $"+"%.2f"%(f_used)
+    plt.text(1.03, 0.93, textboxstr, transform=plt.gca().transAxes, 
+             fontsize=13, bbox=dict(facecolor="white", alpha=0.5))
+        
+    plt.legend(loc=[1.03,0.62], fancybox=True, fontsize=13) # legend 
+
+    if title:
+        plt.title(f"{title}: elongations and areas", fontsize=13)
+        plt.savefig(og_file.replace(".fits", 
+                                    f"_{title}_elongs_areas.png"), 
+                    bbox_inches="tight")
+    else:
+        plt.title("elongations and areas", fontsize=13)
+        plt.savefig(og_file.replace(".fits", "_elongs_areas.png"), 
+                    bbox_inches="tight")            
     plt.close()
 
 
