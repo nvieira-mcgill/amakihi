@@ -8,3 +8,6 @@ __pycache__/
 # Particular to amakihi
 CADC_LOGIN.md
 loop_imdiff*
+
+# Bandaid fix because ReadTheDocs can't find lmxl
+#query_CFIS.py
