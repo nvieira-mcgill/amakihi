@@ -20,7 +20,7 @@ This software was developed to serve in a pipeline for the MegaCam instrument of
 [Vieira, N., Ruan, J.J, Haggard, D., Drout, M.R. et al. 2020, ApJ, 895, 96, 2. *A Deep CFHT Optical Search for a Counterpart to the Possible Neutron Star - Black Hole Merger GW190814.*](https://ui.adsabs.harvard.edu/abs/2020arXiv200309437V/abstract)
 
 
-Named after the ʻamakihi, a species of Hawaiian honeycreeper.
+Named after the ʻamakihi, a species of Hawaiian honeycreeper (a kind of songbird).
 
 Documentation
 =============

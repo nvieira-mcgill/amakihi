@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Aug 13 10:31:33 2019
-@author: Nicholas Vieira
-@query_2MASS.py
+.. Created on Tue Aug 13 10:31:33 2019
+.. @author: Nicholas Vieira
+.. @query_2MASS.py
 """
 
 import requests

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug  1 13:58:03 2019
-@author: Nicholas Vieira
-@amakihi.py 
+.. Created on Thu Aug  1 13:58:03 2019
+.. @author: Nicholas Vieira
+.. @amakihi.py 
 
 Big module which handles all of the actual image differencing. 
 

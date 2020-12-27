@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 25 21:44:27 2020
-@author: Nicholas Vieira
-@imalign.py
+.. Created on Fri Dec 25 21:44:27 2020
+.. @author: Nicholas Vieira
+.. @imalign.py
 
 Image alignment, A.K.A. image registration. In all, this is the trickiest part 
 of image differencing. Poor alignment will result in all sorts of headaches 

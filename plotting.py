@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 25 21:38:44 2020
-@author: Nicholas Vieira
-@plotting.py
+.. Created on Fri Dec 25 21:38:44 2020
+.. @author: Nicholas Vieira
+.. @plotting.py
 
 Utility functions for plotting various quantities/arrays/images. **Sections:**
 
@@ -12,6 +12,7 @@ Utility functions for plotting various quantities/arrays/images. **Sections:**
 - ``imalign`` module
 - ``ePSF`` module
 - ``hotpants`` module
+- ``amakihi`` (image differencing) module
 - ``transient`` module
 
 """
@@ -930,7 +931,7 @@ def __plot_convolve_self(conv, mask, hdr, title, output):
 
 
 ###############################################################################
-### hotpants ##################################################################
+### amakihi ###################################################################
 
 def __plot_hotpants(sub, hdr, mean_diff, std_diff, scale,
                     target_large, target_small, output):

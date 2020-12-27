@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 25 17:24:56 2020
-@author: Nicholas Vieira
-@crop.py
+.. Created on Fri Dec 25 17:24:56 2020
+.. @author: Nicholas Vieira
+.. @crop.py
 
 This module enables cropping (and optionally writing) fits images by either WCS 
 or pixel coords. 

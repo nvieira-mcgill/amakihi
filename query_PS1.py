@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug 12 14:33:50 2019
-@author: Nicholas Vieira
-@query_PS1.py
+.. Created on Mon Aug 12 14:33:50 2019
+.. @author: Nicholas Vieira
+.. @query_PS1.py
 
 **NOTE**: Adapted from https://ps1images.stsci.edu/ps1image.html
 """

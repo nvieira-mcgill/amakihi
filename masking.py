@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 25 23:49:21 2020
-@author: Nicholas Vieira
-@masking.py
+.. Created on Fri Dec 25 23:49:21 2020
+.. @author: Nicholas Vieira
+.. @masking.py
 
 Constructing masks. 
 

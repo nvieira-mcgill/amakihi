@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug 12 17:56:17 2019
-@author: Nicholas Vieira
-@query_CFIS.py
+.. Created on Mon Aug 12 17:56:17 2019
+.. @author: Nicholas Vieira
+.. @query_CFIS.py
 """
 
 import requests

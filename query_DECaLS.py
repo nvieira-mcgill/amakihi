@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Aug 26 19:41:59 2019
-@author: Nicholas Vieira
-@query_DECaLS.py
+.. Created on Mon Aug 26 19:41:59 2019
+.. @author: Nicholas Vieira
+.. @query_DECaLS.py
 """
 
 def geturl_DECaLS(ra, dec, size=512, pixscale=0.262, bands="grz"):

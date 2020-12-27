@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 25 21:57:05 2020
-@author: Nicholas Vieira
-@background.py
+.. Created on Fri Dec 25 21:57:05 2020
+.. @author: Nicholas Vieira
+.. @background.py
 
 Background estimation and subtraction.
 """

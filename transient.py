@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Dec 26 23:33:42 2020
-@author: Nicholas Vieira
-@transient.py
+.. Created on Sat Dec 26 23:33:42 2020
+.. @author: Nicholas Vieira
+.. @transient.py
 
 Transient detection, vetting, and converting candidate transients to 
 "triplets". This represents the final step in an image differencing and 
