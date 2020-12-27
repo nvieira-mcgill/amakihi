@@ -1,4 +1,3 @@
-lmxl
 numpy
 scipy
 matplotlib
