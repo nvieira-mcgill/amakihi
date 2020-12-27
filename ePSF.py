@@ -553,8 +553,6 @@ def convolve_self(image_file, mask_file=None,
     Effectively tries to increase the size of the image's ePSF by sqrt(2). 
     Useful as a preparation for image differencing when sigma_template > 
     sigma_science.
-    
-    Output: PrimaryHDU for the science image convolved with the kernel
     """
     
     ## ePSF

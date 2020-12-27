@@ -10,6 +10,12 @@ of image differencing. Poor alignment will result in all sorts of headaches
 later, and in particular, the appearance of "dipole"-like artifacts in the 
 final difference image. 
 
+**Important:** This module makes use of a slightly modified version of the 
+`astroalign` software developed by Martin Beroiz and the TOROS Dev Team 
+(https://github.com/quatrope/astroalign) in the form of my own script 
+`astroalign_mod.py`. I claim absolutely no ownership of this software. All
+modifications are described in that script.
+
 """
 
 # misc

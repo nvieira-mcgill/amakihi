@@ -945,43 +945,58 @@ def __plot_convolve_self(conv, mask, hdr, title, output):
     
 def __plot_rejected(sub_file, 
                     dipoles, elongated_sources, large_sources, vetted, 
-                    dipole_width, etamax, area_max, nsource_max,
-                    toi=None, #toi_sep_max=None, 
-                    dipole_color="black", 
-                    elong_color="#be03fd", 
-                    large_color="#fcc006", 
-                    vetted_color="#53fca1",
+                    dipole_width, etamax, areamax, 
+                    toi=None,  
+                    dipole_color="black", elong_color="#be03fd", 
+                    large_color="#fcc006", vetted_color="#53fca1",
                     cmap="coolwarm", 
                     output=None):
-    """    
-    Input:
-        - filename for the difference image
-        - table of candidates rejected as dipoles
-        - table of candidates rejected due to elongation
-        - table of candidates rejected due to area 
-        - table of candidates after all vetting 
-        - maximum dipole width 
-        - maximum allowed elongation 
-        - maximum allowed pixel area 
-        - [ra,dec] for some target of interest (optional; default None)
-        - radius (in arcsec) around the toi to probe (optional; default None)
-        - color of circle flagging dipoles (optional; default black)
-        - color of square flagging elongated sources (optional; default bright
-          purple)
-        - color of triangle flagging overly large sources (optional; default 
-          marigold)
-        - color of diamond flagging sources which passed all vetting (optional;
-          default sea green)
-        - colourmap for image (optional; default "coolwarm")
-        - output plotname (optional; default set below)
+    """Plot a difference image with markers flagging sources which were 
+    rejected during preliminary vetting in `transient_detect()`.
     
-    Plot a difference image with marker flagging likely dipoles, overly 
+    Arguments
+    ---------
+    sub_file : str
+        Filename for the difference image
+    dipoles : astropy.table.Table
+        Table of candidates rejected as dipoles
+    elongated_sources : astropy.table.Table
+        Table of candidates rejected due to elongation
+    large_sources : astropy.table.Table 
+        Table of candidates rejected due to size
+    vetted : astropy.table.Table
+        Table of candidates which passed all vetting
+    dipole_width : float
+        *Maximum* dipole width imposed during vetting
+    etamax : float
+        *Maximum* elongation imposed during vetting
+    areamax : float
+        *Maximum* pixel area imposed during vetting
+    toi : array_like, optional
+        [ra, dec] for some target of interest (default None)
+    dipole_color : str, optional
+        Color of circle around dipoles (default "black")
+    elong_color : str, optional
+        Color of square flagging overly elongated sources (default "#be03fd" 
+        --> bright purple)
+    large_color : str, optional
+        Color of triangle flagging overly large sources (default "#fcc006" --> 
+        marigold)
+    vetted_color : str, optional
+        Color of diamond flagging sources which passed all vetting (default 
+        "#53fca1" --> sea green)
+    cmap : str, optional
+        Colormap for image (default "coolwarm")
+    output : str, optional
+        Name for output figure (default 
+        `sub_file.replace(".fits", "_rejections.png")`)
+        
+    Notes
+    -----
+    Plot a difference image with markers flagging likely dipoles, overly 
     elongated sources, overly large sources, and sources which passed all these
-    vetting steps, as determined by transient_detect()
-    
-    Output: None
+    vetting steps, as determined by `transient_detect()`.
     """
-
     from collections import OrderedDict
 
     ## load in data    
@@ -1019,11 +1034,11 @@ def __plot_rejected(sub_file,
         ra, dec = l["ra"], l["dec"]
         plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
                  mec=large_color, mfc="None", mew=2, marker="^", ls="", 
-                label=r"$A$"+" "+r"$\geqslant$"+" "+str(area_max)+
+                label=r"$A$"+" "+r"$\geqslant$"+" "+str(areamax)+
                 " pix"+r"${}^2$")
         
     # marker over accepted sources
-    for v in vetted: # diamonds
+    for v in vetted: # diamonds for accepted
         ra, dec = v["ra"], v["dec"]
         plt.plot(ra, dec, transform=ax.get_transform('icrs'), ms=10,
                  mec=vetted_color, mfc="None", mew=2, marker="D", ls="", 
@@ -1031,11 +1046,6 @@ def __plot_rejected(sub_file,
 
     # crosshair denoting target of interest
     if (toi != None):
-        # circle?
-        #circ = ptc.Circle((toi[0],toi[1]), radius=toi_sep_max/3600.0, 
-        #                  transform=ax.get_transform('icrs'), fill=False,
-        #                  ec="black", lw=2, ls="-.")
-        #plt.gca().add_patch(circ)
         # or a crosshair?
         plt.plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
                  transform=ax.get_transform('icrs'), linewidth=2, 
@@ -1065,25 +1075,35 @@ def __plot_rejected(sub_file,
 
 def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,  
                    wide=True, cmap="bone", title=None, plotdir=None):
-    """
-    Input:
-        - difference image PrimaryHDU
-        - science image PrimaryHDU
-        - reference image PrimaryHDU
-        - id of the candidate (i.e., for candidate #14, n=14)
-        - total number of vetted candidates in the difference image 
-        - whether to plot the triplets as 3 columns, 1 row (horizontally wide)
-          or 3 rows, 1 column (vertically tall) (optional; default wide=True)
-        - colourmap to apply to all images in the triplet (optional; default 
-          "bone")
-        - a title to include in all plots AND to append to all filenames 
-          (optional; default None)
-        - directory in which to store plots (optional; default is the location
-          of the science image file)
+    """Plot a single [science image, reference image, difference image] 
+    triplet.
     
-    Plots a single [science image, reference image, difference image] triplet.
-    
-    Output: None
+    Arguments
+    ---------
+    og_file : str
+        Science image file name
+    sub_hdu : astropy.io.fits.PrimaryHDU
+        Difference image fits HDU
+    og_hdu : astropy.io.fits.PrimaryHDU
+        Science image fits HDU
+    ref_hdu : astropy.io.fits.PrimaryHDU
+        Reference image fits HDU
+    n : int
+        ID of the candidate (first candidate is n=0, next n=1, etc.)
+    ntargets : int
+        Total number of candidates (which passed all preliminary vetting) in 
+        the difference image
+    wide : bool, optional
+        Whether to plot the triplet as 1 row, 3 columns (`wide == True`) or 3
+        rows, 1 column (`wide == False`) (default True)
+    cmap : str, optional
+        Colormap to apply to all images in the triplet (default "bone")
+    title : str, optional
+        A "title" to include in the plot's title **and** filename (default 
+        None)
+    plotdir : str, optional
+        Directory in which to save the plot (default is the directory of 
+        `og_file`)
     """
     
     # load in data
@@ -1154,13 +1174,13 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
             ax2.set_title(title, fontsize=15)
         else: # title above the topmost image
             ax.set_title(title, fontsize=15)
-        figname = og_file.replace(".fits", f"_{title}_candidate{nstr}.png")
+        output = og_file.replace(".fits", f"_{title}_candidate{nstr}.png")
     else:
-        figname = og_file.replace(".fits", f"_candidate{nstr}.png")   
+        output = og_file.replace(".fits", f"_candidate{nstr}.png")   
         
     if plotdir: 
-        figname = f'{plotdir}/{re.sub(".*/", "", figname)}'
+        output = f'{plotdir}/{re.sub(".*/", "", output)}'
     
     # save and close the figure
-    plt.savefig(figname, bbox_inches="tight")
+    plt.savefig(output, bbox_inches="tight")
     plt.close()

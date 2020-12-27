@@ -8,7 +8,7 @@ Created on Thu Aug  1 13:58:03 2019
 **Sections:**
 
 - Image differencing with hotpants (https://github.com/acbecker/hotpants)
-- Transient detection, triplets 
+- Transient detection, triplets
 
 
 **Essential dependencies:**
@@ -19,12 +19,6 @@ Created on Thu Aug  1 13:58:03 2019
   source detection with `photutils`' `image_segmentation` instead)
 - ``hotpants`` (essential for image subtraction via `hotpants`, duh)
 
-
-**Important:** This software makes use of a slightly modified version of the 
-`astroalign` software developed by Martin Beroiz and the TOROS Dev Team 
-(https://github.com/quatrope/astroalign) in the form of my own script 
-`astroalign_mod.py`. I claim absolutely no ownership of this software. All
-modifications are described in that script.
 """
 
 # misc
@@ -71,7 +65,7 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 def get_substamps(source_file, template_file, 
                   sci_mask_file=None, tmp_mask_file=None, 
-                  sigma=3.0, etamax=2.0, area_max=400.0, sep_max=5.0, 
+                  sigma=3.0, etamax=2.0, areamax=400.0, sepmax=5.0, 
                   coords="mean",
                   output=None, verbose=False):
     """    
@@ -174,7 +168,7 @@ def get_substamps(source_file, template_file,
         # restrict elongation and area to obtain only unsaturated stars 
         tbl_mask = (tbl["elongation"] <= etamax)
         tbl = tbl[tbl_mask]
-        tbl_mask = tbl["area"].value <= area_max
+        tbl_mask = tbl["area"].value <= areamax
         tbl = tbl[tbl_mask]
         obj_props.append(tbl)
 
@@ -195,7 +189,7 @@ def get_substamps(source_file, template_file,
     ## find sources which are present in both the science image and template
     ## sources must be <= 1.0" away from each other 
     idx_sci, idx_tmp, d2d, d3d = tmp_skycoords.search_around_sky(
-                                 source_skycoords, sep_max*u.arcsec) 
+                                 source_skycoords, sepmax*u.arcsec) 
     obj_props[0] = obj_props[0][idx_sci]
     obj_props[1] = obj_props[1][idx_tmp]
     
@@ -234,8 +228,8 @@ def get_substamps(source_file, template_file,
 
 def param_estimate(source_file, template_file, mask_file=None,
                    source_epsf_file=None, tmp_epsf_file=None, 
-                   thresh_sigma=3.0, pixelmin=20, etamax=1.4,
-                   areamax=400, cutout=35, verbose=True):
+                   thresh_sigma=3.0, pixelmin=20, etamax=1.4, areamax=400, 
+                   cutout=35, verbose=True):
     """   
     WIP:
         - Not stable right now; messes up when science and reference have 
@@ -344,7 +338,7 @@ def hotpants(source_file, template_file,
              v=1, log=None,
              plot=True, plotname=None, scale=None, 
              target=None, target_small=None,
-             thresh_sigma=3.0, pixelmin=20, etamax=1.4, area_max=500):
+             thresh_sigma=3.0, pixelmin=20, etamax=1.4, areamax=500):
     """       
     hotpants args OR hotpants-related: 
         basic inputs:
@@ -529,7 +523,7 @@ def hotpants(source_file, template_file,
         c, g = param_estimate(source_file, template_file, 
                               thresh_sigma=thresh_sigma, 
                               pixelmin=pixelmin, etamax=etamax, 
-                              area_max=area_max, verbose=True)
+                              areamax=areamax, verbose=True)
     
         ng = f"3 6 {g[6]:.2f} 4 {g[4]:.2f} 2 {g[2]:.2f}"
         rkernel = 2.5*g[4]*gaussian_sigma_to_fwhm
@@ -821,7 +815,7 @@ def hotpants(source_file, template_file,
 def transient_detect(sub_file, og_file, ref_file, mask_file=None, 
                      thresh_sigma=5.0, pixelmin=20, 
                      dipole_width=2.0, dipole_fratio=5.0,
-                     etamax=1.8, area_max=300, nsource_max=50, 
+                     etamax=1.8, areamax=300, nsource_max=50, 
                      toi=None, toi_sep_min=None, toi_sep_max=None,
                      write=True, output=None, 
                      plot_distributions=False,
@@ -994,8 +988,8 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         ## histogram of area distribution   
         plt.figure()
         areas = tbl["area"].value
-        nbelow = len(tbl[areas<area_max])
-        nabove = len(tbl[areas>area_max])
+        nbelow = len(tbl[areas<areamax])
+        nabove = len(tbl[areas>areamax])
         mean, med, std = sigma_clipped_stats(areas) 
         plt.hist(areas, bins=20, color="#c875c4", alpha=0.5)
                  
@@ -1003,7 +997,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         plt.axvline(mean+std, color="red", ls="--", 
                     label=r"$\mu$"+"±"+r"$\sigma$")
         plt.axvline(mean-std, color="red", ls="--")
-        plt.axvline(area_max, color="blue", lw=2.5, label=r"$A_{max}$")
+        plt.axvline(areamax, color="blue", lw=2.5, label=r"$A_{max}$")
         plt.xlabel("Area [pix"+r"${}^2$"+"]", fontsize=15)
         plt.ylabel("Counts", fontsize=15)
         plt.gca().tick_params(which='major', labelsize=10)
@@ -1011,7 +1005,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         plt.xscale("log")
         plt.yscale("log")
         
-        textboxstr = r"$\mu - A_{max} = $"+"%.2f"%(mean-area_max)+"\n"
+        textboxstr = r"$\mu - A_{max} = $"+"%.2f"%(mean-areamax)+"\n"
         textboxstr += r"$A < A_{max} = $"+str(nbelow)+"\n"
         textboxstr += r"$A > A_{max} = $"+str(nabove)+"\n"
         textboxstr += r"$f_{used} = $"+"%.2f"%(nbelow/(nbelow+nabove))
@@ -1032,14 +1026,14 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         ## elongation versus pixel area
         plt.figure()    
         elongsgood = [elongs[i] for i in range(len(elongs)) if (
-                      elongs[i]<etamax and areas[i]<area_max)]
+                      elongs[i]<etamax and areas[i]<areamax)]
         areasgood = [areas[i] for i in range(len(elongs)) if (
-                     elongs[i]<etamax and areas[i]<area_max)]
+                     elongs[i]<etamax and areas[i]<areamax)]
     
         elongsbad = [elongs[i] for i in range(len(elongs)) if (
-                     elongs[i]>etamax or areas[i]>area_max)]
+                     elongs[i]>etamax or areas[i]>areamax)]
         areasbad = [areas[i] for i in range(len(elongs)) if (
-                    elongs[i]>etamax or areas[i]>area_max)]
+                    elongs[i]>etamax or areas[i]>areamax)]
         
         # elongation on x axis, area on y axis            
         plt.scatter(elongsgood, areasgood, marker="o", color="#5ca904", s=12)
@@ -1050,9 +1044,9 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         plt.axvline(etamax, color="#030aa7", lw=2.5, label=r"$\eta_{max}$")
         mean, med, std = sigma_clipped_stats(areas) 
         plt.axhline(mean, ls="--", color="black")
-        plt.axhline(area_max, color="#448ee4", lw=2.5, label=r"$A_{max}$")
+        plt.axhline(areamax, color="#448ee4", lw=2.5, label=r"$A_{max}$")
         # allowed region of parameter space 
-        rect = ptc.Rectangle((0,0), etamax, area_max, fill=False, 
+        rect = ptc.Rectangle((0,0), etamax, areamax, fill=False, 
                              hatch="//", lw=0.5, color="black")
         plt.gca().add_patch(rect)
         # labels, scales 
@@ -1133,14 +1127,14 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         tbl_noelong = tbl.copy()
             
     ## (3) restrict based on maximum pixel area 
-    if area_max:
+    if areamax:
         premasklen = len(tbl)
-        mask = tbl["area"].value < area_max
+        mask = tbl["area"].value < areamax
         tbl = tbl[mask]    
         postmasklen = len(tbl)       
         if premasklen-postmasklen > 0:
             print(f"\n{premasklen-postmasklen} source(s) with "+
-                  f"area >{area_max} pix**2 removed")
+                  f"area >{areamax} pix**2 removed")
     
     vetted = tbl.copy()
 
@@ -1149,7 +1143,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
         dipoles = tbl_novetting[idx_rem]
         elongated_sources = tbl_nodipoles[tbl_nodipoles["elongation"] >= 
                                           etamax]
-        large_sources = tbl_noelong[tbl_noelong["area"].value >= area_max]
+        large_sources = tbl_noelong[tbl_noelong["area"].value >= areamax]
         
         # colours below might be out of date (could be improved)
         __plot_rejected(sub_file=sub_file,
@@ -1159,8 +1153,8 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                         vetted=vetted,
                         dipole_width=dipole_width, 
                         etamax=etamax, 
-                        area_max=area_max, 
-                        nsource_max=nsource_max,
+                        areamax=areamax, 
+                        #nsource_max=nsource_max,
                         toi=toi, #toi_sep_max, 
                         dipole_color="black", 
                         elong_color="#be03fd", 
