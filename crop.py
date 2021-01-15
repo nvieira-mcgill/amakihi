@@ -8,10 +8,10 @@
 This module enables cropping (and optionally writing) fits images by either WCS 
 or pixel coords. 
 
-**TO-DO:**
+.. **TO-DO:**
 
-- Proper warnings in `crop_frac()`
-- Run lots of tests in general
+.. - Proper warnings in `crop_frac()`
+.. - Run lots of tests in general
 
 """
 

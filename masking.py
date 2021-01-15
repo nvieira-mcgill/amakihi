@@ -7,9 +7,9 @@
 
 Constructing masks. 
 
-**TO-DO:**
+.. **TO-DO:**
 
-- Re-think saturated object size limits (can miss cosmic rays? is this OK?)
+.. - Re-think saturated object size limits (can miss cosmic rays? is this OK?)
 
 """
 
