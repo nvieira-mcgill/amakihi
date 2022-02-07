@@ -1089,21 +1089,6 @@ def image_align_morph(science_file, template_file, mask_file=None,
                       write=True, output_im=None, output_mask=None):
     """Align a science image to a template image using `image_registration`, 
     which relies on image morphology rather than cross-matching control points.
-         
-    Input:
-        - science image (source) to register
-        - template image (target) to match source to
-        - mask file for the SOURCE image (optional; default None)
-        - whether to flip the image (invert along X and Y) before tying to 
-          align (optional; default False)
-        - maximum allowed pixel offset before deciding that alignment is not
-          accurate (optional; default 30.0 pix)
-        - whether to plot the matched image data (optional; default False)
-        - scale to apply to the plot (optional; default None (linear); options
-          are "linear", "log", "asinh")
-        - whether to write the output to .fits files (optional; default True)
-        - name for output aligned image file (optional; default set below)
-        - name for output mask image file (optional; default set below)
 
     Arguments
     ---------

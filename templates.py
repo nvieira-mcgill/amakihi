@@ -72,7 +72,7 @@ def __downloadtemplate(url, survey, pixscale, output=None):
     pixscale : float
         Pixel scale of image in arcseconds per pixel
     output : str, optional
-        Output filename(s) (defaults set below)
+        Output filename(s) (defaults set automatically)
     
     Returns
     -------
@@ -187,7 +187,8 @@ def download_PS1_template(ra, dec, size=2400, bands="grizy", output=None):
         Photometric band(s) of choice (default "grizy" --> g-, r-, i-, z-, and 
         y-band; options are "g", "r", "i", "z", "y" or any combination of them)
     output : str, optional
-        Output filename(s) for the downloaded template(s) (default set below)
+        Output filename(s) for the downloaded template(s) (default set 
+        automatically)
     
     Returns
     -------
@@ -250,7 +251,8 @@ def download_DECaLS_template(ra, dec, size=512, pixscale=0.262, bands="grz",
         Photometric band(s) of choice (default "grz" --> g-, r-, and z-band; 
         options are "g", "r", "z", or any combination of them)
     output : str, optional
-        Output filename(s) for the downloaded template(s) (default set below)
+        Output filename(s) for the downloaded template(s) (default set 
+        automatically)
     
     Returns
     -------
@@ -412,7 +414,8 @@ def get_templates(images, survey="PS1", outputs=None):
     survey : {'PS1', 'CFIS'}, optional
         Survey of interest (default 'PS1')
     output : str, optional
-        Output filename(s) for the downloaded template(s) (default set below)
+        Output filename(s) for the downloaded template(s) (default set 
+        automatically)
     """
     
     # get the image names

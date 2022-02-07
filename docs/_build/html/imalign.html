@@ -87,6 +87,7 @@
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
@@ -388,25 +389,6 @@ the image registration footprint) (default True)</li>
 <code class="descclassname">imalign.</code><code class="descname">image_align_morph</code><span class="sig-paren">(</span><em>science_file</em>, <em>template_file</em>, <em>mask_file=None</em>, <em>flip=False</em>, <em>maxoffset=30.0</em>, <em>wcs_transfer=True</em>, <em>plot_align=False</em>, <em>scale='linear'</em>, <em>write=True</em>, <em>output_im=None</em>, <em>output_mask=None</em><span class="sig-paren">)</span><a class="headerlink" href="#imalign.image_align_morph" title="Permalink to this definition">¶</a></dt>
 <dd><p>Align a science image to a template image using <cite>image_registration</cite>,
 which relies on image morphology rather than cross-matching control points.</p>
-<dl class="docutils">
-<dt>Input:</dt>
-<dd><ul class="first last simple">
-<li>science image (source) to register</li>
-<li>template image (target) to match source to</li>
-<li>mask file for the SOURCE image (optional; default None)</li>
-<li>whether to flip the image (invert along X and Y) before tying to
-align (optional; default False)</li>
-<li>maximum allowed pixel offset before deciding that alignment is not
-accurate (optional; default 30.0 pix)</li>
-<li>whether to plot the matched image data (optional; default False)</li>
-<li>scale to apply to the plot (optional; default None (linear); options
-are “linear”, “log”, “asinh”)</li>
-<li>whether to write the output to .fits files (optional; default True)</li>
-<li>name for output aligned image file (optional; default set below)</li>
-<li>name for output mask image file (optional; default set below)</li>
-</ul>
-</dd>
-</dl>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
