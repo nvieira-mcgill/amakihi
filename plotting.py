@@ -1180,9 +1180,9 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title_append):
                 label=r"$\mu$"+"±"+r"$\sigma$")
     plt.axvline(mean-std, color="blue", ls="--")
     plt.axvline(etamax, color="red", lw=2.5, label=r"$\eta_{max}$")
-    plt.xlabel("Elongation", fontsize=15)
+    plt.xlabel(r"elongation $\eta$", fontsize=15)
     plt.xlim(min(1,mean-std), max(11,mean+std+1))
-    plt.ylabel("Counts", fontsize=15)
+    plt.ylabel("counts", fontsize=15)
     plt.gca().tick_params(which='major', labelsize=10)
     plt.grid()
     
@@ -1198,11 +1198,11 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title_append):
     
     if title_append:
         plt.title(f"{title_append}: elongation distribution", fontsize=13)
-        plt.savefig(og_file.replace(".fits", f"_{title_append}_elongs.png"), 
+        plt.savefig(og_file.replace(".fits", f"_{title_append}_elongs_histo.png"), 
                     bbox_inches="tight")
     else:
         plt.title("elongation distribution", fontsize=13)
-        plt.savefig(og_file.replace(".fits", "_elongs.png"), 
+        plt.savefig(og_file.replace(".fits", "_elongs_histo.png"), 
                     bbox_inches="tight")            
     plt.close()
 
@@ -1236,11 +1236,11 @@ def __plot_distributions(og_file, tbl, etamax, areamax, title_append):
     
     if title_append:
         plt.title(f"{title_append}: area distribution", fontsize=13)
-        plt.savefig(og_file.replace(".fits", f"_{title_append}_areas.png"), 
+        plt.savefig(og_file.replace(".fits", f"_{title_append}_areas_histo.png"), 
                     bbox_inches="tight")
     else:
         plt.title("area distribution")
-        plt.savefig(og_file.replace(".fits", "_areas.png"), 
+        plt.savefig(og_file.replace(".fits", "_areas_histo.png"), 
                     bbox_inches="tight") 
     plt.close()
 
