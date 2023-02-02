@@ -15,6 +15,9 @@ Utility functions for plotting various quantities/arrays/images. **Sections:**
 - ``amakihi`` (image differencing) module
 - ``transient`` module
 
+And several functions for plotting machine learning diagnostics which are not 
+associated with any particular module.
+
 """
 
 # misc
@@ -1407,5 +1410,391 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
         output = f'{plotdir}/{re.sub(".*/", "", output)}'
     
     # save and close the figure
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+    
+    
+###############################################################################
+### MACHINE LEARNING DIAGNOSTICS ##############################################
+
+def plot_train_vs_valid_accuracy(train_acc, val_acc, 
+                                 output=None, figsize=(20,9)):
+    """
+    Input:
+        - list/array of training accuracy at each epoch 
+        - list/array of validation accuracy at each epoch
+        - a tensorflow.python.keras.callbacks.History object describing the 
+          history of the training of some model 
+        - name for output figure (optional; default set below)
+        - figure dimensions (optional; default 20" x 9")
+
+    Plots the accuracy of the training set and validaton set versus the epoch
+    of training. Diagnostic to see how the accuracy of the model improves (or 
+    does not improve) with each iteration. 
+    
+    Output: None   
+    """
+
+    # plot the accuracy of the training and validation sets    
+    plt.figure(figsize=figsize)
+    plt.plot(train_acc, label='Training', linewidth=2.0, color="#ff5b00")
+    plt.plot(val_acc, label='Validation', linewidth=2.0, color="#5539cc")
+    plt.xlabel('Epoch', fontsize=18)
+    plt.ylabel('Accuracy', fontsize=18)
+    plt.legend(loc='best', fontsize=18, fancybox=True)
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.grid()
+    
+    # save the figure 
+    if not(output):
+        output = "train_vs_valid_accuracy.png"
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+    
+
+def plot_train_vs_valid_loss(train_loss, val_loss, 
+                             output=None, figsize=(20,9)):
+    """
+    Input:
+        - list/array of training loss at each epoch 
+        - list/array of validation loss at each epoch
+        - name for output figure (optional; default set below)
+        - figure dimensions (optional; default 20" x 9")
+
+    Plots the loss of the training set and validaton set versus the epoch
+    of training. Diagnostic to see how the loss of the model improves (or 
+    does not improve) with each iteration. 
+
+    
+    Output: None   
+    """
+
+    # plot the accuracy of the training and validation sets    
+    plt.figure(figsize=figsize)
+    plt.plot(train_loss, label='Training', linewidth=2.0, color="#ff5b00")
+    plt.plot(val_loss, label='Validation', linewidth=2.0, color="#5539cc")
+    plt.xlabel('Epoch', fontsize=18)
+    plt.ylabel('Loss', fontsize=18)
+    plt.legend(loc='best', fontsize=18, fancybox=True)
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.grid()
+    
+    # save the figure 
+    if not(output):
+        output = "train_vs_valid_loss.png"
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+def plot_confusion_matrix(label_true, label_pred, normalize=True, 
+                          classes=["bogus","real"],
+                          cmap="Purples",
+                          output=None):
+    """
+    Input:
+        - flattened array of the TRUE labels (0 for bogus, 1 for real) for a 
+          test set, i.e., the "ground truth"
+        - array of the PREDICTED labels for a test set, as returned by a 
+          classifier (e.g., if label_true has shape (100,), label_pred should
+          have shape (100,1))
+        - whether to normalize the results and show percentages rather than raw
+          counts (optional; default True)
+        - classes described by the labels (optional; default ["bogus","real"],
+          which assigns 0="bogus", 1="real")
+        - colormap to apply to plot (optional; default "Blues")
+        - name for output figure (optional; default set below)
+    
+    Plot the confusion matrix for the results of training. Can be normalized if
+    desired.
+    
+    Output: the confusion matrix
+    """
+
+    from sklearn.metrics import confusion_matrix
+    
+    ## compute confusion matrix 
+    cm = confusion_matrix(label_true, label_pred)
+    # output has shape [n_classes, n_classes] = [2,2] for real-bogus
+    
+    # normalize?
+    if normalize: # express as percentages 
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]*100
+        print("\nNormalized confusion matrix")
+    else: # express as raw counts 
+        print('\nConfusion matrix [without normalization]')
+    print(cm)
+    
+    ## plot the confusion matrix
+    fig, ax = plt.subplots()
+    ax.imshow(cm, interpolation='nearest', cmap=cmap)
+    
+    # set ticks and tick labels
+    ax.set_xticks(np.arange(cm.shape[1])) # no. of ticks = no. of labels
+    ax.set_yticks(np.arange(cm.shape[0]))
+    ax.set_xticklabels(classes, {"fontsize":14}) # ["bogus", "real"]
+    ax.set_yticklabels(classes, {"fontsize":14})
+    ax.set_xlabel("Prediction", fontsize=16) 
+    ax.set_ylabel("Truth", fontsize=16)
+    ax.axhline(0.5, color="black", lw=2) # lines for clarity
+    ax.axvline(0.5, color="black", lw=2) 
+
+    # rotate the y tick labels by 90 degrees
+    plt.setp(ax.get_yticklabels(), rotation=90, ha="right",
+             rotation_mode="anchor")
+    
+    ## label each entry in the matrix
+    # above this threshold, text should be white, below, should be black
+    thresh = cm.max()/2.0 
+    # for each entry in the matrix...
+    for i in range(cm.shape[0]): 
+        for j in range(cm.shape[1]):
+            ax.text(j, i, f'{cm[i, j]:.1f}%' if normalize else f'{cm[i, j]:d}', 
+                    ha="center", va="center", # center of box
+                    color="white" if cm[i, j] > thresh else "black",
+                    size=20)
+            
+    # save the figure 
+    if not(output):
+        if normalize:
+            output = "confusion_matrix_normalized.png"
+        else:
+            output = "confusion_matrix.png"
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+    
+    return cm
+    
+
+def plot_FPR_FNR_RBscore(preds, bool_bogus_true, bool_real_true, 
+                         thresholds=[0.5], 
+                         output=None):
+    """
+    Input:
+        - predicted label for each element in the test set 
+        - bool array where True if true label for element is 0 (bogus),
+          False if label is 1 (real)
+        - bool array where False if true label for element is 0 (bogus),
+          True if label is 1 (real)
+        - array of RB score thresholds for which we want to know the FPR and 
+          FNR (optional; default just 0.5; can be set to None to be disabled) 
+        - name for output figure (optional; default set below)
+          
+    Plot the false positive rate (FPR) and false negative rate (FNR) as a 
+    function of the real-bogus score (RB score) for the results of training.
+    
+    Output: None
+    """
+    
+    # bins for histogram
+    rbbins = np.arange(-0.0001, 1.0001, 0.0001)
+    
+    # values and edges of histogram, normalized such that binwidth*sum = 1
+    # b = bogus, r = real
+    h_b, e_b = np.histogram(preds[tuple(bool_bogus_true)], bins=rbbins, 
+                                  density=True)
+    h_b_c = np.cumsum(h_b) # same as h_b --  not sure why?    
+    h_r, e_r = np.histogram(preds[tuple(bool_real_true)], bins=rbbins, 
+                                  density=True)
+    h_r_c = np.cumsum(h_r) # same as h_r --  not sure why?
+
+    # real bogus thresholds
+    rb_thres = np.array(list(range(len(h_b)))) / len(h_b)   
+    
+    ## plot
+    # FNR and FPR
+    plt.figure(figsize=(13, 9))    
+    plt.plot(rb_thres, h_r_c/np.max(h_r_c), color="#e17701",
+             label='False Negative Rate (FNR)', linewidth=3.0)
+    plt.plot(rb_thres, 1 - h_b_c/np.max(h_b_c), color="#632de9",
+             label='False Positive Rate (FPR)', linewidth=3.0) 
+    
+    # mean misclassification error
+    mmce = (h_r_c/np.max(h_r_c) + 1 - h_b_c/np.max(h_b_c))/2
+    plt.plot(rb_thres, mmce, '--', label='Mean misclassification error', 
+             color='gray', linewidth=2.5)
+          
+    # x and y scales/ticks/labels
+    plt.yscale("log") # log scaling  
+    plt.xlim([-0.05, 1.05])    
+    plt.ylim([5e-4, 1.05])
+    plt.xticks(np.arange(0, 1.1, 0.1))   
+    ytick_values = plt.gca().get_yticks()
+    # make y ticks into percentages
+    plt.gca().set_yticklabels(['{:,.1%}'.format(x) if x < 0.01 else 
+                               '{:,.0%}'.format(x) for x in ytick_values])
+    plt.tick_params(axis='both', which='major', labelsize=20)
+    plt.xlabel('RB score threshold', fontsize=18)
+    plt.ylabel('Cumulative percentage', fontsize=18)  
+    
+    # mark the desired RB score threshold(s) (default is just 0.5)
+    if thresholds != None:
+        for t in thresholds:
+            mask_thresh = rb_thres < t
+            # compute FPR, FNR for this threshold
+            fnr = np.array(h_r_c/np.max(h_r_c))[mask_thresh][-1]
+            fpr = np.array(1 - h_b_c/np.max(h_b_c))[mask_thresh][-1]
+            print(f"\nAt RB threshold = {t}:")
+            print(f"FPR = {(fpr*100):.2f}%\tFNR = {(fnr*100):.2f}%")
+            # draw a line at the RB score threshold and write the FPR and FNR
+            # above the point where the line hits max(FPR, FNR)
+            plt.vlines(t, ymin=5e-4, ymax=max(fnr, fpr), linestyle="-", 
+                        color="black",linewidth=2.5)
+            t_label = f' {fnr*100:.1f}% FNR\n {fpr*100:.1f}% FPR'
+            plt.text(t-0.04, max(fnr, fpr)+0.01, t_label, fontsize=16)
+    
+    # grid lines     
+    plt.gca().grid(True, which='major', linewidth=1.0)
+    plt.gca().grid(True, which='minor', linewidth=0.5)    
+        
+    # legend
+    plt.legend(loc="best", fontsize=16, fancybox=True)    
+            
+    # save the figure 
+    if not(output):
+        output = "FPR_FNR_RBscore.png"
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+def plot_ROC(test_labels, preds, output=None):
+    """
+    WIP: connect inset to parent axis 
+    
+    Input:
+        - list/array of labels (0 OR 1) given to sources in the test set for 
+          some RB score threshold
+        - list/array of actual predicted RB scores for some RB score threshold 
+        - name for the output figure (optional; default set below)
+    
+    Plots the receiver operating characteristic (ROC) curve for some test data
+    set, showing the False Positive Rate (FPR; Contamination) versus the True 
+    Positive Rate (TPR; Sensitivity). Shows the entire plot as well as a 
+    zoomed-in section near where (ideally) FPR~0, TPR~1. 
+    
+    Output: None
+    """
+    from sklearn.metrics import roc_curve, auc    
+
+    # compute False Pos. Rate (FPR), True Pos. Rate (TPR), and thresholds
+    # for a Receiver Operating Characteristic (ROC) curve     
+    fpr, tpr, thresholds = roc_curve(test_labels, preds) # curve
+    roc_auc = auc(fpr, tpr) # area under the curve 
+ 
+    ## plot
+    fig = plt.figure(figsize=(14, 5))
+    fig.subplots_adjust(bottom=0.09, left=0.05, right=0.70, top=0.98, 
+                        wspace=0.2, hspace=0.2)            
+    # ROC
+    ax = fig.add_subplot(1,2,1)                 
+    ax.plot(fpr, tpr, lw=3.0, color="#632de9") # ROC curve      
+    ax.set_xlim([-0.05, 1.0])
+    ax.set_ylim([0.0, 1.05])
+    ax.set_xlabel('False Positive Rate [Contamination]', fontsize=16)
+    ax.set_ylabel('True Positive Rate [Sensitivity]', fontsize=16)
+    ax.tick_params(axis='both', which='major', labelsize=13)
+    ax.grid(True)    
+    # zoomed ROC
+    ax2 = fig.add_subplot(1,2,2)     
+    ax2.plot(fpr, tpr, lw=3.0, color="#632de9",
+             label=f'ROC (AUC = {roc_auc:.2f})') # ROC curve    
+    ax2.set_xlim([-0.005, 0.1])
+    ax2.set_ylim([0.9, 1.005])
+    #ax2.set_xlabel('False Positive Rate [Contamination]', fontsize=16)
+    #ax2.set_ylabel('True Positive Rate [Sensitivity]', fontsize=16)
+    ax2.tick_params(axis='both', which='major', labelsize=13)
+    ax2.grid(True)
+    ax2.legend(loc="best", fontsize=16, fancybox=True)
+    
+    # make edges red, dashed lines with thickness 2.5
+    for i in ["bottom", "top", "right", "left"]:
+        ax2.spines[i].set_color('red')
+        ax2.spines[i].set_linewidth(2.5)
+        ax2.spines[i].set_linestyle("--")
+
+    # straight line with slope 1, intercept 0
+    ax.plot([0, 1], [0, 1], color='#333333', lw=1.5, linestyle='--')
+    
+    # rectangle indicating zoomed region
+    rect = ptc.Rectangle((0.0, 0.9), width=0.1, height=0.1, fill=False, 
+                         lw=2.5, ls="--", color="red")
+    ax.add_patch(rect)
+    
+    # connect inset axes here?
+
+    # save the figure 
+    if not(output):
+        output = "ROC_curve.png"
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+def plot_histogram_RB_score(tabfile, 
+                            key="label_preds", rb_thresh=0.5, 
+                            title=None, 
+                            output=None):
+    """
+    Input:
+        - single table of transient candidates which have been assigned an RB 
+          score using a braai model (must be of form .csv or .fits) OR have 
+          been manually labelled 
+        - the key (column name) to search for the predicted RB score (optional; 
+          default "label_preds")
+        - the RB score to set as the threshold for real sources (optional; 
+          default 0.5)
+        - title for the plot (optional; default None)
+        - name for output plot (optional; default set below)
+
+    Plots a histogram of the RB score assigned to each candidate in some 
+    dataset.
+    
+    Output: None
+    """
+    
+    # load in table
+    if ".fits" in tabfile:
+        tbl = Table.read(tabfile, format="ascii")
+        filext = ".fits"
+    elif ".csv" in tabfile:
+        tbl = Table.read(tabfile, format="ascii.csv")
+        filext = ".csv"
+    else:
+        print("\nInput table must be of filetype .csv or .fits. Exiting.")
+        return
+    
+    # labels 
+    labels = tbl[key]
+    real_labels = [l for l in labels if l>rb_thresh] # real sources
+    bogus_labels = [l for l in labels if l<rb_thresh] # bogus sources 
+    # bins
+    real_bins = np.arange(rb_thresh, 1.05, 0.05)
+    bogus_bins = np.arange(0, rb_thresh+0.05, 0.05)
+    
+    # plot
+    plt.figure(figsize=(11,10))
+    plt.hist(real_labels, bins=real_bins, color="#0652ff", 
+             label=f"Real [{len(real_labels)}]")
+    plt.hist(bogus_labels, bins=bogus_bins, color="#fc5a50", 
+             label=f"Bogus [{len(bogus_labels)}]")   
+    
+    plt.xlabel("RB score", fontsize=18)
+    plt.ylabel("Counts", fontsize=18)
+    xticks = np.arange(0, 1.1, 0.1)
+    plt.xticks(xticks)
+    plt.yscale("log")
+    plt.gca().tick_params(axis="both", which='major', labelsize=20)    
+    plt.legend(fancybox=True, fontsize=20)
+    plt.gca().grid(True, which='major', linewidth=1.0)
+    plt.gca().grid(True, which='minor', linewidth=0.3)  
+
+    # a line at the RB score threshold
+    plt.axvline(rb_thresh, lw=2.0, color="black")    
+
+    # title
+    if title:
+        plt.title(title, fontsize=15)
+
+    # save the figure 
+    if not(output):
+        output = tabfile.replace(filext, f"_histo_RBscore_{rb_thresh}.png")
     plt.savefig(output, bbox_inches="tight")
     plt.close()

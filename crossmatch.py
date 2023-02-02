@@ -7,7 +7,7 @@
 
 Functions for cross-matching candidate transients yielded by `amakihi` with 
 lists of known transients, transients from the Transient Name Server (TNS), 
-catalogues of variable star, quasars, or active galactic nuclei, etc.
+catalogues of variable star, quasars, active galactic nuclei, etc.
 
 """
 
@@ -1304,7 +1304,9 @@ def MOC_crossmatch_TNS(moc_file, TNS_tabfile, output_tab_TNS=None):
     -------
     astropy.table.Table
         Table of TNS sources in the MOC footprint
-            
+    
+    Notes
+    -----
     Given some table of sources from TNS, produces a table of only those 
     sources which are also in the footprint defined by the MOC. 
     

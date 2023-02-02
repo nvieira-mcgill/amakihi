@@ -16,7 +16,6 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -50,17 +49,13 @@
 <li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">plotting module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#plotting.plot_image"><code class="docutils literal notranslate"><span class="pre">plot_image()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#plotting.plot_transient_stamp"><code class="docutils literal notranslate"><span class="pre">plot_transient_stamp()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#plotting.plot_transient"><code class="docutils literal notranslate"><span class="pre">plot_transient()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">plotting module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_2MASS.html">query_2MASS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_data_utils.html">training_data_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
 </ul>
 </li>
@@ -103,6 +98,8 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">amakihi</span></code> (image differencing) module</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">transient</span></code> module</p></li>
 </ul>
+<p>And several functions for plotting machine learning diagnostics which are not
+associated with any particular module.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="plotting.plot_image">
 <span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bone'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_large</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_large</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#fe019a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_image" title="Permalink to this definition"></a></dt>
@@ -210,6 +207,131 @@ science or reference images cannot be assured.</p>
 <li><p>“zoom ref” - postage stamp of the original reference image</p></li>
 <li><p>“zoom diff” - postage stamp of the subtracted image</p></li>
 </ol>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_train_vs_valid_accuracy">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_train_vs_valid_accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_acc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_acc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(20,</span> <span class="pre">9)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_train_vs_valid_accuracy" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>list/array of training accuracy at each epoch</p></li>
+<li><p>list/array of validation accuracy at each epoch</p></li>
+<li><p>a tensorflow.python.keras.callbacks.History object describing the
+history of the training of some model</p></li>
+<li><p>name for output figure (optional; default set below)</p></li>
+<li><p>figure dimensions (optional; default 20” x 9”)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plots the accuracy of the training set and validaton set versus the epoch
+of training. Diagnostic to see how the accuracy of the model improves (or
+does not improve) with each iteration.</p>
+<p>Output: None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_train_vs_valid_loss">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_train_vs_valid_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_loss</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(20,</span> <span class="pre">9)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_train_vs_valid_loss" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>list/array of training loss at each epoch</p></li>
+<li><p>list/array of validation loss at each epoch</p></li>
+<li><p>name for output figure (optional; default set below)</p></li>
+<li><p>figure dimensions (optional; default 20” x 9”)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plots the loss of the training set and validaton set versus the epoch
+of training. Diagnostic to see how the loss of the model improves (or
+does not improve) with each iteration.</p>
+<p>Output: None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_confusion_matrix">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_confusion_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['bogus',</span> <span class="pre">'real']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Purples'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_confusion_matrix" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>flattened array of the TRUE labels (0 for bogus, 1 for real) for a
+test set, i.e., the “ground truth”</p></li>
+<li><p>array of the PREDICTED labels for a test set, as returned by a
+classifier (e.g., if label_true has shape (100,), label_pred should
+have shape (100,1))</p></li>
+<li><p>whether to normalize the results and show percentages rather than raw
+counts (optional; default True)</p></li>
+<li><p>classes described by the labels (optional; default [“bogus”,”real”],
+which assigns 0=”bogus”, 1=”real”)</p></li>
+<li><p>colormap to apply to plot (optional; default “Blues”)</p></li>
+<li><p>name for output figure (optional; default set below)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plot the confusion matrix for the results of training. Can be normalized if
+desired.</p>
+<p>Output: the confusion matrix</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_FPR_FNR_RBscore">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_FPR_FNR_RBscore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bool_bogus_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bool_real_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresholds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_FPR_FNR_RBscore" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>predicted label for each element in the test set</p></li>
+<li><p>bool array where True if true label for element is 0 (bogus),
+False if label is 1 (real)</p></li>
+<li><p>bool array where False if true label for element is 0 (bogus),
+True if label is 1 (real)</p></li>
+<li><p>array of RB score thresholds for which we want to know the FPR and
+FNR (optional; default just 0.5; can be set to None to be disabled)</p></li>
+<li><p>name for output figure (optional; default set below)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plot the false positive rate (FPR) and false negative rate (FNR) as a
+function of the real-bogus score (RB score) for the results of training.</p>
+<p>Output: None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_ROC">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_ROC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">test_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_ROC" title="Permalink to this definition"></a></dt>
+<dd><p>WIP: connect inset to parent axis</p>
+<dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>list/array of labels (0 OR 1) given to sources in the test set for
+some RB score threshold</p></li>
+<li><p>list/array of actual predicted RB scores for some RB score threshold</p></li>
+<li><p>name for the output figure (optional; default set below)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plots the receiver operating characteristic (ROC) curve for some test data
+set, showing the False Positive Rate (FPR; Contamination) versus the True
+Positive Rate (TPR; Sensitivity). Shows the entire plot as well as a
+zoomed-in section near where (ideally) FPR~0, TPR~1.</p>
+<p>Output: None</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_histogram_RB_score">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_histogram_RB_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label_preds'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_histogram_RB_score" title="Permalink to this definition"></a></dt>
+<dd><dl class="simple">
+<dt>Input:</dt><dd><ul class="simple">
+<li><p>single table of transient candidates which have been assigned an RB
+score using a braai model (must be of form .csv or .fits) OR have
+been manually labelled</p></li>
+<li><p>the key (column name) to search for the predicted RB score (optional;
+default “label_preds”)</p></li>
+<li><p>the RB score to set as the threshold for real sources (optional;
+default 0.5)</p></li>
+<li><p>title for the plot (optional; default None)</p></li>
+<li><p>name for output plot (optional; default set below)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Plots a histogram of the RB score assigned to each candidate in some
+dataset.</p>
+<p>Output: None</p>
 </dd></dl>
 
 </section>

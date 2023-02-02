@@ -16,7 +16,6 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -86,8 +85,350 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="crossmatch-module">
-<h1>crossmatch module<a class="headerlink" href="#crossmatch-module" title="Permalink to this heading"></a></h1>
+  <section id="module-crossmatch">
+<span id="crossmatch-module"></span><h1>crossmatch module<a class="headerlink" href="#module-crossmatch" title="Permalink to this heading"></a></h1>
+<p>Functions for cross-matching candidate transients yielded by <cite>amakihi</cite> with
+lists of known transients, transients from the Transient Name Server (TNS),
+catalogues of variable star, quasars, active galactic nuclei, etc.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_list">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossmatch_ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossmatch_dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_crossmatch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_list" title="Permalink to this definition"></a></dt>
+<dd><p>Given some candidate transients, search for matches within <cite>sep_max</cite>
+arcseconds of some <cite>(crossmatch_ra, crossmatch_dec)</cite></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>crossmatch_ra, crossmatch_dec</strong> (<em>array_like</em>) – Lists of RA and Dec to crossmatch to; must be in degrees</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_crossmatch</strong> (<em>str, optional</em>) – Name for output table with RA, Dec which were successfully
+crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, looks for candidates which
+are within <cite>sep_max</cite> arcseconds of pairs (ra, dec) given by the input
+lists <cite>crossmatch_ra</cite> and <cite>crossmatch_dec</cite>. If M&gt;0 matches are found,
+writes a table containing the M crossmatched transient candidates, another
+tablecontaining just the RA, Dec of the M crossmatched sources, and a
+(M,3,Y,X) .npy file containing the M relevant triplets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_table">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transient_tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_transients</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_table" title="Permalink to this definition"></a></dt>
+<dd><p>Given some tables of candidate transients and known transients, search
+for matches within <cite>sep_max</cite> arcseconds of each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>transient_tabfile</strong> (<em>str</em>) – Table of known transients from whatever source (must have, at
+minimum, ‘RA’/’ra’/’RAJ2000’ and ‘DEC’/’dec’/’DEJ2000’ columns;
+must be .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_transients</strong> (<em>str, optional</em>) – Name for output table with <strong>known</strong> transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, looks for candidates which
+are within <cite>sep_max</cite> arcsec of known transients provided via the .fits /
+.csv table <cite>transient_tabfile</cite>. If M&gt;0 matches are found, writes a table
+containing the M crossmatched transient <em>candidates</em>, another table
+containing the M <em>known</em> transients, and a (M,3,Y,X) .npy file containing
+the M relevant triplets.</p>
+<p>Bug: files are overwritten if tabfile and known_transient_table have
+different file extensions?</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_TNS">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_TNS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TNS_tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_TNS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_TNS" title="Permalink to this definition"></a></dt>
+<dd><p>Given some tables of candidate transients and known treansients from
+the Transient Name Server (TNS), search for matches within <cite>sep_max</cite>
+arcseconds of each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>TNS_tabfile</strong> (<em>str</em>) – Table of known transients from Transient Name Server (must be a .csv)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_TNS</strong> (<em>str, optional</em>) – Name for output table with <strong>TNS</strong> transients which were successfully
+crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, looks for candidates which
+are within <cite>sep_max</cite> arcsec of known transients provided via the .csv
+table <cite>TNS_tabfile</cite>, which must come the Transient Name Server’s querying
+page. If M&gt;0 matches are found, writes a table containing the M
+crossmatched transient <em>candidates</em>, another table containing the M
+<em>known</em> TNS sources, and a <cite>(M,3,Y,X)</cite> .npy file containing the M relevant
+triplets.</p>
+<p>The .csv of TNS files must have been previously downloaded. In the future,
+will write a function which queries the TNS in real-time.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_GCVS">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_GCVS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_GCVS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_GCVS" title="Permalink to this definition"></a></dt>
+<dd><p>Given a table of candidate transients, search for cross-matches in the
+General Catalogue of Variable Stars (GCVS), within <cite>sep_max</cite> arcseconds of
+each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_GCVS</strong> (<em>str, optional</em>) – Name for output table with <strong>GCVS</strong> transients which were successfully
+crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, queries the General
+Catalog of Variable Stars (~55,000 stars as of 22 November 2019) for
+sources within <cite>sep_max</cite> arcsec of the candidate transients. If M&gt;0
+matches are found, writes a table containing the M crossmatched transient
+<em>candidates</em>, another table containing the M <em>known</em> GCVS variable stars,
+and a <cite>(M,3,Y,X)</cite> .npy file containing the M relevant triplets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_AAVSO">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_AAVSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_AAVSO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_AAVSO" title="Permalink to this definition"></a></dt>
+<dd><p>Given a table of candidate transients, search for cross-matches in the
+American Association of Variable Star Observers (AAVSO) International
+Variable Star Index (VSX) within <cite>sep_max</cite> arcseconds of each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_AAVSO</strong> (<em>str, optional</em>) – Name for output table with <strong>AAVSO</strong> transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, queries the American
+Association of Variable Star Observers (AAVSO) International Variable Star
+indeX (VSX, ~2 million stars as of 22 November 2019) for sources within
+<cite>sep_max</cite> arcsec of the candidate transients. If M&gt;0 matches are found,
+writes a table containing the M crossmatched transient <em>candidates</em>,
+another table containing the M <em>known</em> AAVSO variable stars, and a
+<cite>(M,3,Y,X)</cite> .npy file containing the M relevant triplets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_VeronCettyVeron">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_VeronCettyVeron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_VCV</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_VeronCettyVeron" title="Permalink to this definition"></a></dt>
+<dd><p>Given a table of candidate transients, search for cross-matches in the
+Veron-Cetty and Veron catalogue of quasars, within <cite>sep_max</cite> arcseconds of
+each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_VCV</strong> (<em>str, optional</em>) – Name for output table with <strong>Veron-Cetty and Veron</strong> quasars which
+were successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, queries the Veron-Cetty &amp;
+Veron catalogue of quasars and active galactic nuclei (13ed, Veron-Cetty &amp;
+Veron 2010) for sources within <cite>sep_max</cite> arcsec of the candidate
+transients. If M&gt;0 matches are found, writes a table containing the M
+crossmatched transient <em>candidates</em>, another table containing the M
+<em>known</em> quasars/AGN, and a <cite>(M,3,Y,X)</cite> .npy file containing the M relevant
+triplets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_MILLIQUAS">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_MILLIQUAS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_MILLIQUAS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_MILLIQUAS" title="Permalink to this definition"></a></dt>
+<dd><p>Given a table of candidate transients, search for cross-matches in the
+Million Quasars (MILLIQUAS) catalogue of quasars, within <cite>sep_max</cite>
+arcseconds of each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_MILLIQUAS</strong> (<em>str, optional</em>) – Name for output table with <strong>MILLIQUAS</strong> quasars which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, queries the Million
+Quasars (MILLIQUAS) catalogue of quasars (v6.3, Flesch 2019, updated 16
+June 2019) for sources within <cite>sep_max</cite> arcsec of the candidate
+transients. If M&gt;0 matches are found, writes a table containing the M
+crossmatched transient <em>candidates</em>, another table containing the M
+<em>known</em> quasars, and a <cite>(M,3,Y,X)</cite> .npy file containing the M relevant
+triplets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.crossmatch_PS1_stellar">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">crossmatch_PS1_stellar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sep_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_PS1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.crossmatch_PS1_stellar" title="Permalink to this definition"></a></dt>
+<dd><p>Given a table of candidate transients, search for cross-matches among
+the stellar sources in the Pan-STARSS1 3pi catalogue, within <cite>sep_max</cite>
+arcseconds of each other</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str, optional</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite> (default
+None; if provided, will write matches to a new file)</p></li>
+<li><p><strong>sep_max</strong> (<em>float, optional</em>) – Maximum separation to consider two sources to be the same, in
+arcseconds (default 2.0)</p></li>
+<li><p><strong>match</strong> (<em>bool, optional</em>) – Look for matches? or look for non-matches (default True)</p></li>
+<li><p><strong>output_tab</strong> (<em>str, optional</em>) – Name for output table with candidate transients which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_tab_PS1</strong> (<em>str, optional</em>) – Name for output table with <strong>Pan-STARSS1</strong> stars which were
+successfully crossmatched (default set by function)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with crossmatched triplets (default set by
+function)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Parameters</dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>For a single .fits or .csv table containing N transient candidates and a</strong></p></li>
+<li><p><strong>single triplet .npy file containing N triplets, queries the Pan-STARRS 1</strong></p></li>
+<li><p><strong>3pi survey (Chambers et al 2016) for **stellar</strong> sources within <a href="#id1"><span class="problematic" id="id2">`</span></a>sep_max`**</p></li>
+<li><p><strong>arcseconds of the candidate transients. If M&gt;0 matches are found, writes a</strong></p></li>
+<li><p><strong>table containing the M crossmatched transient  *candidates*, another table</strong></p></li>
+<li><p><strong>containing the M *known* quasars, and a `(M,3,Y,X)` .npy file containing</strong></p></li>
+<li><p><strong>the M relevant triplets.</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.MOC_crossmatch_TNS">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">MOC_crossmatch_TNS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">moc_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TNS_tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_TNS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.MOC_crossmatch_TNS" title="Permalink to this definition"></a></dt>
+<dd><p>Given a Multi-Order Coverage (MOC) map and table of transients from the
+Transient Name Server (TNS), identify TNS transients which lie in the MOC
+footprint</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>moc_file</strong> (<em>str</em>) – .fits file containing MOC</p></li>
+<li><p><strong>TNS_tabfile</strong> (<em>str</em>) – Table of known transients from Transient Name Server (must be a .csv)</p></li>
+<li><p><strong>output_tab_TNS</strong> (<em>str, optional</em>) – Name for output table with <strong>TNS</strong> transients which were successfully
+crossmatched (default set by function)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of TNS sources in the MOC footprint</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>astropy.table.Table</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Given some table of sources from TNS, produces a table of only those
+sources which are also in the footprint defined by the MOC.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="crossmatch.MOC_crossmatch_AAVSO">
+<span class="sig-prename descclassname"><span class="pre">crossmatch.</span></span><span class="sig-name descname"><span class="pre">MOC_crossmatch_AAVSO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">moc_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab_AAVSO</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#crossmatch.MOC_crossmatch_AAVSO" title="Permalink to this definition"></a></dt>
+<dd><p>Find AAVSO sources in the region defined by some Multi-Order Coverage
+(MOC) map</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>moc_file</strong> (<em>str</em>) – .fits file containing MOC</p></li>
+<li><p><strong>output_tab_AAVSO</strong> (<em>str, optional</em>) – Name for output table with <strong>AAVSO</strong> transients which were successfully
+crossmatched (default set by function)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Table of American Association of Variable Star Observers (AAVSO)
+international Variable Source indeX (VSC) sources in the MOC
+footprint</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>astropy.table.Table</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Gets a very barebones table of all AAVSO sources present in an input MOC
+file by querying Vizier.</p>
+</dd></dl>
+
 </section>
 
 

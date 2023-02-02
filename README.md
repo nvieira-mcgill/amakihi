@@ -13,7 +13,7 @@ End-to-end image differencing and transient detection software, including:
 - Transient detection and basic vetting of candidate transients 
 
 The end products of a pipeline constructed from ``amakihi`` are "triplets", i.e., 
-`N` length-3 arrays of the (science, reference, difference) images cropped around `N` candidate transient sources. These candidate transients can then be further vetted with e.g. your favourite machine learning algorithm. (I use [``braai``](https://github.com/dmitryduev/braai)).
+`N` length-3 arrays of the (science, reference, difference) images cropped around `N` candidate transient sources. These candidate transients can then be further vetted with e.g. your favourite machine learning algorithm. (I use [``braai``](https://github.com/dmitryduev/braai)). Some modules for interfacing with ``braai`` are included here as well.
 
 This software was developed to serve in a pipeline for the MegaCam instrument of the Canada-France-Hawaii Telescope (CFHT). This pipeline was used for all image differencing and transient detection in the following paper describing our CFHT MegaCam follow-up of the gravitational wave event GW190814:
 
@@ -31,15 +31,22 @@ Installation
 
 Currently, needs to be installed directly from github. May be install-able with ``conda`` and/or ``pip`` in the future.
 
-**Dependencies:**
+**Essential dependencies:**
 
 - ``numpy``
 - ``scipy``
 - ``matplotlib``
-- [``lxml``](https://lxml.de/) (but only for `query_CFIS`)
-- [``scikit-image``](https://scikit-image.org/)
 - [``astropy``](https://docs.astropy.org/en/stable/)
 - [``photutils``](https://photutils.readthedocs.io/en/stable/)
+- [``scikit-image``](https://scikit-image.org/)
+- [``scikit-learn``](https://scikit-learn.org/stable/install.html)
+
+
+**Optional dependencies:**
+
+- [``imblearn''](https://imbalanced-learn.org/stable/index.html) (if using `training_data_utils.augment_dataset_SMOTE()`)
+- [``lxml``](https://lxml.de/) (if using `query_CFIS` module)
+- [``astroquery``](https://astroquery.readthedocs.io/en/latest/) (if using `crossmatch` module)
 
 **Non-Python:**
 

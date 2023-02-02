@@ -18,4 +18,5 @@ amakihi
    query_DECaLS
    query_PS1
    templates
+   training_data_utils
    transient
