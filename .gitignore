@@ -8,6 +8,8 @@ __pycache__/
 # Particular to amakihi
 CADC_LOGIN.md
 loop_imdiff*
+CNN_model_utils.py
+
 
 # token for working on repo
 TOKEN

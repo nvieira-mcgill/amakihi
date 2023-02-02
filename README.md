@@ -44,7 +44,7 @@ Currently, needs to be installed directly from github. May be install-able with 
 
 **Optional dependencies:**
 
-- [``imblearn''](https://imbalanced-learn.org/stable/index.html) (if using `training_data_utils.augment_dataset_SMOTE()`)
+- [``imblearn``](https://imbalanced-learn.org/stable/index.html) (if using `training_data_utils.augment_dataset_SMOTE()`)
 - [``lxml``](https://lxml.de/) (if using `query_CFIS` module)
 - [``astroquery``](https://astroquery.readthedocs.io/en/latest/) (if using `crossmatch` module)
 

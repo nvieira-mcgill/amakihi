@@ -525,9 +525,9 @@ def triplets_normalize(tripfile, output_trips=None):
     Notes
     -----
     For an array of N triplets with shape (N, 3, X, Y), normalizes each 
-    science, reference and difference image **independently*8 using L2 
-    normalization. **Should be called BEFORE rearranging the triplets into 
-    shape (N, X, Y, 3) with :func:`triplet_rearrange`**
+    science, reference and difference image **independently** using L2 
+    normalization. Should be called **BEFORE** rearranging the triplets into 
+    shape (N, X, Y, 3) with :func:`triplet_rearrange`
 
     """
     
@@ -571,9 +571,9 @@ def triplets_rearrange(tripfile, output_trips=None):
     -----
     For an array of N triplets with shape (N, 3, X, Y), rearranges the array 
     to have shape (N, X, Y, 3). This is the required format for training the 
-    braai. **Should be used as the final step of pre-processing, after 
+    braai. Should be used as the **FINAL** step of pre-processing, after 
     merging, augmenting, normalizing, etc. Calling this function on several 
-    triplet files and then trying to merge, augment, etc. will NOT work.** 
+    triplet files and then trying to merge, augment, etc. will **NOT** work. 
     
     """
     
