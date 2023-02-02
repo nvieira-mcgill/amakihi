@@ -77,20 +77,19 @@ def crossmatch_list(tabfile,
         tbl = Table.read(tabfile, format="ascii.csv")
         filext = ".csv"
     else:
-        print("\nInput table must be of filetype .csv or .fits. Exiting.")
-        return
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
     
-    # load in triplets    
-    triplets = np.load(tripfile, mmap_mode="r")
-
-    if not(len(tbl) == len(triplets)):
-        print("\nThe number of candidate transients in the input table does "+
-              "not match the number of triplets. Exiting.")
-        return
+    # load in triplets, if given
+    if not(type(tripfile) == type(None)):
+        triplets = np.load(tripfile, mmap_mode="r")
+        if not(len(tbl) == len(triplets)):
+            raise ValueError("Length of table with candidate transients "+
+                             "does not match number of input triplets")
+    # check input RA, Dec
     if not(len(crossmatch_ra) == len(crossmatch_dec)):
-        print("\nThe length of the input RAs and input Decs do not match. "+
-              "Exiting.")
-        return
+        raise ValueError("The length of the input RAs and input Decs do "+
+                         "not match")
     
     # build skycoord objects out of table of candidates and candidate RA, Decs
     # to crossmatch to
@@ -249,14 +248,15 @@ def crossmatch_table(tabfile, transient_tabfile,
         print("\nSearching for matching sources...")
         tbl_match = tbl[idx_cand]
         trns_match = trns[idx_trns]
-        if tripfile: 
+        if not(type(tripfile) == type(None)): 
             triplets_match = triplets[idx_cand]
     else: # tables with only NON-matched sources 
         print("\nSearching for NON-matching sources...")
         tbl_match = setdiff(tbl, tbl[idx_cand])
         trns_match = setdiff(trns, trns[trns_match], keys=[ra_col,dec_col])
         idx_nomatch = [i for i in range(len(tbl)) if not(i in idx_cand)]
-        if tripfile: triplets_match = triplets[idx_nomatch]  
+        if not(type(tripfile) == type(None)): 
+            triplets_match = triplets[idx_nomatch]  
 
 
     print(f'\n{len(idx_cand)} match(es) found for {len(tbl)} input '+
@@ -322,7 +322,7 @@ def crossmatch_TNS(tabfile, TNS_tabfile,
     output_tab : str, optional
         Name for output table with candidate transients which were 
         successfully crossmatched (default set by function)
-    output_tab_transients : str, optional
+    output_tab_TNS : str, optional
         Name for output table with **TNS** transients which were successfully 
         crossmatched (default set by function)
     output_trips : str, optional
@@ -333,11 +333,12 @@ def crossmatch_TNS(tabfile, TNS_tabfile,
     -----
     For a single .fits or .csv table containing N transient candidates and a 
     single triplet .npy file containing N triplets, looks for candidates which
-    are within `sep_max` arcsec of known transients provided via the .csv table 
-    `TNS_tabfile`, which must come the Transient Name Server's querying page.
-    If M>0 matches are found, writes a table containing the M crossmatched 
-    transient *candidates*, another table containing the M *known* TNS 
-    sources, and a `(M,3,Y,X)` .npy file containing the M relevant triplets. 
+    are within `sep_max` arcsec of known transients provided via the .csv 
+    table `TNS_tabfile`, which must come the Transient Name Server's querying 
+    page. If M>0 matches are found, writes a table containing the M 
+    crossmatched transient *candidates*, another table containing the M 
+    *known* TNS sources, and a `(M,3,Y,X)` .npy file containing the M relevant 
+    triplets. 
     
     The .csv of TNS files must have been previously downloaded. In the future, 
     will write a function which queries the TNS in real-time.
@@ -393,7 +394,7 @@ def crossmatch_TNS(tabfile, TNS_tabfile,
         print("\nSearching for matching sources...")
         tbl_match = tbl[idx_cand]
         tns_match = tns[idx_tns]
-        if tripfile: 
+        if not(type(tripfile) == type(None)): 
             triplets_match = triplets[idx_cand]
     else: # tables with only NON-matched sources 
         print("\nSearching for NON-matching sources...")
@@ -424,7 +425,8 @@ def crossmatch_TNS(tabfile, TNS_tabfile,
     
     # always write known TNS transients to a .csv 
     if type(output_tab_TNS) == type(None):
-        output_tab_TNS = tabfile.replace(filext, "_TNS_crossmatched_catalog.csv")
+        output_tab_TNS = tabfile.replace(filext, 
+                                         "_TNS_crossmatched_catalog.csv")
     tns_match.write(output_tab_TNS, format="ascii.csv", overwrite=True)
     
     # write triplets?
@@ -473,12 +475,12 @@ def crossmatch_GCVS(tabfile,
     Notes
     -----
     For a single .fits or .csv table containing N transient candidates and a 
-    single triplet .npy file containing N triplets, queries the General Catalog
-    of Variable Stars (~55,000 stars as of 22 November 2019) for sources within
-    `sep_max` arcsec of the candidate transients. If M>0 matches are found, 
-    writes a table containing the M crossmatched transient *candidates*, 
-    another table containing the M *known* GCVS variable stars, and a 
-    `(M,3,Y,X)` .npy file containing the M relevant triplets.  
+    single triplet .npy file containing N triplets, queries the General 
+    Catalog of Variable Stars (~55,000 stars as of 22 November 2019) for 
+    sources within `sep_max` arcsec of the candidate transients. If M>0 
+    matches are found, writes a table containing the M crossmatched transient 
+    *candidates*, another table containing the M *known* GCVS variable stars, 
+    and a `(M,3,Y,X)` .npy file containing the M relevant triplets.  
 
     """
     
@@ -563,14 +565,14 @@ def crossmatch_GCVS(tabfile,
         print("\nSearching for matching sources...")
         tbl_match = tbl[idx_trns]
         cat_match = cat[idx_cat]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_trns]
     else: # tables with only NON-matched sources 
         print("\nSearching for NON-matching sources...") 
         tbl_match = setdiff(tbl, tbl[idx_trns])
         cat_match = setdiff(cat, cat[idx_cat], keys="GCVS")
         idx_nomatch = [i for i in range(len(tbl)) if not(i in idx_trns)]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_nomatch] 
     
     print(f'\n{len(idx_trns)} match(es) found for {len(tbl)} input '+
@@ -594,7 +596,8 @@ def crossmatch_GCVS(tabfile,
     
     # always write known GCVS stars to a .csv
     if type(output_tab_GCVS) == type(None):
-        output_tab_GCVS = tabfile.replace(filext, "_GCVS_crossmatched_catalog.csv")
+        output_tab_GCVS = tabfile.replace(filext, 
+                                          "_GCVS_crossmatched_catalog.csv")
     cat_match.write(output_tab_GCVS, format="ascii.csv", overwrite=True)
     
     # write triplets?
@@ -631,8 +634,8 @@ def crossmatch_AAVSO(tabfile,
         Name for output table with candidate transients which were 
         successfully crossmatched (default set by function)
     output_tab_AAVSO : str, optional
-        Name for output table with **AAVSO** transients which were successfully 
-        crossmatched (default set by function)
+        Name for output table with **AAVSO** transients which were 
+        successfully crossmatched (default set by function)
     output_trips : str, optional
         Name for output .npy file with crossmatched triplets (default set by 
         function)
@@ -725,14 +728,14 @@ def crossmatch_AAVSO(tabfile,
         print("\nSearching for matching sources...")
         tbl_match = tbl[idx_trns]
         cat_match = cat[idx_cat]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_trns]
     else: # tables with only NON-matched sources 
         print("\nSearching for NON-matching sources...")
         tbl_match = setdiff(tbl, tbl[idx_trns])
         cat_match = setdiff(cat, cat[idx_cat], keys="Name")
         idx_nomatch = [i for i in range(len(tbl)) if not(i in idx_trns)]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_nomatch] 
    
     print(f'\n{len(idx_trns)} match(es) found for {len(tbl)} input '+
@@ -749,13 +752,14 @@ def crossmatch_AAVSO(tabfile,
 
     # write the CANDIDATE file with matches    
     if type(output_tab) == type(None):
-        output_tab = tabfile.replace(filext, f"_AAVSO-VSX_crossmatched{filext}")    
+        output_tab = tabfile.replace(filext, 
+                                     f"_AAVSO-VSX_crossmatched{filext}")    
     if filext == ".fits":
         tbl_match.write(output_tab, format="ascii", overwrite=True)
     elif filext == ".csv":
         tbl_match.write(output_tab, format="ascii.csv", overwrite=True)
     
-    # always write known AAVSO stars to a csv
+    # always write known AAVSO stars to a .csv
     if type(output_tab_AAVSO) == type(None):
         output_tab_AAVSO = tabfile.replace(filext, 
                                      "_AAVSO-VSX_crossmatched_catalog.csv")
@@ -764,39 +768,58 @@ def crossmatch_AAVSO(tabfile,
     # write triplets?
     if not(type(tripfile) == type(None)): # were input triplets provided?
         if type(output_trips) == type(None):
-            output_trips = tripfile.replace(".npy", "_AAVSO-VSX_crossmatched.npy")
+            output_trips = tripfile.replace(".npy", 
+                                            "_AAVSO-VSX_crossmatched.npy")
         np.save(output_trips, triplets_match)
 
 
 
 ### QUASARS / ACTIVE GALACTIC NUCLEI ##########################################
 
-def crossmatch_VeronCettyVeron(tabfile, tripfile=None, sep_max=2.0, match=True,
-                               tabout=None, cat_tabout=None, tripout=None):
-    """        
-    Input:
-        - single table of transient candidates (must be of form .csv or .fits)
-        - single .npy file containing corresponding triplets (optional; default 
-          None)              
-        - maximum allowed separation (in arcsec) to consider two sources to be 
-          the same (optional; default 2.0 arcsec)
-        - name for the output table of candidates which were successfully 
-          matched (optional; default set below)
-        - name for the output table of CATALOG (Veron-Cetty) sources which were 
-          successfully matched (optional; default set below)
-        - name for the output matched triplets (optional; default set below)
-        - whether to return matches or to return sources which did NOT match 
-          (optional; default True -> return matches; False -> inverse)
-        
+def crossmatch_VeronCettyVeron(tabfile, 
+                               tripfile=None, 
+                               sep_max=2.0, 
+                               match=True,
+                               output_tab=None,
+                               output_tab_VCV=None,
+                               output_trips=None):
+    """Given a table of candidate transients, search for cross-matches in the 
+    Veron-Cetty and Veron catalogue of quasars, within `sep_max` arcseconds of 
+    each other
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    tripfile : str, optional
+        .npy file containing triplets corresponding to `tabfile` (default 
+        None; if provided, will write matches to a new file)
+    sep_max : float, optional
+        Maximum separation to consider two sources to be the same, in 
+        arcseconds (default 2.0)
+    match : bool, optional
+        Look for matches? or look for non-matches (default True)
+    output_tab : str, optional
+        Name for output table with candidate transients which were 
+        successfully crossmatched (default set by function)
+    output_tab_VCV : str, optional
+        Name for output table with **Veron-Cetty and Veron** quasars which 
+        were successfully crossmatched (default set by function)
+    output_trips : str, optional
+        Name for output .npy file with crossmatched triplets (default set by 
+        function)
+    
+    Notes
+    -----
     For a single .fits or .csv table containing N transient candidates and a 
     single triplet .npy file containing N triplets, queries the Veron-Cetty & 
     Veron catalogue of quasars and active galactic nuclei (13ed, Veron-Cetty & 
-    Veron 2010) for sources within <sep_max> arcsec of the candidate 
+    Veron 2010) for sources within `sep_max` arcsec of the candidate 
     transients. If M>0 matches are found, writes a table containing the M 
-    crossmatched transient *candidates*, another table containing the M *known* 
-    quasars/AGN, and a (M,3,Y,X) .npy file containing the M relevant triplets.  
+    crossmatched transient *candidates*, another table containing the M 
+    *known* quasars/AGN, and a `(M,3,Y,X)` .npy file containing the M relevant 
+    triplets.  
     
-    Output: None
     """
     
     # load in table
@@ -807,17 +830,15 @@ def crossmatch_VeronCettyVeron(tabfile, tripfile=None, sep_max=2.0, match=True,
         tbl = Table.read(tabfile, format="ascii.csv")
         filext = ".csv"
     else:
-        print("\nInput table must be of filetype .csv or .fits. Exiting.")
-        return
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
     
-    # load in triplets  
-    if tripfile:
+    # load in triplets, if given
+    if not(type(tripfile) == type(None)):
         triplets = np.load(tripfile, mmap_mode="r")
-
-    if tripfile and not(len(tbl) == len(triplets)):
-        print("\nThe number of candidate transients in the input table does "+
-              "not match the number of triplets. Exiting.")
-        return
+        if not(len(tbl) == len(triplets)):
+            raise ValueError("Length of table with candidate transients "+
+                             "does not match number of input triplets")
     
     # find the footprint of the input candidates table
     ra_min, ra_max = np.min(tbl["ra"]), np.max(tbl["ra"]) 
@@ -846,6 +867,7 @@ def crossmatch_VeronCettyVeron(tabfile, tripfile=None, sep_max=2.0, match=True,
         return
     
     cat = Q[0]
+    
     print(f"\nFound {len(cat)} quasars/AGN in the Veron-Cetty & Veron "+
           "2010 catalogue in the region of "+
           f"\nRA = [{ra_min}, {ra_max}]"+
@@ -880,14 +902,14 @@ def crossmatch_VeronCettyVeron(tabfile, tripfile=None, sep_max=2.0, match=True,
         print("\nSearching for matching sources...")
         tbl_match = tbl[idx_trns]
         cat_match = cat[idx_cat]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_trns]
     else: # tables with only NON-matched sources 
         print("\nSearching for NON-matching sources...") 
         tbl_match = setdiff(tbl, tbl[idx_trns])
         cat_match = setdiff(cat, cat[idx_cat], keys="Name")
         idx_nomatch = [i for i in range(len(tbl)) if not(i in idx_trns)]
-        if tripfile:
+        if not(type(tripfile) == type(None)):
             triplets_match = triplets[idx_nomatch] 
 
     print(f'\n{len(idx_trns)} MATCH(ES) representing '+
@@ -904,52 +926,72 @@ def crossmatch_VeronCettyVeron(tabfile, tripfile=None, sep_max=2.0, match=True,
     cat_match["Cl", "Name","RAJ2000","DEJ2000"].pprint() 
 
     # write the CANDIDATE file, with matches     
-    if not(tabout):
-        tabout = tabfile.replace(filext, 
-                                 f"_VeronCettyVeron_crossmatched{filext}")    
+    if type(output_tab) == type(None):
+        output_tab = tabfile.replace(filext, 
+                                     f"_VeronCettyVeron_crossmatched{filext}")    
     if filext == ".fits":
-        tbl_match.write(tabout, format="ascii", overwrite=True)
+        tbl_match.write(output_tab, format="ascii", overwrite=True)
     elif filext == ".csv":
-        tbl_match.write(tabout, format="ascii.csv", overwrite=True)
+        tbl_match.write(output_tab, format="ascii.csv", overwrite=True)
     
-    # always write known Veron-Cetty & Veron quasars/AGN to a csv
-    if not(cat_tabout):
-        cat_tabout = tabfile.replace(filext, 
+    # always write known Veron-Cetty & Veron quasars/AGN to a .csv
+    if type(output_tab_VCV) == type(None):
+        output_tab_VCV = tabfile.replace(filext, 
                                 "_VeronCettyVeron_crossmatched_catalog.csv")
-    cat_match.write(cat_tabout, format="ascii.csv", overwrite=True)
+    cat_match.write(output_tab_VCV, format="ascii.csv", overwrite=True)
     
-    if tripfile:
-        if not(tripout):
-            tripout = tripfile.replace(".npy", "_VeronCettyVeron_crossmatched.npy")
-        np.save(tripout, triplets_match)
+    # write triplets?
+    if not(type(tripfile) == type(None)): # were input triplets provided?
+        if type(output_trips) == type(None):
+            output_trips = tripfile.replace(".npy", 
+                                        "_VeronCettyVeron_crossmatched.npy")
+        np.save(output_trips, triplets_match)
 
 
-def crossmatch_MILLIQUAS(tabfile, tripfile=None, sep_max=2.0, match=True,
-                         tabout=None, cat_tabout=None, tripout=None):
-    """    
-    Input:
-        - single table of transient candidates (must be of form .csv or .fits)
-        - single .npy file containing corresponding triplets  (optional; 
-          default None)        
-        - maximum allowed separation (in arcsec) to consider two sources to be 
-          the same (optional; default 2.0 arcsec)
-        - whether to return matches or to return sources which did NOT match 
-          (optional; default True -> return matches; False -> inverse)
-        - name for the output table of candidates which were successfully 
-          matched (optional; default set below)
-        - name for the output table of CATALOG (MILLIQUAS) sources which were 
-          successfully matched (optional; default set below)
-        - name for the output matched triplets (optional; default set below)
-          
+def crossmatch_MILLIQUAS(tabfile, 
+                         tripfile=None, 
+                         sep_max=2.0, 
+                         match=True,
+                         output_tab=None,
+                         output_tab_MILLIQUAS=None, 
+                         output_trips=None):
+    """Given a table of candidate transients, search for cross-matches in the 
+    Million Quasars (MILLIQUAS) catalogue of quasars, within `sep_max` 
+    arcseconds of each other
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    tripfile : str, optional
+        .npy file containing triplets corresponding to `tabfile` (default 
+        None; if provided, will write matches to a new file)
+    sep_max : float, optional
+        Maximum separation to consider two sources to be the same, in 
+        arcseconds (default 2.0)
+    match : bool, optional
+        Look for matches? or look for non-matches (default True)
+    output_tab : str, optional
+        Name for output table with candidate transients which were 
+        successfully crossmatched (default set by function)
+    output_tab_MILLIQUAS : str, optional
+        Name for output table with **MILLIQUAS** quasars which were 
+        successfully crossmatched (default set by function)
+    output_trips : str, optional
+        Name for output .npy file with crossmatched triplets (default set by 
+        function)
+    
+    Notes
+    -----
     For a single .fits or .csv table containing N transient candidates and a 
-    single triplet .npy file containing N triplets, queries the Million Quasars
-    (MILLIQUAS) catalogue of quasars (v6.3, Flesch 2019, updated 16 June 2019) 
-    for sources within <sep_max> arcsec of the candidate transients. If M>0 
-    matches are found, writes a table containing the M crossmatched transient 
-    *candidates*, another table containing the M *known* quasars, 
-    and a (M,3,Y,X) .npy file containing the M relevant triplets.  
-    
-    Output: None
+    single triplet .npy file containing N triplets, queries the Million 
+    Quasars (MILLIQUAS) catalogue of quasars (v6.3, Flesch 2019, updated 16 
+    June 2019) for sources within `sep_max` arcsec of the candidate 
+    transients. If M>0 matches are found, writes a table containing the M 
+    crossmatched transient *candidates*, another table containing the M 
+    *known* quasars, and a `(M,3,Y,X)` .npy file containing the M relevant 
+    triplets.  
+
     """
     
     # load in table
@@ -960,17 +1002,15 @@ def crossmatch_MILLIQUAS(tabfile, tripfile=None, sep_max=2.0, match=True,
         tbl = Table.read(tabfile, format="ascii.csv")
         filext = ".csv"
     else:
-        print("\nInput table must be of filetype .csv or .fits. Exiting.")
-        return
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
     
-    # load in triplets 
-    if tripfile:
+    # load in triplets, if given
+    if not(type(tripfile) == type(None)):
         triplets = np.load(tripfile, mmap_mode="r")
-
-    if tripfile and not(len(tbl) == len(triplets)):
-        print("\nThe number of candidate transients in the input table does "+
-              "not match the number of triplets. Exiting.")
-        return
+        if not(len(tbl) == len(triplets)):
+            raise ValueError("Length of table with candidate transients "+
+                             "does not match number of input triplets")
     
     # find the footprint of the input candidates table
     ra_min, ra_max = np.min(tbl["ra"]), np.max(tbl["ra"]) 
@@ -999,6 +1039,7 @@ def crossmatch_MILLIQUAS(tabfile, tripfile=None, sep_max=2.0, match=True,
         return
     
     cat = Q[0]
+    
     print(f"\nFound {len(cat)} quasars in the MILLIQUAS v6.3 (16 June 2019)"+
           " catalogue in the region of "+
           f"\nRA = [{ra_min}, {ra_max}]"+
@@ -1051,55 +1092,74 @@ def crossmatch_MILLIQUAS(tabfile, tripfile=None, sep_max=2.0, match=True,
     cat_match["Cl_Ass", "Name","RAJ2000","DEJ2000"].pprint() 
 
     # write the CANDIDATE file, with matches     
-    if not(tabout):
-        tabout = tabfile.replace(filext, 
+    if type(output_tab) == type(None):
+        output_tab = tabfile.replace(filext, 
                                  f"_MILLIQUAS_crossmatched{filext}")    
     if filext == ".fits":
-        tbl_match.write(tabout, format="ascii", overwrite=True)
+        tbl_match.write(output_tab, format="ascii", overwrite=True)
     elif filext == ".csv":
-        tbl_match.write(tabout, format="ascii.csv", overwrite=True)
+        tbl_match.write(output_tab, format="ascii.csv", overwrite=True)
     
-    # always write known MILLIQUAS quasars to a csv
-    if not(cat_tabout):
-        cat_tabout = tabfile.replace(filext, 
+    # always write known MILLIQUAS quasars to a .csv
+    if type(output_tab_MILLIQUAS) == type(None):
+        output_tab_MILLIQUAS = tabfile.replace(filext, 
                                 "_MILLIQUAS_crossmatched_catalog.csv")
-    cat_match.write(cat_tabout, format="ascii.csv", overwrite=True)
+    cat_match.write(output_tab_MILLIQUAS, format="ascii.csv", overwrite=True)
     
-    if tripfile:
-        if not(tripout):
-            tripout = tripfile.replace(".npy", "_MILLIQUAS_crossmatched.npy")
-        np.save(tripout, triplets_match)
+    # write triplets?
+    if not(type(tripfile) == type(None)): # were input triplets provided?
+        if type(output_trips) == type(None):
+            output_trips = tripfile.replace(".npy", 
+                                            "_MILLIQUAS_crossmatched.npy")
+        np.save(output_trips, triplets_match)
 
 
 
 ### Pan-STARRS1 3pi STELLAR SOURCES ###########################################
     
-def crossmatch_PS1_stellar(tabfile, tripfile=None, sep_max=2.0, match=True,
-                           tabout=None, cat_tabout=None, tripout=None):
-    """       
-    Input:
-        - single table of transient candidates (must be of form .csv or .fits)
-        - single .npy file containing corresponding triplets  (optional; 
-          default None)        
-        - maximum allowed separation (in arcsec) to consider two sources to be 
-          the same (optional; default 2.0 arcsec)
-        - whether to return matches or to return sources which did NOT match 
-          (optional; default True -> return matches; False -> inverse)
-        - name for the output table of candidates which were successfully 
-          matched (optional; default set below)
-        - name for the output table of CATALOG (PS1) sources which were 
-          successfully matched (optional; default set below)
-        - name for the output matched triplets (optional; default set below)
-          
+def crossmatch_PS1_stellar(tabfile, 
+                           tripfile=None, 
+                           sep_max=2.0, 
+                           match=True,
+                           output_tab=None,
+                           output_tab_PS1=None, 
+                           output_trips=None):
+    """Given a table of candidate transients, search for cross-matches among 
+    the stellar sources in the Pan-STARSS1 3pi catalogue, within `sep_max` 
+    arcseconds of each other
+
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    tripfile : str, optional
+        .npy file containing triplets corresponding to `tabfile` (default 
+        None; if provided, will write matches to a new file)
+    sep_max : float, optional
+        Maximum separation to consider two sources to be the same, in 
+        arcseconds (default 2.0)
+    match : bool, optional
+        Look for matches? or look for non-matches (default True)
+    output_tab : str, optional
+        Name for output table with candidate transients which were 
+        successfully crossmatched (default set by function)
+    output_tab_PS1 : str, optional
+        Name for output table with **Pan-STARSS1** stars which were 
+        successfully crossmatched (default set by function)
+    output_trips : str, optional
+        Name for output .npy file with crossmatched triplets (default set by 
+        function)
+    
+    Arguments
+    ---------
     For a single .fits or .csv table containing N transient candidates and a 
     single triplet .npy file containing N triplets, queries the Pan-STARRS 1 
-    3pi survey (Chambers et al 2016) for **stellar** sources within <sep_max> 
-    arcsec of the candidate transients. If M>0 matches are found, writes a 
+    3pi survey (Chambers et al 2016) for **stellar** sources within `sep_max` 
+    arcseconds of the candidate transients. If M>0 matches are found, writes a 
     table containing the M crossmatched transient  *candidates*, another table
-    containing the M *known* quasars, and a (M,3,Y,X) .npy file containing the 
-    M relevant triplets.  
-    
-    Output: None
+    containing the M *known* quasars, and a `(M,3,Y,X)` .npy file containing 
+    the M relevant triplets.  
+
     """
     
     # load in table
@@ -1110,17 +1170,15 @@ def crossmatch_PS1_stellar(tabfile, tripfile=None, sep_max=2.0, match=True,
         tbl = Table.read(tabfile, format="ascii.csv")
         filext = ".csv"
     else:
-        print("\nInput table must be of filetype .csv or .fits. Exiting.")
-        return
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
     
-    # load in triplets 
-    if tripfile:
+    # load in triplets, if given
+    if not(type(tripfile) == type(None)):
         triplets = np.load(tripfile, mmap_mode="r")
-
-    if tripfile and not(len(tbl) == len(triplets)):
-        print("\nThe number of candidate transients in the input table does "+
-              "not match the number of triplets. Exiting.")
-        return
+        if not(len(tbl) == len(triplets)):
+            raise ValueError("Length of table with candidate transients "+
+                             "does not match number of input triplets")
     
     # load in the catalogue
     # RAJ2000, DEJ2000 cols cannot be empty, must have >=5 multi-epoch 
@@ -1142,7 +1200,8 @@ def crossmatch_PS1_stellar(tabfile, tripfile=None, sep_max=2.0, match=True,
               f'within {sep_max:.2f}" of the input sources. \nExiting.')
         return 
     
-    cat = Q[0]   
+    cat = Q[0]
+    
     ## get rid of extended sources 
     # convert Qual number to binary
     # if last (rightmost) bit or second-to-last bit is 1, then Qual 
@@ -1202,41 +1261,107 @@ def crossmatch_PS1_stellar(tabfile, tripfile=None, sep_max=2.0, match=True,
     cat["objID", "Qual", "RAJ2000","DEJ2000", "Nd"].pprint() 
 
     # write the CANDIDATE file, with matches     
-    if not(tabout):
-        tabout = tabfile.replace(filext, 
+    if type(output_tab) == type(None):
+        output_tab = tabfile.replace(filext, 
                                  f"_PS1_crossmatched{filext}")    
     if filext == ".fits":
-        tbl_match.write(tabout, format="ascii", overwrite=True)
+        tbl_match.write(output_tab, format="ascii", overwrite=True)
     elif filext == ".csv":
-        tbl_match.write(tabout, format="ascii.csv", overwrite=True)
-    
+        tbl_match.write(output_tab, format="ascii.csv", overwrite=True)
 
-    if not(cat_tabout):
-        cat_tabout = tabfile.replace(filext, 
+    # always write PS1 matches to a .csv
+    if type(output_tab_PS1) == type(None):
+        output_tab_PS1 = tabfile.replace(filext, 
                                 "_PS1_crossmatched_catalog.csv")
-    cat_match.write(cat_tabout, format="ascii.csv", overwrite=True)
+    cat_match.write(output_tab_PS1, format="ascii.csv", overwrite=True)
 
-    if tripfile:
-        if not(tripout):
-            tripout = tripfile.replace(".npy", "_PS1_crossmatched.npy")
-        np.save(tripout, triplets_match)
+    # write triplets?
+    if not(type(tripfile) == type(None)): # were input triplets provided?
+        if type(output_trips) == type(None):
+            output_trips = tripfile.replace(".npy", "_PS1_crossmatched.npy")
+        np.save(output_trips, triplets_match)
 
 
 
-###############################################################################
+### MATCHING TO MULTI-ORDER COVERAGE MAPS (MOCs) ##############################
 
-def MOC_crossmatch_AAVSO(moc_file, output=None):
-    """
-    Input:
-        - Multi-Order Coverage map (MOC) in a .fits file
-        - name for output table (optional; default set below)
-    
-    Output: table of American Association of Variable Star Observers (AAVSO) 
-            international Variable Source indeX (VSC) sources in the MOC 
-            footprint
+def MOC_crossmatch_TNS(moc_file, TNS_tabfile, output_tab_TNS=None):
+    """Given a Multi-Order Coverage (MOC) map and table of transients from the 
+    Transient Name Server (TNS), identify TNS transients which lie in the MOC 
+    footprint
+
+    Arguments
+    ---------
+    moc_file : str
+        .fits file containing MOC
+    TNS_tabfile : str
+        Table of known transients from Transient Name Server (must be a .csv)
+    output_tab_TNS : str, optional
+        Name for output table with **TNS** transients which were successfully 
+        crossmatched (default set by function)
+
+    Returns
+    -------
+    astropy.table.Table
+        Table of TNS sources in the MOC footprint
             
-    Gets a very barebones table of all AAVSO sources in an input MOC file by 
-    querying Vizier.
+    Given some table of sources from TNS, produces a table of only those 
+    sources which are also in the footprint defined by the MOC. 
+    
+    """
+    from mocpy import MOC
+    
+    # load in the MOC 
+    moc = MOC.from_fits(moc_file)
+
+    # load in TNS transients (always a csv)
+    tns = Table.read(TNS_tabfile, format="ascii.csv")
+    # convert RA, DEC to degrees 
+    tns["RA"] = [float(Angle(str(t["RA"])+" hours").degree) for t in tns]
+    tns["DEC"] = [float(Angle(str(t["DEC"])+" degrees").degree) for t in tns]
+    ra = tns["RA"]
+    dec = tns["DEC"]
+    
+    # get only the sources which lie in the footprint 
+    contains = moc.contains(ra*u.deg, dec*u.deg)
+    tns_valid = tns[contains]    
+    
+    # write
+    if type(output_tab_TNS) == type(None):
+        output_tab_TNS = moc_file.replace(".fits","_crossmatch_TNS.fits")
+        tns_valid.write(output_tab_TNS, format="ascii", overwrite=True)
+    elif ".fits" in output_tab_TNS:
+        tns_valid.write(output_tab_TNS, format="ascii", overwrite=True)
+    elif ".csv" in output_tab_TNS:        
+        tns_valid.write(output_tab_TNS, format="ascii.csv", overwrite=True)
+        
+    return tns_valid
+
+
+def MOC_crossmatch_AAVSO(moc_file, output_tab_AAVSO=None):
+    """Find AAVSO sources in the region defined by some Multi-Order Coverage 
+    (MOC) map 
+    
+    Arguments
+    ---------
+    moc_file : str
+        .fits file containing MOC
+    output_tab_AAVSO : str, optional
+        Name for output table with **AAVSO** transients which were successfully 
+        crossmatched (default set by function)
+    
+    Returns
+    -------
+    astropy.table.Table
+        Table of American Association of Variable Star Observers (AAVSO) 
+        international Variable Source indeX (VSC) sources in the MOC 
+        footprint
+        
+    Notes
+    -----
+    Gets a very barebones table of all AAVSO sources present in an input MOC 
+    file by querying Vizier.
+    
     """
     from mocpy import MOC
     
@@ -1249,119 +1374,15 @@ def MOC_crossmatch_AAVSO(moc_file, output=None):
     # informative print
     tab.pprint()
     
-    if not(output):
-        output = moc_file.replace(".fits","_crossmatch_AAVSO.fits")
-        tab.write(output, format="ascii", overwrite=True)
-    elif ".fits" in output:
-        tab.write(output, format="ascii", overwrite=True)
-    elif ".csv" in output:        
-        tab.write(output, format="ascii.csv", overwrite=True)
+    # write
+    if type(output_tab_AAVSO) == type(None):
+        output_tab_AAVSO = moc_file.replace(".fits","_crossmatch_AAVSO.fits")
+        tab.write(output_tab_AAVSO, format="ascii", overwrite=True)
+    elif ".fits" in output_tab_AAVSO:
+        tab.write(output_tab_AAVSO, format="ascii", overwrite=True)
+    elif ".csv" in output_tab_AAVSO:        
+        tab.write(output_tab_AAVSO, format="ascii.csv", overwrite=True)
         
     return tab
 
-
-def MOC_crossmatch_TNS(moc_file, tns_file, output=None):
-    """
-    Input:
-        - Multi-Order Coverage map (MOC) in a .fits file
-        - single table of transients from the Transient Name Server (must be 
-          .csv)
-        - name for output table (optional; default set below)
-    
-    Output: table of sources in the TNS table which lie in the footprint 
-            defined by the MOC
-            
-    Given some table of sources from TNS, produces a table of only those 
-    sources which are also in the footprint defined by the MOC. 
-    """
-    from mocpy import MOC
-    
-    # load in the MOC 
-    moc = MOC.from_fits(moc_file)
-
-    # load in TNS transients (always a csv)
-    tns = Table.read(tns_file, format="ascii.csv")
-    # convert RA, DEC to degrees 
-    tns["RA"] = [float(Angle(str(t["RA"])+" hours").degree) for t in tns]
-    tns["DEC"] = [float(Angle(str(t["DEC"])+" degrees").degree) for t in tns]
-    ra = tns["RA"]
-    dec = tns["DEC"]
-    
-    # get only the sources which lie in the footprint 
-    contains = moc.contains(ra*u.deg, dec*u.deg)
-    tns_valid = tns[contains]    
-    
-    if not(output):
-        output = moc_file.replace(".fits","_crossmatch_TNS.fits")
-        tns_valid.write(output, format="ascii", overwrite=True)
-    elif ".fits" in output:
-        tns_valid.write(output, format="ascii", overwrite=True)
-    elif ".csv" in output:        
-        tns_valid.write(output, format="ascii.csv", overwrite=True)
-        
-    return tns_valid
-
-
-def catalog_merge(*catalogs, output=None):
-    """
-    Input: 
-        - filenames for as many cataogs (tables of sources) in the form .fits
-          and/or .csv as desired, with (at minimum) a RA column with the name 
-          'ra', 'RA', or 'RAJ2000'; a Dec column with the name 'dec', 'DEC', 
-          or 'DEJ2000'; and a 'Name' column
-        - name for the output merged catalog (optional; default set below)
-        
-    Output: the merged catalog table
-    """
-    
-    rows = []
-    for c in catalogs:
-        
-        # load in table
-        if ".fits" in c:
-            tbl = Table.read(c, format="ascii")
-        elif ".csv" in c:
-            tbl = Table.read(c, format="ascii.csv")
-        else:
-            print("\nInput tables must be of filetype .csv or .fits. "+
-                  "Skipping to next table.")
-            continue
-        
-        # get RAs, DECs
-        cols = tbl.colnames
-        ra_col = [c for c in cols if (("ra" in c) or ("RA" in c))]
-        if "RAJ2000" in ra_col: ra_col = "RAJ2000"
-        else: ra_col = ra_col[0]
-            
-        dec_col = [c for c in cols if (("dec" in c) or ("DEC" in c) or (
-                "DEJ" in c) or ("de" in c))]
-        if "DEJ2000" in dec_col: dec_col = "DEJ2000"
-        else: dec_col = dec_col[0]
-        
-        # if RA, DEC are in sexagesimal coords
-        if 'TNS AT' in cols and ":" in tbl[ra_col][0]:
-            tbl[ra_col] = [float(Angle(str(t[ra_col])+" hours").degree) for 
-               t in tbl]
-            tbl[dec_col] = [float(Angle(str(t[dec_col])+" degrees").degree) for 
-               t in tbl]        
-
-        ras = tbl[ra_col].data.tolist()
-        decs = tbl[dec_col].data.tolist()
-        
-        newtbl = Table(data=[tbl["Name"], ras, decs], 
-                       names=["Name", "ra", "dec"])
-        
-        for row in newtbl: rows.append(row) # add to row list
-
-    final_table = Table(rows=rows, names=["Name", "ra", "dec"])
-
-    if not(output):
-        output = "catalogs_merged.fits"
-        final_table.write(output, format="ascii", overwrite=True)
-    elif ".fits" in output:
-        final_table.write(output, format="ascii", overwrite=True)
-    elif ".csv" in output:        
-        final_table.write(output, format="ascii.csv", overwrite=True)
-        
-    return final_table
 

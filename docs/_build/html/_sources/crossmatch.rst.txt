@@ -1,7 +1,7 @@
-background module
+crossmatch module
 =================
 
-.. automodule:: background
+.. automodule:: crossmatch
    :members:
    :undoc-members:
    :show-inheritance:

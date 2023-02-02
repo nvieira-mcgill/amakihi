@@ -8,6 +8,7 @@ amakihi
    astroalign_mod
    background
    crop
+   crossmatch
    ePSF
    imalign
    masking

@@ -2,6 +2,6 @@ amakihi module
 ==============
 
 .. automodule:: amakihi
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

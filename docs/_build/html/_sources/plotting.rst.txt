@@ -2,6 +2,6 @@ plotting module
 ===============
 
 .. automodule:: plotting
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

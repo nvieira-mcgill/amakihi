@@ -1,69 +1,36 @@
-
-
 <!DOCTYPE html>
-<html class="writer-html4" lang="en" >
+<html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>query_2MASS module &mdash; amakihi  documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-
-  
-  
-  
-  
-
-  
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script type="text/javascript" src="_static/language_data.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-
-    
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="query_CFIS module" href="query_CFIS.html" />
     <link rel="prev" title="plotting module" href="plotting.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="index.html" class="icon icon-home" alt="Documentation Home"> amakihi
-          
-
-          
+            <a href="index.html" class="icon icon-home"> amakihi
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -71,30 +38,23 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Contents:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crossmatch.html">crossmatch module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="plotting.html">plotting module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">query_2MASS module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">query_2MASS module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#query_2MASS.geturl_2MASS"><code class="docutils literal notranslate"><span class="pre">geturl_2MASS()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
@@ -104,99 +64,55 @@
 </li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">amakihi</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-        
-          <li><a href="modules.html">amakihi</a> &raquo;</li>
-        
-      <li>query_2MASS module</li>
-    
-    
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">amakihi</a></li>
+      <li class="breadcrumb-item active">query_2MASS module</li>
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="_sources/query_2MASS.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="module-query_2MASS">
-<span id="query-2mass-module"></span><h1>query_2MASS module<a class="headerlink" href="#module-query_2MASS" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="query_2MASS.geturl_2MASS">
-<code class="descclassname">query_2MASS.</code><code class="descname">geturl_2MASS</code><span class="sig-paren">(</span><em>ra</em>, <em>dec</em>, <em>size=150</em>, <em>bands='A'</em><span class="sig-paren">)</span><a class="headerlink" href="#query_2MASS.geturl_2MASS" title="Permalink to this definition">¶</a></dt>
+             
+  <section id="module-query_2MASS">
+<span id="query-2mass-module"></span><h1>query_2MASS module<a class="headerlink" href="#module-query_2MASS" title="Permalink to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="query_2MASS.geturl_2MASS">
+<span class="sig-prename descclassname"><span class="pre">query_2MASS.</span></span><span class="sig-name descname"><span class="pre">geturl_2MASS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ra</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">150</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bands</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'A'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#query_2MASS.geturl_2MASS" title="Permalink to this definition"></a></dt>
 <dd><p>Get the URL(s) for some reference image(s) to download from the 2-Micron
 All Sky Survey (2MASS).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ra, dec</strong> (<em>float</em>) – RA and Dec of interest</li>
-<li><strong>size</strong> (<em>float, optional</em>) – Size of the cutout image in pixels (1 pix == 4.0” in 2MASS; default
-150)</li>
-<li><strong>bands</strong> (<em>str, optional</em>) – Photometric band(s) of choice (default “A” –&gt; all; options are “A”,
-“J”, “H”, “K” - see notes for details)</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ra, dec</strong> (<em>float</em>) – RA and Dec of interest</p></li>
+<li><p><strong>size</strong> (<em>float, optional</em>) – Size of the cutout image in pixels (1 pix == 4.0” in 2MASS; default
+150)</p></li>
+<li><p><strong>bands</strong> (<em>str, optional</em>) – Photometric band(s) of choice (default “A” –&gt; all; options are “A”,
+“J”, “H”, “K” - see notes for details)</p></li>
 </ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of URL(s) to download the relevant fits files</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>List of URL(s) to download the relevant fits files</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
 <p class="rubric">Notes</p>
 <p>Options for bands are “A” –&gt;  all, <strong>OR</strong> “J” for only J-band, <strong>OR</strong> “H”
 for only H-band, <strong>OR</strong> “K” for only K-band. Combinations such as e.g. “JH”
@@ -204,62 +120,37 @@ are not allowed.</p>
 <p>See: <a class="reference external" href="https://irsa.ipac.caltech.edu/applications/2MASS/IM/docs/siahelp.html">https://irsa.ipac.caltech.edu/applications/2MASS/IM/docs/siahelp.html</a></p>
 </dd></dl>
 
-</div>
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="query_CFIS.html" class="btn btn-neutral float-right" title="query_CFIS module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="plotting.html" class="btn btn-neutral float-left" title="plotting module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="plotting.html" class="btn btn-neutral float-left" title="plotting module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="query_CFIS.html" class="btn btn-neutral float-right" title="query_CFIS module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        
-        &copy; Copyright 2020, Nicholas Vieira
-
-    </p>
+    <p>&#169; Copyright 2020, Nicholas Vieira.</p>
   </div>
-    
-    
-    
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

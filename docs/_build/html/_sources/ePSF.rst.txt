@@ -2,6 +2,6 @@ ePSF module
 ===========
 
 .. automodule:: ePSF
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
