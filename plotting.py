@@ -1419,20 +1419,20 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
 
 def plot_train_vs_valid_accuracy(train_acc, val_acc, 
                                  output=None, figsize=(20,9)):
-    """
-    Input:
-        - list/array of training accuracy at each epoch 
-        - list/array of validation accuracy at each epoch
-        - a tensorflow.python.keras.callbacks.History object describing the 
-          history of the training of some model 
-        - name for output figure (optional; default set below)
-        - figure dimensions (optional; default 20" x 9")
-
-    Plots the accuracy of the training set and validaton set versus the epoch
-    of training. Diagnostic to see how the accuracy of the model improves (or 
-    does not improve) with each iteration. 
+    """Plot the training and validation set **accuracy** over the course of 
+    training. 
     
-    Output: None   
+    Arguments
+    ---------
+    train_acc : array_like
+        Training set accuracy as a function of epoch
+    val_acc : array_like 
+        Validation set accuracy as a function of epoch
+    output : str, optional
+        Name for output figure (defualt set by function)
+    figsize : tuple, optional
+        Figure dimensions, in inches (default (20,9))
+  
     """
 
     # plot the accuracy of the training and validation sets    
@@ -1446,7 +1446,7 @@ def plot_train_vs_valid_accuracy(train_acc, val_acc,
     plt.grid()
     
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         output = "train_vs_valid_accuracy.png"
     plt.savefig(output, bbox_inches="tight")
     plt.close()
@@ -1454,19 +1454,20 @@ def plot_train_vs_valid_accuracy(train_acc, val_acc,
 
 def plot_train_vs_valid_loss(train_loss, val_loss, 
                              output=None, figsize=(20,9)):
-    """
-    Input:
-        - list/array of training loss at each epoch 
-        - list/array of validation loss at each epoch
-        - name for output figure (optional; default set below)
-        - figure dimensions (optional; default 20" x 9")
-
-    Plots the loss of the training set and validaton set versus the epoch
-    of training. Diagnostic to see how the loss of the model improves (or 
-    does not improve) with each iteration. 
-
+    """Plot the training and validation set **loss** over the course of 
+    training. 
     
-    Output: None   
+    Arguments
+    ---------
+    train_loss : array_like
+        Training set loss as a function of epoch
+    val_loss : array_like 
+        Validation set loss as a function of epoch
+    output : str, optional
+        Name for output figure (defualt set by function)
+    figsize : tuple, optional
+        Figure dimensions, in inches (default (20,9))
+  
     """
 
     # plot the accuracy of the training and validation sets    
@@ -1480,34 +1481,48 @@ def plot_train_vs_valid_loss(train_loss, val_loss,
     plt.grid()
     
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         output = "train_vs_valid_loss.png"
     plt.savefig(output, bbox_inches="tight")
     plt.close()
 
 
-def plot_confusion_matrix(label_true, label_pred, normalize=True, 
+def plot_confusion_matrix(label_true, label_pred, 
+                          normalize=True, 
                           classes=["bogus","real"],
                           cmap="Purples",
                           output=None):
-    """
-    Input:
-        - flattened array of the TRUE labels (0 for bogus, 1 for real) for a 
-          test set, i.e., the "ground truth"
-        - array of the PREDICTED labels for a test set, as returned by a 
-          classifier (e.g., if label_true has shape (100,), label_pred should
-          have shape (100,1))
-        - whether to normalize the results and show percentages rather than raw
-          counts (optional; default True)
-        - classes described by the labels (optional; default ["bogus","real"],
-          which assigns 0="bogus", 1="real")
-        - colormap to apply to plot (optional; default "Blues")
-        - name for output figure (optional; default set below)
+    """Plot the confusion matrix given some true labels and predicted labels. 
     
-    Plot the confusion matrix for the results of training. Can be normalized if
-    desired.
+    Arguments
+    ---------
+    label_true : array_like
+        **Flattened** array of the ground truth labels (0 for bogus, 1 for 
+        real) for a test set
+    label_pred : np.ndarray
+        Array of **predicted** labels for a test set, as returned by some 
+        classifier 
+    normalize : bool, optional
+        Return percentages? or return actual numbers (default True)
+    classes : array_like, optional
+        Array / tuple with the names the classes 
+        (default ["bogus", "real"], which assigns "bogus" to 0 and "real" to 
+        1)
+    cmap : str, matplotlib.colors.ListedColormap, optional
+        Colormap for the plot (default "Purples")
+    output : str, optional
+        Name for output figure (default set by function)
+
+    Returns
+    -------
+    np.ndarray
+        Confusion matrix ((2,2) array)
+
+    Notes
+    -----
+    E.g., if `label_true` has shape `(100,)`, `label_pred` must have shape 
+    `(100,1)`
     
-    Output: the confusion matrix
     """
 
     from sklearn.metrics import confusion_matrix
@@ -1554,7 +1569,7 @@ def plot_confusion_matrix(label_true, label_pred, normalize=True,
                     size=20)
             
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         if normalize:
             output = "confusion_matrix_normalized.png"
         else:
@@ -1565,24 +1580,29 @@ def plot_confusion_matrix(label_true, label_pred, normalize=True,
     return cm
     
 
-def plot_FPR_FNR_RBscore(preds, bool_bogus_true, bool_real_true, 
+def plot_FPR_FNR_RBscore(preds, 
+                         bool_bogus_true, bool_real_true, 
                          thresholds=[0.5], 
                          output=None):
-    """
-    Input:
-        - predicted label for each element in the test set 
-        - bool array where True if true label for element is 0 (bogus),
-          False if label is 1 (real)
-        - bool array where False if true label for element is 0 (bogus),
-          True if label is 1 (real)
-        - array of RB score thresholds for which we want to know the FPR and 
-          FNR (optional; default just 0.5; can be set to None to be disabled) 
-        - name for output figure (optional; default set below)
-          
-    Plot the false positive rate (FPR) and false negative rate (FNR) as a 
-    function of the real-bogus score (RB score) for the results of training.
+    """Plot the False Positive Rate (FPR) and False Negative Rate (FNR) of 
+    some predictions given some RB score threshold.
     
-    Output: None
+    Arguments
+    ---------
+    preds : array_like
+        Predicted element for each element in the test set
+    bool_bogus_true : array_like
+        Array where True if ground truth is **bogus**, for each element in the 
+        test set
+    bool_real_true : array_like
+        Array where True if ground truth is **real**, for each element in the 
+        test set
+    thresholds : array_like
+        Array of thresholds for which the FPR and FNR will be annotated 
+        (default [0.5]; can be set to None to be disabled)
+    output : str, optional
+        Name for output figure (default set by function)
+
     """
     
     # bins for histogram
@@ -1650,28 +1670,32 @@ def plot_FPR_FNR_RBscore(preds, bool_bogus_true, bool_real_true,
     plt.legend(loc="best", fontsize=16, fancybox=True)    
             
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         output = "FPR_FNR_RBscore.png"
     plt.savefig(output, bbox_inches="tight")
     plt.close()
 
 
 def plot_ROC(test_labels, preds, output=None):
-    """
-    WIP: connect inset to parent axis 
+    """Plot the receiver operating characteristic (ROC) curve, for some test 
+    data set.
     
-    Input:
-        - list/array of labels (0 OR 1) given to sources in the test set for 
-          some RB score threshold
-        - list/array of actual predicted RB scores for some RB score threshold 
-        - name for the output figure (optional; default set below)
+    Arguments
+    ---------
+    test_labels : array_like
+        Array of labels (0 or 1) given to sources in the test set, for some 
+        RB score threshold
+    preds : array_like
+        Array of **predicted** RB scores given some threshold
+    output : str, optional
+        Name for output figure (default set by function)
     
-    Plots the receiver operating characteristic (ROC) curve for some test data
-    set, showing the False Positive Rate (FPR; Contamination) versus the True 
-    Positive Rate (TPR; Sensitivity). Shows the entire plot as well as a 
-    zoomed-in section near where (ideally) FPR~0, TPR~1. 
-    
-    Output: None
+    Notes
+    -----
+    The ROC curve shows the False Positive Rate (FPR; Contamination) versus 
+    the True Positive Rate (TPR; Sensitivity). Shows the entire plot as well 
+    as a zoomed-in section near where (ideally) FPR~0, TPR~1. 
+
     """
     from sklearn.metrics import roc_curve, auc    
 
@@ -1719,10 +1743,10 @@ def plot_ROC(test_labels, preds, output=None):
                          lw=2.5, ls="--", color="red")
     ax.add_patch(rect)
     
-    # connect inset axes here?
+    ### CONNECT INSET AXES HERE?
 
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         output = "ROC_curve.png"
     plt.savefig(output, bbox_inches="tight")
     plt.close()
@@ -1732,22 +1756,24 @@ def plot_histogram_RB_score(tabfile,
                             key="label_preds", rb_thresh=0.5, 
                             title=None, 
                             output=None):
-    """
-    Input:
-        - single table of transient candidates which have been assigned an RB 
-          score using a braai model (must be of form .csv or .fits) OR have 
-          been manually labelled 
-        - the key (column name) to search for the predicted RB score (optional; 
-          default "label_preds")
-        - the RB score to set as the threshold for real sources (optional; 
-          default 0.5)
-        - title for the plot (optional; default None)
-        - name for output plot (optional; default set below)
-
-    Plots a histogram of the RB score assigned to each candidate in some 
-    dataset.
+    """Plot a histogram showing the RB scores predicted by some model. 
     
-    Output: None
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients which have been assigned an RB score by 
+        some model, or have been manually labelled (must be a .csv or .fits 
+        file)
+    key : str, optional
+        Key (column name) to use to extract the predicted RB score (default 
+        "label_preds")
+    rb_thresh : float, optional
+        RB score to set as the threshold for real sources (default 0.5)
+    title : str, optional
+        Title for the plot (default None)
+    output : str, optional
+        Name for the output figure (default set by function)
+
     """
     
     # load in table
@@ -1758,8 +1784,8 @@ def plot_histogram_RB_score(tabfile,
         tbl = Table.read(tabfile, format="ascii.csv")
         filext = ".csv"
     else:
-        print("\nInput table must be of filetype .csv or .fits. Exiting.")
-        return
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
     
     # labels 
     labels = tbl[key]
@@ -1789,12 +1815,12 @@ def plot_histogram_RB_score(tabfile,
     # a line at the RB score threshold
     plt.axvline(rb_thresh, lw=2.0, color="black")    
 
-    # title
-    if title:
+    # add a title to the plot?
+    if not(type(title) == type(None)):
         plt.title(title, fontsize=15)
 
     # save the figure 
-    if not(output):
+    if type(output) == type(None):
         output = tabfile.replace(filext, f"_histo_RBscore_{rb_thresh}.png")
     plt.savefig(output, bbox_inches="tight")
     plt.close()

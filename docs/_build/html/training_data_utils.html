@@ -16,6 +16,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -41,6 +42,7 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="CNN_model_utils.html">CNN_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
@@ -55,7 +57,16 @@
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">training_data_utils module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">training_data_utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.merge_triplets"><code class="docutils literal notranslate"><span class="pre">merge_triplets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.merge_tables"><code class="docutils literal notranslate"><span class="pre">merge_tables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.augment_dataset"><code class="docutils literal notranslate"><span class="pre">augment_dataset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.augment_dataset_single"><code class="docutils literal notranslate"><span class="pre">augment_dataset_single()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.augment_SMOTE"><code class="docutils literal notranslate"><span class="pre">augment_SMOTE()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.triplets_normalize"><code class="docutils literal notranslate"><span class="pre">triplets_normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#training_data_utils.triplets_rearrange"><code class="docutils literal notranslate"><span class="pre">triplets_rearrange()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
 </ul>
 </li>
@@ -172,10 +183,10 @@ columns for which the first row in the table is populated)</p></li>
 </dl>
 <p class="rubric">Notes</p>
 <p>For a directory of N astropy tables of transient candidates in the .fits
-format and another directory containing N .npy files, augments this dataset
-by rotating each of the three sub-arrays in the triplets in <cite>factor</cite>
-increments of 90 degrees, where <cite>factor</cite> can be 2, 3, or 4.
-e.g., for 100 tables of candidates, each with 10 candidates, and 100
+format and another directory containing N .npy files, augments this
+dataset by rotating each of the three sub-arrays in the triplets in
+<cite>factor</cite> increments of 90 degrees, where <cite>factor</cite> can be 2, 3, or 4.</p>
+<p>E.g., for 100 tables of candidates, each with 10 candidates, and 100
 triplet files, each with 10 triplets, a factor of 3 will produce a new
 dataset containing 100 tables, each with 30 candidates, and 100 triplet
 files, each with 30 triplets. These new tables and triplets will then be
@@ -209,13 +220,14 @@ columns for which the first row in the table is populated)</p></li>
 <p class="rubric">Notes</p>
 <p>For a single table of N candidates and a corresponding .npy file of N
 triplets, augments this dataset by rotating each of the three sub-arrays
-in the triplets in &lt;factor&gt; increments of 90 degrees, where <cite>factor</cite> can be
-2, 3, or 4.
-e.g., for 100 candidates and 100 triplets, a factor of 3 will produce a new
-dataset containing 300 candidates 300 triplets. The new table and triplets
-will then be written to <cite>output_tab</cite> and <cite>output_trips</cite>, respectively.</p>
-<p>The purpose of this function is to augment the size of a dataset to be used
-in training a braai neural network.</p>
+in the triplets in <cite>factor</cite> increments of 90 degrees, where <cite>factor</cite> can
+be 2, 3, or 4.</p>
+<p>E.g., for 100 candidates and 100 triplets, a factor of 3 will produce a
+new dataset containing 300 candidates 300 triplets. The new table and
+triplets will then be written to <cite>output_tab</cite> and <cite>output_trips</cite>,
+respectively.</p>
+<p>The purpose of this function is to augment the size of a dataset to be
+used in training a neural network.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -223,29 +235,16 @@ in training a braai neural network.</p>
 <span class="sig-prename descclassname"><span class="pre">training_data_utils.</span></span><span class="sig-name descname"><span class="pre">augment_SMOTE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newfrac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#training_data_utils.augment_SMOTE" title="Permalink to this definition"></a></dt>
 <dd><p>Apply Synthetic Minority Over-sampling Technique (SMOTE) to obtain a
 more class-balanced training set.</p>
-<dl class="simple">
-<dt>tabfile<span class="classifier">str</span></dt><dd><p>Table of candidate transients (must be a .csv or .fits file)</p>
-</dd>
-<dt>tripfile<span class="classifier">str</span></dt><dd><p>.npy file containing triplets corresponding to <cite>tabfile</cite></p>
-</dd>
-<dt>newfrac<span class="classifier">float, optional</span></dt><dd><p>Fraction (between 0.0, 1.0) of the data which should belong to the
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>tripfile</strong> (<em>str</em>) – .npy file containing triplets corresponding to <cite>tabfile</cite></p></li>
+<li><p><strong>newfrac</strong> (<em>float, optional</em>) – Fraction (between 0.0, 1.0) of the data which should belong to the
 minority class after SMOTE (default 0.5, i.e., augmented dataset
-will be half real and half bogus)</p>
-</dd>
-<dt>output_tab<span class="classifier">str, optional</span></dt><dd><p>Name for output table with augmented set of candidate transient
-(default set by function)</p>
-</dd>
-<dt>output_trips<span class="classifier">str, optional</span></dt><dd><p>Name for output .npy file with augmented sert of  triplets (default
-set by function)</p>
-</dd>
-<dt>Input:</dt><dd><ul class="simple">
-<li><p>a single table of transient candidates (must be .fits or .csv)</p></li>
-<li><p>a single .npy file of corresponding transients</p></li>
-<li><p>the fraction (between 0, 1) of the data which should belong to the
-minority class after SMOTE (optional; default 0.5, i.e. augmented
-dataset will be half real, half bogus)</p></li>
-<li><p>name for the output table (optional; default set below)</p></li>
-<li><p>name for the output triplets .npy file (optional; default set below)</p></li>
+will be half real and half bogus)</p></li>
+<li><p><strong>output_trips</strong> (<em>str, optional</em>) – Name for output .npy file with augmented set of triplets (default
+set by function)</p></li>
 </ul>
 </dd>
 </dl>
@@ -275,10 +274,10 @@ set by function)</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>For an array of N triplets with shape (N, 3, X, Y), normalizes each
-science, reference and difference image <strong>independently*8 using L2
-normalization. **Should be called BEFORE rearranging the triplets into
-shape (N, X, Y, 3) with :func:`triplet_rearrange`</strong></p>
+<p>For an array of N triplets with shape <cite>(N, 3, X, Y)</cite>, normalizes each
+science, reference and difference image <strong>independently</strong> using L2
+normalization. Should be called <strong>BEFORE</strong> rearranging the triplets into
+shape <cite>(N, X, Y, 3)</cite> with <a class="reference internal" href="#training_data_utils.triplets_rearrange" title="training_data_utils.triplets_rearrange"><code class="xref py py-func docutils literal notranslate"><span class="pre">triplets_rearrange()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -302,11 +301,11 @@ set by function)</p></li>
 </dd>
 </dl>
 <p class="rubric">Notes</p>
-<p>For an array of N triplets with shape (N, 3, X, Y), rearranges the array
-to have shape (N, X, Y, 3). This is the required format for training the
-braai. <strong>Should be used as the final step of pre-processing, after
+<p>For an array of N triplets with shape <cite>(N, 3, X, Y)</cite>, rearranges the array
+to have shape <cite>(N, X, Y, 3)</cite>. This is the required format for training the
+braai. Should be used as the <strong>FINAL</strong> step of pre-processing, after
 merging, augmenting, normalizing, etc. Calling this function on several
-triplet files and then trying to merge, augment, etc. will NOT work.</strong></p>
+triplet files and then trying to merge, augment, etc. will <strong>NOT</strong> work.</p>
 </dd></dl>
 
 </section>

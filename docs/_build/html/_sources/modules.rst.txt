@@ -4,6 +4,7 @@ amakihi
 .. toctree::
    :maxdepth: 4
 
+   CNN_model_utils
    amakihi
    astroalign_mod
    background

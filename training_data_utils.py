@@ -191,10 +191,11 @@ def augment_dataset(tab_dir, triplet_dir, outdir, factor=4, filt=None,
     Notes
     -----
     For a directory of N astropy tables of transient candidates in the .fits 
-    format and another directory containing N .npy files, augments this dataset
-    by rotating each of the three sub-arrays in the triplets in `factor` 
-    increments of 90 degrees, where `factor` can be 2, 3, or 4. 
-    e.g., for 100 tables of candidates, each with 10 candidates, and 100 
+    format and another directory containing N .npy files, augments this 
+    dataset by rotating each of the three sub-arrays in the triplets in 
+    `factor` increments of 90 degrees, where `factor` can be 2, 3, or 4. 
+    
+    E.g., for 100 tables of candidates, each with 10 candidates, and 100 
     triplet files, each with 10 triplets, a factor of 3 will produce a new 
     dataset containing 100 tables, each with 30 candidates, and 100 triplet 
     files, each with 30 triplets. These new tables and triplets will then be 
@@ -314,14 +315,16 @@ def augment_dataset_single(tabfile, tripfile,
     -----
     For a single table of N candidates and a corresponding .npy file of N 
     triplets, augments this dataset by rotating each of the three sub-arrays 
-    in the triplets in <factor> increments of 90 degrees, where `factor` can be 
-    2, 3, or 4. 
-    e.g., for 100 candidates and 100 triplets, a factor of 3 will produce a new 
-    dataset containing 300 candidates 300 triplets. The new table and triplets 
-    will then be written to `output_tab` and `output_trips`, respectively. 
+    in the triplets in `factor` increments of 90 degrees, where `factor` can 
+    be 2, 3, or 4.
     
-    The purpose of this function is to augment the size of a dataset to be used
-    in training a braai neural network. 
+    E.g., for 100 candidates and 100 triplets, a factor of 3 will produce a 
+    new dataset containing 300 candidates 300 triplets. The new table and 
+    triplets will then be written to `output_tab` and `output_trips`, 
+    respectively. 
+    
+    The purpose of this function is to augment the size of a dataset to be 
+    used in training a neural network. 
 
     """
     
@@ -434,6 +437,8 @@ def augment_SMOTE(tabfile, tripfile, newfrac=0.5, output_trips=None):
     """Apply Synthetic Minority Over-sampling Technique (SMOTE) to obtain a 
     more class-balanced training set.
 
+    Arguments
+    ---------
     tabfile : str
         Table of candidate transients (must be a .csv or .fits file)
     tripfile : str
@@ -442,20 +447,9 @@ def augment_SMOTE(tabfile, tripfile, newfrac=0.5, output_trips=None):
         Fraction (between 0.0, 1.0) of the data which should belong to the 
         minority class after SMOTE (default 0.5, i.e., augmented dataset 
         will be half real and half bogus)
-    output_tab : str, optional
-        Name for output table with augmented set of candidate transient 
-        (default set by function)
     output_trips : str, optional
-        Name for output .npy file with augmented sert of  triplets (default 
+        Name for output .npy file with augmented set of triplets (default 
         set by function)
-    Input:
-        - a single table of transient candidates (must be .fits or .csv)
-        - a single .npy file of corresponding transients 
-        - the fraction (between 0, 1) of the data which should belong to the 
-          minority class after SMOTE (optional; default 0.5, i.e. augmented
-          dataset will be half real, half bogus)
-        - name for the output table (optional; default set below)
-        - name for the output triplets .npy file (optional; default set below)
 
     Notes
     -----
@@ -524,10 +518,10 @@ def triplets_normalize(tripfile, output_trips=None):
     
     Notes
     -----
-    For an array of N triplets with shape (N, 3, X, Y), normalizes each 
+    For an array of N triplets with shape `(N, 3, X, Y)`, normalizes each 
     science, reference and difference image **independently** using L2 
     normalization. Should be called **BEFORE** rearranging the triplets into 
-    shape (N, X, Y, 3) with :func:`triplet_rearrange`
+    shape `(N, X, Y, 3)` with :func:`triplets_rearrange`.
 
     """
     
@@ -569,8 +563,8 @@ def triplets_rearrange(tripfile, output_trips=None):
     
     Notes
     -----
-    For an array of N triplets with shape (N, 3, X, Y), rearranges the array 
-    to have shape (N, X, Y, 3). This is the required format for training the 
+    For an array of N triplets with shape `(N, 3, X, Y)`, rearranges the array 
+    to have shape `(N, X, Y, 3)`. This is the required format for training the 
     braai. Should be used as the **FINAL** step of pre-processing, after 
     merging, augmenting, normalizing, etc. Calling this function on several 
     triplet files and then trying to merge, augment, etc. will **NOT** work. 

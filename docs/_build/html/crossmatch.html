@@ -16,6 +16,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -41,11 +42,24 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="CNN_model_utils.html">CNN_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="crop.html">crop module</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">crossmatch module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">crossmatch module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_list"><code class="docutils literal notranslate"><span class="pre">crossmatch_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_table"><code class="docutils literal notranslate"><span class="pre">crossmatch_table()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_TNS"><code class="docutils literal notranslate"><span class="pre">crossmatch_TNS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_GCVS"><code class="docutils literal notranslate"><span class="pre">crossmatch_GCVS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_AAVSO"><code class="docutils literal notranslate"><span class="pre">crossmatch_AAVSO()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_VeronCettyVeron"><code class="docutils literal notranslate"><span class="pre">crossmatch_VeronCettyVeron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_MILLIQUAS"><code class="docutils literal notranslate"><span class="pre">crossmatch_MILLIQUAS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.crossmatch_PS1_stellar"><code class="docutils literal notranslate"><span class="pre">crossmatch_PS1_stellar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.MOC_crossmatch_TNS"><code class="docutils literal notranslate"><span class="pre">MOC_crossmatch_TNS()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#crossmatch.MOC_crossmatch_AAVSO"><code class="docutils literal notranslate"><span class="pre">MOC_crossmatch_AAVSO()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="ePSF.html">ePSF module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="imalign.html">imalign module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="masking.html">masking module</a></li>
@@ -55,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="training_data_utils.html">training_data_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
 </ul>
 </li>
