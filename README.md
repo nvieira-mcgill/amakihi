@@ -41,9 +41,6 @@ Currently, needs to be installed directly from github. May be installable with `
 
 **Essential dependencies:**
 
-- ``os``
-- ``subprocess``
-- ``warnings``
 - ``numpy``
 - ``scipy``
 - ``matplotlib``
