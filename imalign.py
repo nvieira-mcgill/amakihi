@@ -30,7 +30,8 @@ from astropy import wcs
 import astropy.units as u 
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from photutils import detect_sources, source_properties
+from photutils import detect_sources#, source_properties
+from photutils.segmentation import SourceCatalog
 
 # amakihi 
 from background import bkgstd
@@ -76,7 +77,9 @@ def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
                                npixels=data_pixmin,
                                mask=data_mask)          
     # use the segmentation image to get the source properties 
-    cat = source_properties(data, segm_data, mask=data_mask)
+    #cat = source_properties(data, segm_data, mask=data_mask) # photutils 0.8
+    cat = SourceCatalog(data=data, segment_image=segm_data, 
+                        mask=data_mask) # photutils >=1.1
     try:
         tbl = cat.to_table()
     except ValueError:

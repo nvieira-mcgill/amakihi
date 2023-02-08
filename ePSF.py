@@ -20,7 +20,8 @@ from astropy import wcs
 from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.convolution import convolve_fft, Gaussian2DKernel, Moffat2DKernel
 from astropy.table import Table, Column
-from photutils import make_source_mask, detect_sources, source_properties
+from photutils import make_source_mask, detect_sources#, source_properties
+from photutils.segmentation import SourceCatalog
 
 # amakihi
 from plotting import __plot_ePSF, __plot_convolve_self
@@ -192,7 +193,9 @@ def build_ePSF_imsegm(image_file, mask_file=None, nstars=40,
     # use the segmentation image to get the source properties 
     segm = detect_sources(image_data, thresh_sigma*std, npixels=pixelmin,
                           mask=mask) 
-    cat = source_properties(image_data, segm, mask=mask)
+    #cat = source_properties(image_data, segm, mask=mask) # photutils 0.8
+    cat = SourceCatalog(data=image_data, segment_image=segm, 
+                        mask=mask) # photutils >=1.1
 
     ## get the catalog and coordinate/fluxes for sources, do some filtering
     try:

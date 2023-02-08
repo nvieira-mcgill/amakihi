@@ -23,7 +23,8 @@ from astropy import wcs
 import astropy.units as u 
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
-from photutils import detect_sources, source_properties
+from photutils import detect_sources#, source_properties
+from photutils.segmentation import SourceCatalog
 
 # amakihi 
 from crop import crop_WCS
@@ -193,12 +194,16 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     segm = detect_sources(data, thresh_sigma*std, npixels=pixelmin,
                           mask=mask)          
     # use the segmentation image to get the source properties 
-    cat = source_properties(data, segm, mask=mask)
+    #cat = source_properties(data, segm, mask=mask) # photutils 0.8
+    cat = SourceCatalog(data=data, segment_image=segm, 
+                        mask=mask) # photutils >=1.1
     
     # do the same with the inverse of the image to look for dipoles
     segm_inv = detect_sources((-1.0)*data, thresh_sigma*std, 
                               npixels=pixelmin, mask=mask)
-    cat_inv = source_properties((-1.0)*data, segm_inv, mask=mask)
+    #cat_inv = source_properties((-1.0)*data, segm_inv, mask=mask) # photutils 0.8
+    cat_inv = SourceCatalog(data=(-1.0)*data, segment_image=segm_inv, 
+                            mask=mask) # photutils >=1.1
     # get the catalog and coordinates for sources
     try:
         tbl = cat.to_table()

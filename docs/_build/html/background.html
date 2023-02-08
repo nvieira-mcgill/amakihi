@@ -16,7 +16,6 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -88,8 +87,67 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="background-module">
-<h1>background module<a class="headerlink" href="#background-module" title="Permalink to this heading"></a></h1>
+  <section id="module-background">
+<span id="background-module"></span><h1>background module<a class="headerlink" href="#module-background" title="Permalink to this heading"></a></h1>
+<p>Background estimation and subtraction.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="background.bkgsub">
+<span class="sig-prename descclassname"><span class="pre">background.</span></span><span class="sig-name descname"><span class="pre">bkgsub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(5,</span> <span class="pre">5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bkg_filt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(5,</span> <span class="pre">5)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_bkg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_bkgsubbed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_bkg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_bkgsubbed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#background.bkgsub" title="Permalink to this definition"></a></dt>
+<dd><p>Subtract the background from an image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>im_file</strong> (<em>str</em>) – Filename for image of interest</p></li>
+<li><p><strong>mask_file</strong> (<em>str, optional</em>) – Filename for bad pixels mask (default None)</p></li>
+<li><p><strong>bkg_box</strong> (<em>tuple, optional</em>) – Sizes of box along each axis in which background is estimated (default
+(5,5))</p></li>
+<li><p><strong>bkg_filt</strong> (<em>tuple, optional</em>) – Size of the median filter pre-applied to the background before
+background estimation (default (5,5) where (1,1) –&gt; no filtering)</p></li>
+<li><p><strong>plot_bkg</strong> (<em>bool, optional</em>) – Whether to plot BACKGROUND image (default False)</p></li>
+<li><p><strong>plot_bkgsubbed</strong> (<em>bool, optional</em>) – Whether to plot background-SUBTRACTED image (default False)</p></li>
+<li><p><strong>scale_bkg</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to BACKGROUND image plot (default “linear”)</p></li>
+<li><p><strong>scale_bkgsubbed</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to background-SUBTRACTED image plot (default “linear”)</p></li>
+<li><p><strong>write</strong> (<em>bool, optional</em>) – Whether to write the background-SUBTRACTED image to a fits file
+(default True)</p></li>
+<li><p><strong>output</strong> (<em>str, optional</em>) – Name for output fits file (default
+<cite>im_file.replace(“.fits”, “_bkgsub.fits”)</cite>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>New HDU (image + header) with the image background-subtracted</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>astropy.io.fits.PrimaryHDU</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><strong>TO-DO:</strong></p>
+<ul class="simple">
+<li><p>Allow naming of output plots</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="background.bkgstd">
+<span class="sig-prename descclassname"><span class="pre">background.</span></span><span class="sig-name descname"><span class="pre">bkgstd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#background.bkgstd" title="Permalink to this definition"></a></dt>
+<dd><p>Estimate the RMS standard deviation of the background in the <cite>im_data</cite>
+image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>im_data</strong> (<em>array_like</em>) – Image data</p></li>
+<li><p><strong>mask</strong> (<em>array_like</em>) – Mask to apply to image</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>RMS standard deviation of the background image</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 

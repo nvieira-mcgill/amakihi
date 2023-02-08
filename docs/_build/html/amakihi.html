@@ -16,7 +16,6 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -88,8 +87,233 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="amakihi-module">
-<h1>amakihi module<a class="headerlink" href="#amakihi-module" title="Permalink to this heading"></a></h1>
+  <section id="module-amakihi">
+<span id="amakihi-module"></span><h1>amakihi module<a class="headerlink" href="#module-amakihi" title="Permalink to this heading"></a></h1>
+<p>Big module which handles all of the actual image differencing.</p>
+<p><strong>References:</strong></p>
+<dl class="simple">
+<dt>[1] Alard, C., &amp; Lupton, R. H. 1998, ApJ, 503, 325</dt><dd><p><a class="reference external" href="https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract">https://ui.adsabs.harvard.edu/abs/1998ApJ…503..325A/abstract</a></p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="amakihi.get_substamps">
+<span class="sig-prename descclassname"><span class="pre">amakihi.</span></span><span class="sig-name descname"><span class="pre">get_substamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">science_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sci_mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmp_mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">areamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">400.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sepmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.get_substamps" title="Permalink to this definition"></a></dt>
+<dd><p>Get and write a substamps file containing the coordinates of good
+sources for hotpants which are present in both the science and template
+images.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>science_file, template_file</strong> (<em>str</em>) – Science and template images fits files</p></li>
+<li><p><strong>sci_mask_file</strong> (<em>str, optional</em>) – Fits files for bad pixel masks for the science and template images
+(default None for both)</p></li>
+<li><p><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma to use in setting the threshold for source detection via image
+segmentation (default 3.0)</p></li>
+<li><p><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for hotpants (default 2.0)</p></li>
+<li><p><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed pixel area for an isophote to be considered a good
+source for hotpants (default 400.0)</p></li>
+<li><p><strong>sepmax</strong> (<em>float, optional</em>) – <em>Maximum</em> on-sky separation (arcsec) of sources between the science and
+template images to be designated as a source present in both (default
+5.0)</p></li>
+<li><p><strong>mode</strong> (<em>{“mean”, “science”, “template”}, optional</em>) – Coordinate system to use for the output (xi, yi) pairs (default “mean”,
+see notes for details)</p></li>
+<li><p><strong>output</strong> (<em>str, optional</em>) – Name for output ascii text file (default
+<cite>science_file.replace(“.fits”, “_substamps.txt”)</cite>)</p></li>
+<li><p><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default False)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A tuple containing the tables of source coordinates (“xcentroid”,
+“ycentroid”) for the science and reference images</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple of astropy.table.Table objects</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For both the science and template image, finds sources via image
+segmentation and selects those which are not overly elongated (to filter
+out galaxies) or overly large (to filter out saturated stars). Then
+compares the science and template images, finds sources in common, and
+writes these to an ascii text file in the form</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s1">&#39;x1 y1&#39;</span>
+<span class="s1">&#39;x2 y2&#39;</span>
+<span class="s1">&#39;x3 y3&#39;</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>Where the exact coordinates are determined by the setting for <cite>mode</cite>. If
+<cite>mode == “mean”</cite>, the coordinates will be the average of the science and
+template image; if <cite>mode == “science”</cite> or <cite>mode == “template”</cite>, the
+coordinates will be those of the science or template image, respectively.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amakihi.param_estimate">
+<span class="sig-prename descclassname"><span class="pre">amakihi.</span></span><span class="sig-name descname"><span class="pre">param_estimate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">science_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sci_epsf_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmp_epsf_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixelmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">areamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">400.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.param_estimate" title="Permalink to this definition"></a></dt>
+<dd><p>Get a rough estimate for the parameters of the Gaussian basis kernel
+which should be used by <cite>hotpants</cite> given some input science and template
+images, and whether to convolve the science or template image during
+differencing. <strong>However, see notes</strong>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>science_file, template_file</strong> (<em>str</em>) – Science and template images fits files</p></li>
+<li><p><strong>mask_file</strong> (<em>str, optional</em>) – Bad pixel mask fits file (default None)</p></li>
+<li><p><strong>sci_epsf_file</strong> (<em>str, optional</em>) – Fits file containing the science and template images’ ePSFs,
+respectively (default None for both, in which case ePSF will be
+estimated here with <cite>build_ePSF()</cite>)</p></li>
+<li><p><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+3.0)</p></li>
+<li><p><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20; passed to <cite>build_ePSF_imsegm()</cite> only
+if needed)</p></li>
+<li><p><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4; passed to
+<cite>build_ePSF_imsegm()</cite> only if needed)</p></li>
+<li><p><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 400.0, passed
+to <cite>build_ePSF_imsegm()</cite> only if needed)</p></li>
+<li><p><strong>cutout</strong> (<em>int, optional</em>) – Cutout size around each star in pixels (default 35; must be <strong>odd</strong>;
+rounded <strong>down</strong> if even; passed to <cite>build_ePSF_imsegm()</cite> only if
+needed)</p></li>
+<li><p><strong>verbose</strong> (<em>bool, optional</em>) – Whether to be verbose (default True)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>convolve</strong> (<em>{“t”, “i”}</em>) – String indicating whether to convolve the template (t) or science
+image (i) during image differencing with <cite>hotpants</cite></p></li>
+<li><p><strong>gaussian</strong> (<em>dict</em>) – Dictionary containing the parameters of the Gaussian basis kernel
+to use during image differencing with <cite>hotpants</cite></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><strong>Not stable right now.</strong> Messes up when science and reference have very
+similar PSFs (which is often the case and in fact what we want).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="amakihi.hotpants">
+<span class="sig-prename descclassname"><span class="pre">amakihi.</span></span><span class="sig-name descname"><span class="pre">hotpants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">science_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sci_mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmp_mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substamps_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_estimate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">il</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lsigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rkernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nrx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'i'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bgo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ko</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kern_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_scale_write</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maskout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kerout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noiseout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noisescaleout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_large</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thresh_sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixelmin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">areamax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#amakihi.hotpants" title="Permalink to this definition"></a></dt>
+<dd><p>Wrapper for the hotpants image differencing software <a class="footnote-reference brackets" href="#id3" id="id1">1</a>, adapted
+primarily for use with the Canada-France-Hawaii Telescope (CFHT) MegaCam
+instrument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>science_file, template_file</strong> (<em>str</em>) – Science image and template image fits files</p></li>
+<li><p><strong>sci_mask_file, tmp_mask_file</strong> (<em>str, optional</em>) – Masks of pixels to ignore in the science and template images (fits
+files; default None)</p></li>
+<li><p><strong>substamps_file</strong> (<em>str, optional</em>) – Text file containing the locations of substamps (default None)</p></li>
+<li><p><strong>param_estimate</strong> (<em>bool, optional</em>) – Whether to try and estimate the optimal parameters of the Gaussian
+basis kernel and whether to convolve the template or science image
+(default False; <strong>recommended to keep it this way</strong> - not reliable)</p></li>
+<li><p><strong>iu, tu, il, tl</strong> (<em>float, optional</em>) – Upper (u) and lower (l) ADU limits for the science image (i) and
+template image (t) (default None, in which case these limits are set
+according to args <cite>lsigma</cite>, <cite>hsigma</cite>)</p></li>
+<li><p><strong>lsigma, hsigma</strong> (<em>float, optional</em>) – Number of standard deviations away from the background at which to
+place the lower and upper ADU limits (default 5.0, but only used if
+<cite>tu</cite>, <cite>tl</cite>, <cite>iu</cite>, <cite>il</cite> are not given)</p></li>
+<li><p><strong>gd</strong> (<em>str, optional</em>) – String of form “xmin xmax ymin ymax” indicating the region in which
+pixels are good (e.g. “150 1000 200 800” to trim the edges of some
+1000x1000 image; default None –&gt; use whole image)</p></li>
+<li><p><strong>ig, ir, tg, tr</strong> (<em>float, optional</em>) – Gain (g) and readnoise (r) for the science image (i) and template (t)
+(default None, in which case values are extracted from headers if
+present; if not present, default is <cite>ig = tg = 1</cite>, <cite>ir = tr = 0</cite>)</p></li>
+<li><p><strong>ng</strong> (<em>str, optional</em>) – String of form “ngauss degree0 sigma0 … degreeN sigmaN”, where
+N=ngauss-1, “ngauss” is the number of Gaussians in the basis kernel,
+degreej is the degree of the polynomial attached to the jth Gaussian,
+and sigmaj is the width of the jth Gaussian (default
+“3 6.0 0.7 4.0 1.5 2.0 3.0”, which is a mixture of 3 Gaussians with
+widths 0.7, 1.5, 3.0 respectively and polynomials of order 6, 4, 2,
+respectively). <strong>This is the most important setting.</strong></p></li>
+<li><p><strong>rkernel</strong> (<em>float, optional</em>) – FWHM of the convolution kernel (default, 10.0)</p></li>
+<li><p><strong>nrx, nry</strong> (<em>int, optional</em>) – Number of regions in the x and y directions, respectively (defaul 1 for
+both)</p></li>
+<li><p><strong>nsx, nsy</strong> (<em>int, optional</em>) – Number of stamps in each region in the x and y directions, respectively
+(default 10 for both)</p></li>
+<li><p><strong>nss</strong> (<em>int, optional</em>) – Number of centroids (i.e. sources) to extract within each stamp
+(default 3)</p></li>
+<li><p><strong>rss</strong> (<em>float, optional</em>) – Half-width of the substamp for centroid extraction (default
+<cite>2.5*rkernel</cite>, which is 25.0 for default <cite>rkernel</cite>)</p></li>
+<li><p><strong>ssig</strong> (<em>float, optional</em>) – Sigma threshold for sigma clipping (default 3.0)</p></li>
+<li><p><strong>norm</strong> (<em>{“i”, “t”, “u”}, optional</em>) – Normalization to use for final difference image, where “i” is the
+science image, “t” the template, and “u” the unconvolved science image
+or template depending on which was convolved (default “i”)</p></li>
+<li><p><strong>convi</strong> (<em>bool, optional</em>) – Whether to force convolution of the science image (default False)</p></li>
+<li><p><strong>convt</strong> (<em>bool, optional</em>) – Whether to force convolution of the template image (default False)</p></li>
+<li><p><strong>bgo</strong> (<em>int, optional</em>) – Order of spatial variations in the background (default 0)</p></li>
+<li><p><strong>ko</strong> (<em>int, optional</em>) – Order of spatial variations in the kernel (default 1)</p></li>
+<li><p><strong>output</strong> (<em>str, optional</em>) – Output difference image file name (default
+<cite>science_file.replace(“.fits”, “_subtracted.fits”)</cite>)</p></li>
+<li><p><strong>mask_write</strong> (<em>bool, optional</em>) – Whether to write the bad pixel mask (default False)</p></li>
+<li><p><strong>conv_write</strong> (<em>bool, optional</em>) – Whether to write the convolved image (default False)</p></li>
+<li><p><strong>kern_write</strong> (<em>bool, optional</em>) – Whether to write the kernel image (default False)</p></li>
+<li><p><strong>noise_write</strong> (<em>bool, optional</em>) – Whether to write the noise image (default False)</p></li>
+<li><p><strong>noise_scale_write</strong> (<em>bool, optional</em>) – Whether to write the <em>scaled difference</em> noise image (default False)</p></li>
+<li><p><strong>maskout</strong> (<em>str, optional</em>) – Name for the output bad pixel mask if <cite>mask_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_submask.fits”)</cite>)</p></li>
+<li><p><strong>convout</strong> (<em>str, optional</em>) – Name for output convolved image if <cite>conv_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_conv.fits”)</cite>)</p></li>
+<li><p><strong>kernout</strong> (<em>str, optional</em>) – Name for output kernel if <cite>kern_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_kernel.fits”)</cite>)</p></li>
+<li><p><strong>noiseout</strong> (<em>str, optional</em>) – Name for output noise image if <cite>noise_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_noise.fits”)</cite>)</p></li>
+<li><p><strong>noisecaleout</strong> (<em>str, optional</em>) – Name for output noise <em>scaled difference</em> image if
+<cite>noise_scale_write = True</cite> (default
+<cite>science_file.replace(“.fits”, “_noise_scaled.fits”)</cite>)</p></li>
+<li><p><strong>v</strong> (<em>{0, 1, 2}, optional</em>) – Level of verbosity, where 0 is least and 2 is most (default 1)</p></li>
+<li><p><strong>log</strong> (<em>str, optional</em>) – Name for a logfile in which to store STDERR (default None)</p></li>
+<li><p><strong>plot</strong> (<em>bool, optional</em>) – Whether to plot the final difference image (default True)</p></li>
+<li><p><strong>plotname</strong> (<em>str, optional</em>) – Name for the output figure (default
+<cite>output.replace(“.fits”, “_hotpants.png”)</cite>)</p></li>
+<li><p><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to apply to the plot (default “linear”)</p></li>
+<li><p><strong>target_large</strong> (<em>array_like</em>) – [ra, dec] for some target of interest (e.g. a potential transient)
+at which to draw a large crosshair (default None)</p></li>
+<li><p><strong>target_small</strong> (<em>array_like</em>) – [ra, dec] for some other target of interest (e.g. the candidate host
+galaxy of some target of interest) at which to draw a small crosshair
+(default None)</p></li>
+<li><p><strong>thresh_sigma</strong> (<em>float, optional</em>) – Sigma threshold for source detection with image segmentation (default
+3.0)</p></li>
+<li><p><strong>pixelmin</strong> (<em>float, optional</em>) – <em>Minimum</em> pixel area of an isophote to be considered a good source for
+building the ePSF (default 20; passed to <cite>build_ePSF_imsegm()</cite> only
+if <cite>param_estimate = True</cite>)</p></li>
+<li><p><strong>etamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed elongation for an isophote to be considered a good
+source for building the ePSF (default 1.4; passed to
+<cite>build_ePSF_imsegm()</cite> only if <cite>param_estimate = True</cite>)</p></li>
+<li><p><strong>areamax</strong> (<em>float, optional</em>) – <em>Maximum</em> allowed area (in square pixels) for an isophote to be
+considered a good source for building the ePSF (default 500.0, passed
+to <cite>build_ePSF_imsegm()</cite> only if <cite>param_estimate = True</cite>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>New HDU (image + header) for the difference image</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>astropy.io.fits.PrimaryHDU</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>For more details, see: <a class="reference external" href="https://github.com/acbecker/hotpants">https://github.com/acbecker/hotpants</a></p>
+<p>High Order Transformation of Psf ANd Template Subtraction
+Based (hotpants) is based on the method of “optimal image subtraction” of
+Alard &amp; Lupton 1998 <a class="footnote-reference brackets" href="#id3" id="id2">1</a> .</p>
+<p>Note that this wrapper does not implement <em>all</em> settings which can be
+specified by the user when running hotpants directly from the command line,
+but does include most of them (and all of the most important ones).</p>
+<p class="rubric">References</p>
+<dl class="footnote brackets">
+<dt class="label" id="id3"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>)</span></dt>
+<dd><p>Alard, C., &amp; Lupton, R. H. 1998, ApJ, 503, 325
+<a class="reference external" href="https://ui.adsabs.harvard.edu/abs/1998ApJ...503..325A/abstract">https://ui.adsabs.harvard.edu/abs/1998ApJ…503..325A/abstract</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 

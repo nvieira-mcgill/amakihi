@@ -28,7 +28,8 @@ from astropy.stats import (SigmaClip,
                            gaussian_fwhm_to_sigma, gaussian_sigma_to_fwhm)
 from astropy.coordinates import SkyCoord
 from photutils import Background2D, MedianBackground
-from photutils import make_source_mask, detect_sources, source_properties
+from photutils import make_source_mask, detect_sources#, source_properties
+from photutils.segmentation import SourceCatalog
 
 ## for speedy FFTs
 #import pyfftw
@@ -176,7 +177,9 @@ def get_substamps(science_file, template_file,
         segm = detect_sources(image_data, threshold, npixels=5, mask=mask)
         
         # get the source properties
-        cat = source_properties(image_data, segm, mask=mask) 
+        #cat = source_properties(image_data, segm, mask=mask) # photutils 0.8
+        cat = SourceCatalog(data=image_data, segment_image=segm, 
+                            mask=mask) # photutils >=1.1
         try:
             tbl = cat.to_table()
         except ValueError:

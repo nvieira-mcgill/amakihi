@@ -49,9 +49,12 @@ Currently, needs to be installed directly from github. May be installable with `
 - [``scikit-image``](https://scikit-image.org/)
 - [``scikit-learn``](https://scikit-learn.org/stable/install.html)
 
-**Optional dependencies:**
+**Semi-optional dependencies:**
 
 - [``tensorflow``](https://www.tensorflow.org/install) (if using `CNN_model_utils` module)
+
+**Really optional dependencies:** 
+
 - [``imblearn``](https://imbalanced-learn.org/stable/index.html) (if using `training_data_utils.augment_dataset_SMOTE()`)
 - [``lxml``](https://lxml.de/) (if using `query_CFIS` module)
 - [``astroquery``](https://astroquery.readthedocs.io/en/latest/) (if using `crossmatch` module)

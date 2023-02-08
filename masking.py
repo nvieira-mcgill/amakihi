@@ -27,7 +27,8 @@ from astropy.stats import SigmaClip
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from photutils import Background2D, MedianBackground
-from photutils import make_source_mask, detect_sources, source_properties
+from photutils import make_source_mask, detect_sources#, source_properties
+from photutils.segmentation import SourceCatalog
 
 # amakihi
 from plotting import __plot_mask
@@ -213,7 +214,8 @@ def saturation_mask(image_file, mask_file=None,
     ## only detect sources composed of at least sat_area_min pixels
     segm = detect_sources(data, threshold, npixels=sat_area_min)
     labels = segm.labels 
-    cat = source_properties(data, segm) 
+    #cat = source_properties(data, segm) # photutils 0.8
+    cat = SourceCatalog(data=data, segment_image=segm) # photutils >=1.1
     
     ## if any sources are found
     if len(cat) != 0:
