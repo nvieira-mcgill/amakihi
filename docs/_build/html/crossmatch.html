@@ -363,18 +363,15 @@ successfully crossmatched (default set by function)</p></li>
 function)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Parameters</dt>
-<dd class="field-even"><ul class="simple">
-<li><p><strong>For a single .fits or .csv table containing N transient candidates and a</strong></p></li>
-<li><p><strong>single triplet .npy file containing N triplets, queries the Pan-STARRS 1</strong></p></li>
-<li><p><strong>3pi survey (Chambers et al 2016) for **stellar</strong> sources within <a href="#id1"><span class="problematic" id="id2">`</span></a>sep_max`**</p></li>
-<li><p><strong>arcseconds of the candidate transients. If M&gt;0 matches are found, writes a</strong></p></li>
-<li><p><strong>table containing the M crossmatched transient  *candidates*, another table</strong></p></li>
-<li><p><strong>containing the M *known* quasars, and a `(M,3,Y,X)` .npy file containing</strong></p></li>
-<li><p><strong>the M relevant triplets.</strong></p></li>
-</ul>
-</dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>For a single .fits or .csv table containing N transient candidates and a
+single triplet .npy file containing N triplets, queries the Pan-STARRS1
+3pi survey (Chambers et al 2016) for <strong>stellar</strong> sources within <cite>sep_max</cite>
+arcseconds of the candidate transients. If M&gt;0 matches are found, writes a
+table containing the M crossmatched transient  <em>candidates</em>, another table
+containing the M <em>known</em> quasars, and a <cite>(M,3,Y,X)</cite> .npy file containing
+the M relevant triplets.</p>
 </dd></dl>
 
 <dl class="py function">

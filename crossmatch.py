@@ -1150,13 +1150,13 @@ def crossmatch_PS1_stellar(tabfile,
         Name for output .npy file with crossmatched triplets (default set by 
         function)
     
-    Arguments
-    ---------
+    Notes
+    -----
     For a single .fits or .csv table containing N transient candidates and a 
-    single triplet .npy file containing N triplets, queries the Pan-STARRS 1 
+    single triplet .npy file containing N triplets, queries the Pan-STARRS1 
     3pi survey (Chambers et al 2016) for **stellar** sources within `sep_max` 
     arcseconds of the candidate transients. If M>0 matches are found, writes a 
-    table containing the M crossmatched transient  *candidates*, another table
+    table containing the M crossmatched transient  *candidates*, another table 
     containing the M *known* quasars, and a `(M,3,Y,X)` .npy file containing 
     the M relevant triplets.  
 
