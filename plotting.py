@@ -5,18 +5,19 @@
 .. @author: Nicholas Vieira
 .. @plotting.py
 
-Utility functions for plotting various quantities/arrays/images. **Sections:**
+Functions for plotting images, triplets, etc.
 
-- ``background`` module
-- ``masking`` module
-- ``imalign`` module
-- ``ePSF`` module
-- ``hotpants`` module
-- ``amakihi`` (image differencing) module
-- ``transient`` module
+Also contains several functions for plotting machine learning diagnostics.
 
-And several functions for plotting machine learning diagnostics which are not 
-associated with any particular module.
+See the source code for utility plotting functions called by:
+
+- :obj:`background` module
+- :obj:`masking` module
+- :obj:`imalign` module
+- :obj:`ePSF` module
+- :obj:`hotpants` module
+- :obj:`amakihi` (image differencing) module
+- :obj:`transient` module
 
 """
 
@@ -47,6 +48,19 @@ import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
+
+###############################################################################
+### CHANGING PLOTTING BACKEND (needs to be "agg" on remote servers) ###########
+
+def to_agg():
+    """Switch matplotlib backend to 'agg'"""
+    plt.switch_backend("agg")
+    
+def to_Qt4Agg():
+    """Switch matplotlib backend to 'Qt4Agg'"""
+    plt.switch_backend('Qt4Agg')
+    
+
 ###############################################################################
 #### MISCELLANEOUS PLOTTING ###################################################
     
@@ -66,7 +80,7 @@ def plot_image(im_file, mask_file=None,
         Filename for mask fits image (default None)
     scale : {"linear", "log", "asinh"}, optional
         Scale to use for the image (default "linear")
-    cmap : str, optional
+    cmap : str, matplotlib.colors.ListedColormap, optional
         Colourmap to use for the image (default "bone")
     label : str, optional
         Label to apply to the colorbar (default None, in which case will be 
@@ -193,7 +207,7 @@ def plot_transient_stamp(im_file, target, size=200.0, cropmode="truncate",
         the crop goes out of bounds (default "truncate")
     scale : {"linear", "log", "asinh"}, optional
         Scale to use for the image (default "linear")
-    cmap : str, optional
+    cmap : str, matplotlib.colors.ListedColormap, optional
         Colourmap to use for the image (default "bone")
     crosshairs : str, optional
         Color for the crosshair(s) (default "#fe019a" --> ~ hot pink)
@@ -508,7 +522,335 @@ def plot_transient(sub_file, og_file, ref_file, tbl,
                                  output=zoom_diff_output, 
                                  toi=toi)    
 
+
+def plot_triplets(tripfile, 
+                  outdir, 
+                  tabfile=None, 
+                  images=None,
+                  
+                  wide=True, 
+                  
+                  SRDlabel=False,
+                  titles=None,
+                  
+                  ticks_axes=True, 
+                  scalebar=True, 
+                  pixscale=0.185,
+                  
+                  crosshair_from_table=False,
+                  crosshair_peak=False, 
+                  crosshair_color="#fe01b1",
+                  crosshair_thick=2.5,
+                  
+                  cmap="bone", fmt="png"):
+    """Plot a set of triplets.
+
+    Arguments
+    ---------
+    tripfile : str
+        .npy file containing triplets
+    outdir : str
+        Directory in which to store output plots
+    tabfile : str, optional
+        Table of candidate transients corresponding to `tripfile` (must be a 
+        .csv or .fits file) (default None)
+    images : list, optional
+        **List** of .fits images from which to extract WCS information for 
+        plotting, **if** `tabfile` was provided (default None --> use pixel 
+        coordinates)
+    wide : bool, optional
+        Plot the triplets as 3 columns, 1 row (horizontally wide)? Else, plot 
+        as 3 rows, 1 column (vertically tall) (default True)
+    SRDlabel : bool, optional
+        Label the science, reference, and difference images with 'science', 
+        'reference', 'difference'? (default False)
+    titles : list, optional
+        **List** of titles to include in corresponding plots; also used for 
+        setting output filenames (default None)
+    ticks_axes : bool, optional
+        Include ticks, tick labels, and axis labels? (default True)
+    scalebar : bool, optional
+        Include a bar showing the scale? (default True)
+    pixscale : float, optional
+        Pixel scale of the image in arcseconds per pixel; only relevant if 
+        `scalebar = True` (default 0.185 = pixel scale for MegaCam)
+    crosshair_from_table : bool, optional
+        Label the science, reference, and difference images with a crosshair 
+        using the location of the source given via `images` and `tabfile`? 
+        (default False)
+    crosshair_peak : bool, optional
+        Label the science, reference, and difference images with a crosshair 
+        using the peak of the image? (default False)
+    crosshair_color : str, optional
+        Color for crosshair (default "#fe01b1" = bright pink)
+    crosshair_thick : float, optional
+        Thickness of crosshairs (default 2.5)
+    cmap : str, matplotlib.colors.ListedColormap, optional
+        Colormap to use in plots (default "bone")
+    fmt : {"png", "pdf"}, optional
+        Filetype for the plots (default "png")
+        
+    """
+
+    from matplotlib_scalebar.scalebar import ScaleBar
+
+    ## load in triplets    
+    triplets = np.load(tripfile, mmap_mode="r")
     
+    ## load in corresponding table if one is given    
+    if tabfile:
+        if ".fits" in tabfile:
+            tbl = Table.read(tabfile, format="ascii")
+        elif ".csv" in tabfile:
+            tbl = Table.read(tabfile, format="ascii.csv")
+        else:
+            raise ValueError("tabfile must be of filetype .csv or .fits, "+
+                             f"did not recognize {tabfile}")
+        
+    
+    # parameters for the plots and subplots based on whether wide=True
+    plot_dict = {True:[(17,7), 131, 132, 133],
+                 False:[(7, 17), 311, 312, 313]}
+
+    ## write candidate number as a string for filenaming (if needed)
+    if type(titles) == type(None):
+        nstrs = []
+        if len(triplets) < 100:
+            for i in range(len(triplets)):
+                if i<10: nstrs.append(f"0{i}")
+                else: nstrs.append(str(i)) 
+        elif len(triplets) < 1000:
+            for i in range(len(triplets)):
+                if i<10: nstrs.append(f"00{i}")
+                elif i<100: nstrs.append(f"0{i}")
+                else: nstrs.append(str(i)) 
+        else:
+            for i in range(len(triplets)):
+                if i<10: nstrs.append(f"000{i}")
+                elif i<100: nstrs.append(f"00{i}")
+                elif i<1000: nstrs.append(f"0{i}")
+                else: nstrs.append(str(i)) 
+
+    ## set crosshair width/offset from coordinate center (if needed)
+    if crosshair_from_table or crosshair_peak:
+        if triplets.shape[1] == 3:
+            triplet_temp = triplets[0][0]
+        else:
+            triplet_temp = triplets[0][:,:,0]
+        crosshair_width = 0.2*triplet_temp.shape[0] # width of crosshair
+        crosshair_offset = 0.1*triplet_temp.shape[0] # offset from center 
+    
+    ## loop over each triplet 
+    for i in range(len(triplets)):        
+        # check shape of the array ((N, 3, X, Y) or (N, X, Y, 3))
+        if triplets.shape[1] == 3:
+            og_data, ref_data, sub_data = triplets[i]
+        else:
+            og_data = triplets[i][:,:,0]
+            ref_data = triplets[i][:,:,1]
+            sub_data = triplets[i][:,:,2]
+            
+        ## see if an image *and* table were provided 
+        if not(type(images) == type(None) or type(tabfile) == type(None)):
+            ra = tbl["ra"][i]; dec = tbl["dec"][i]
+            new_hdu = crop_WCS(images[i], ra, dec, size=og_data.shape[0],
+                               write=False)
+            w = wcs.WCS(new_hdu.header)
+        else:
+            w = None
+            
+        ## plot
+        fig = plt.figure(figsize=plot_dict[wide][0])      
+        # science image
+        ax = fig.add_subplot(plot_dict[wide][1], projection=w)
+        mean, median, std = sigma_clipped_stats(og_data)
+        #og_norm = simple_norm(og_data, "asinh")
+        ax.imshow(og_data, vmin=mean-5*std, vmax=mean+9*std, origin='lower', 
+                  cmap=cmap)                   
+        # reference image 
+        ax2 = fig.add_subplot(plot_dict[wide][2], projection=w)
+        mean, median, std = sigma_clipped_stats(ref_data)
+        #ref_norm = simple_norm(ref_data, "asinh")
+        ax2.imshow(ref_data, vmin=mean-5*std, vmax=mean+9*std, origin='lower', 
+                   cmap=cmap)        
+        # difference image 
+        ax3 = fig.add_subplot(plot_dict[wide][3], projection=w)
+        mean, median, std = sigma_clipped_stats(sub_data)
+        #sub_norm = simple_norm(sub_data, "asinh")
+        ax3.imshow(sub_data, vmin=mean-5*std, vmax=mean+9*std, origin='lower', 
+                   cmap=cmap) 
+        
+        ## ticks and axis labels? ticks are forced if <images>, <table> given
+        if not(type(images) == type(None) or type(tabfile) == type(None)):
+            if wide: # RA under middle image, DEC left of leftmost image 
+                ax.coords["ra"].set_ticklabel_visible(False)
+                ax.coords["dec"].set_ticklabel(size=26, 
+                         exclude_overlapping=True)
+                ax.set_ylabel("Dec (J2000)", fontsize=24)
+                ax2.coords["ra"].set_ticklabel(size=26, 
+                          exclude_overlapping=True)
+                ax2.coords["dec"].set_ticklabel_visible(False)
+                ax2.set_xlabel("RA (J2000)", fontsize=24)
+                ax2.coords["ra"].set_major_formatter("dd:mm:ss")
+                ax3.coords["ra"].set_ticklabel_visible(False)
+                ax3.coords["dec"].set_ticklabel_visible(False)
+            else: # RA under bottom image, DEC left of middle image
+                ax.coords["ra"].set_ticklabel_visible(False)
+                ax.coords["dec"].set_ticklabel_visible(False)        
+                ax2.coords["ra"].set_ticklabel_visible(False)        
+                ax2.coords["dec"].set_ticklabel(size=26, 
+                          exclude_overlapping=True)
+                ax2.set_ylabel("Dec (J2000)", fontsize=24)
+                ax3.coords["ra"].set_ticklabel(size=26, 
+                          exclude_overlapping=True)
+                ax3.coords["dec"].set_ticklabel_visible(False)    
+                ax3.set_xlabel("RA (J2000)", fontsize=24)
+        elif ticks_axes:
+            if wide:
+                ax.set_ylabel("Pixels", fontsize=24)
+                ax2.set_xlabel("Pixels", fontsize=24)
+            else:
+                ax2.set_ylabel("Pixels", fontsize=24)
+                ax3.set_xlabel("Pixels", fontsize=24)
+            ax.tick_params(which='major', labelsize=26)
+            ax2.tick_params(which='major', labelsize=26) 
+            ax3.tick_params(which='major', labelsize=26)
+            ax.set_yticks(ax.get_xticks()[1:-1])
+            ax2.set_yticks(ax2.get_xticks()[1:-1])
+            ax3.set_yticks(ax3.get_xticks()[1:-1])
+        else: 
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax2.set_xticks([])
+            ax2.set_yticks([])
+            ax3.set_xticks([])
+            ax3.set_yticks([])
+            
+        ## scalebar?  
+        if scalebar:
+            scalebar = ScaleBar(pixscale, units="''", dimension='angle', 
+                                color="k", box_alpha=1.0, 
+                                label_loc="top", 
+                                height_fraction=0.015,
+                                font_properties={"size":23})
+            ax2.add_artist(scalebar)
+
+        ## crosshair at coords supplied by table?
+        if crosshair_from_table: 
+            if not(type(images) == type(None) or type(tabfile) == type(None)):
+                x, y = w.all_world2pix(tbl["ra"][i], tbl["dec"][i], 1)
+                crosshair_x = [x-crosshair_offset-crosshair_width,
+                               x-crosshair_offset] # xmin, xmax of crosshair
+                crosshair_y = [y+crosshair_offset, # ymin, ymax of crosshair
+                               y+crosshair_offset+crosshair_width]
+
+                ax.hlines(y, xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax.get_transform('pixel'))
+                ax.vlines(x, ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax.get_transform('pixel'))
+                ax2.hlines(y, xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax2.get_transform('pixel'))
+                ax2.vlines(x, ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax2.get_transform('pixel'))
+                ax3.hlines(y, xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax3.get_transform('pixel'))
+                ax3.vlines(x, ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax3.get_transform('pixel'))
+            else:
+                print("\nEither a table or a list of .fits images was not "+
+                      "provided, so no crosshair can be drawn.")
+                
+        ## OR, crosshair at peak of diff image?
+        elif crosshair_peak:            
+            ind = np.unravel_index(np.argmax(sub_data, axis=None), 
+                                   sub_data.shape) # find the peak's indices
+            if not(type(images) == type(None) or type(tabfile) == type(None)):
+                crosshair_x = [ind[1]-crosshair_offset-crosshair_width,
+                               ind[1]-crosshair_offset] 
+                crosshair_y = [ind[0]+crosshair_offset, 
+                               ind[0]+crosshair_offset+crosshair_width]
+                ax.hlines(ind[0], xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax.get_transform('pixel'))
+                ax.vlines(ind[1], ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax.get_transform('pixel'))
+                ax2.hlines(ind[0], xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax2.get_transform('pixel'))
+                ax2.vlines(ind[1], ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax2.get_transform('pixel'))
+                ax3.hlines(ind[0], xmin=crosshair_x[0], xmax=crosshair_x[1], 
+                          colors=crosshair_color, lw=crosshair_thick, 
+                          transform=ax3.get_transform('pixel'))
+                ax3.vlines(ind[1], ymin=crosshair_y[0], ymax=crosshair_y[1], 
+                          colors=crosshair_color, lw=crosshair_thick,
+                          transform=ax3.get_transform('pixel'))
+                
+            else:
+                ax.axhline(ind[0], 0.2, 0.4, color=crosshair_color, 
+                           lw=crosshair_thick)
+                ax.axvline(ind[1], 0.6, 0.8, color=crosshair_color, 
+                           lw=crosshair_thick)
+                ax2.axhline(ind[0], 0.2, 0.4, color=crosshair_color, 
+                            lw=crosshair_thick)
+                ax2.axvline(ind[1], 0.6, 0.8, color=crosshair_color, 
+                            lw=crosshair_thick)        
+                ax3.axhline(ind[0], 0.2, 0.4, color=crosshair_color, 
+                            lw=crosshair_thick)
+                ax3.axvline(ind[1], 0.6, 0.8, color=crosshair_color, 
+                            lw=crosshair_thick)
+            
+        ## titles/filenames
+        # if "science", "reference", "difference" titles are requested
+        if SRDlabel:
+            ax.set_title('$science$', fontsize=24)
+            ax2.set_title('$reference$', fontsize=24)
+            ax3.set_title('$difference$', fontsize=24)            
+            if not(type(titles) == type(None)): # title can be a supertitle above the others
+                plt.suptitle(titles[i], fontsize=24)
+                # get rid of illegal chars
+                title_nosp = [t.replace(" ","_") for t in titles.copy()]
+                title_nosp = [t.replace(",","") for t in title_nosp.copy()]
+                title_nosp = [t.replace("\n","_") for t in title_nosp.copy()]
+                title_nosp = [t.replace("$","") for t in title_nosp.copy()]
+                plotname = tripfile.replace(".npy", 
+                                             f"_{title_nosp[i]}.{fmt}")                          
+            else: # no supertitle will be used
+                plotname = tripfile.replace(".npy", 
+                                            f"_candidate{nstrs[i]}.{fmt}")                
+                
+        # OR, if a title is given but no SRD label is requested 
+        elif not(type(titles) == type(None)):
+            if wide:
+                ax2.set_title(titles[i], fontsize=24)
+            else:
+                ax.set_title(titles[i], fontsize=24)
+            # get rid of illegal chars
+            title_nosp = [t.replace(" ","_") for t in titles.copy()]
+            title_nosp = [t.replace(",","") for t in title_nosp.copy()]
+            title_nosp = [t.replace("\n","_") for t in title_nosp.copy()]
+            title_nosp = [t.replace("$","") for t in title_nosp.copy()]
+            plotname = tripfile.replace(".npy", f"_{title_nosp[i]}.{fmt}") 
+               
+        # no table nor title nor SRDlabel requested
+        else:
+            plotname = tripfile.replace(".npy", f"_candidate{nstrs[i]}.{fmt}")
+        
+        ## save and close the figure 
+        plotname = f'{outdir}/{re.sub(".*/", "", plotname)}' 
+        plt.savefig(plotname, bbox_inches="tight")
+        plt.close()
+
+
+
 ###############################################################################
 ### background ################################################################
 
@@ -1063,7 +1405,7 @@ def __plot_rejected(sub_file,
     vetted_color : str, optional
         Color of diamond flagging sources which passed all vetting (default 
         "#53fca1" --> sea green)
-    cmap : str, optional
+    cmap : str, matplotlib.colors.ListedColormap, optional
         Colormap for image (default "coolwarm")
     output : str, optional
         Name for output figure (default 
@@ -1323,7 +1665,7 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
     wide : bool, optional
         Whether to plot the triplet as 1 row, 3 columns (`wide == True`) or 3
         rows, 1 column (`wide == False`) (default True)
-    cmap : str, optional
+    cmap : str, matplotlib.colors.ListedColormap, optional
         Colormap to apply to all images in the triplet (default "bone")
     title_append : str, optional
         A "title" to include in the plot's title **and** filename (default 
@@ -1414,6 +1756,124 @@ def __plot_triplet(og_file, sub_hdu, og_hdu, ref_hdu, n, ntargets,
     plt.close()
     
     
+
+###############################################################################
+### TRAINING SET PROPERTIES ###################################################
+
+def histogram_elongation(tabfile, title=None, output=None):
+    """Plot a histogram of the elongations for sources generated by transient 
+    detection. 
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    title : str, optional
+        Title for output plot (default None)
+    output : str, optional
+        Filename for output figure (default set by function)
+
+    """
+    
+    # load in table
+    if ".fits" in tabfile:
+        tbl = Table.read(tabfile, format="ascii")
+        filext = ".fits"
+    elif ".csv" in tabfile:
+        tbl = Table.read(tabfile, format="ascii.csv")
+        filext = ".csv"
+    else:
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
+    
+    # plot
+    elongs = tbl["elongation"].data
+    mean, med, std = sigma_clipped_stats(elongs) 
+    plt.figure(figsize=(11,10))
+    plt.hist(elongs, bins=18, color="#90e4c1", alpha=0.8)
+    
+    # label the mean and 1sigma deviation
+    plt.axvline(mean, color="black", label=r"$\mu$")
+    plt.axvline(mean+std, color="black", ls="--", 
+                label=r"$\mu$"+"±"+r"$\sigma$")
+    plt.axvline(mean-std, color="black", ls="--")
+    
+    plt.xlabel("Elongation "+r"$\eta$", fontsize=16)
+    plt.ylabel("Counts", fontsize=16)
+    plt.gca().tick_params(axis="both", which='major', labelsize=15)    
+    plt.legend(fancybox=True, fontsize=16)
+    plt.grid()
+
+    # title
+    if title:
+        plt.title(title, fontsize=15)
+    
+    # write it
+    if type(output) == type(None):
+        output = tabfile.replace(filext, "_elongs_histo.png")
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+def histogram_area(tabfile, title=None, output=None):
+    """Plot a histogram of the area for sources generated by transient 
+    detection. 
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    title : str, optional
+        Title for output plot (default None)
+    output : str, optional
+        Filename for output figure (default set by function)
+
+    """
+    
+    # load in table
+    if ".fits" in tabfile:
+        tbl = Table.read(tabfile, format="ascii")
+        filext = ".fits"
+    elif ".csv" in tabfile:
+        tbl = Table.read(tabfile, format="ascii.csv")
+        filext = ".csv"
+    else:
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
+    
+    # plot
+    areas = tbl["area"].data     
+    mean, med, std = sigma_clipped_stats(areas)
+    plt.figure(figsize=(11,10)) 
+    plt.hist(areas, bins=18, range=(0,np.max(areas)), color="#c875c4", 
+             alpha=0.8)
+    
+    # label the mean and 1sigma deviations
+    plt.axvline(mean, color="black", label=r"$\mu$")
+    plt.axvline(mean+std, color="black", ls="--", 
+                label=r"$\mu$"+"±"+r"$\sigma$")
+    plt.axvline(mean-std, color="black", ls="--")
+    
+    plt.xlabel("Area [pix"+r"${}^2$"+"]", fontsize=16)
+    plt.ylabel("Counts", fontsize=16)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.gca().tick_params(axis="both", which='major', labelsize=15)    
+    plt.legend(fancybox=True, fontsize=16)
+    plt.grid()
+
+    # title
+    if title:
+        plt.title(title, fontsize=15)
+    
+    # write it
+    if type(output) == type(None):
+        output = tabfile.replace(filext, "_areas_histo.png")
+    plt.savefig(output, bbox_inches="tight")
+    plt.close()
+
+
+
 ###############################################################################
 ### MACHINE LEARNING DIAGNOSTICS ##############################################
 

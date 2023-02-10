@@ -4,7 +4,6 @@ amakihi
 .. toctree::
    :maxdepth: 4
 
-   CNN_model_utils
    amakihi
    astroalign_mod
    background
@@ -18,6 +17,7 @@ amakihi
    query_CFIS
    query_DECaLS
    query_PS1
+   rb_dataset_utils
+   rb_model_utils
    templates
-   training_data_utils
    transient

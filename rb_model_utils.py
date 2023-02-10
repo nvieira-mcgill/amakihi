@@ -3,10 +3,10 @@
 """
 .. Created on Thu Feb  2 03:29:02 2023
 .. @author: Nicholas Vieira
-.. @CNN_model_utils.py
+.. @rb_model_utils.py
 
-Utility functions for interacting with Keras models: writing, reading, and 
-applying to candidate transients. 
+Utility functions for interacting with (real-bogus) Keras models: writing, 
+reading, and applying to candidate transients. 
 
 """
 

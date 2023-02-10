@@ -3,10 +3,10 @@
 """
 .. Created on Thu Feb  2 03:23:35 2023
 .. @author: Nicholas Vieira
-.. @training_data_utils.py
+.. @rb_dataset_utils.py
 
 Utility functions for (pre-)processing the tables, triplets, etc. which go 
-into training the bogus real adversarial artificial intelligence (braai) 
+into training the bogus-real adversarial artificial intelligence (braai) 
 convolutional neural network. 
 
 """
@@ -16,7 +16,9 @@ import re
 import sys
 import numpy as np
 
+import astropy.units as u
 from astropy.table import Table
+from astropy.coordinates import Angle, SkyCoord
 
 from scipy.ndimage import rotate
 
@@ -87,7 +89,7 @@ def merge_tables(direc, filext=".fits", filt=None, output_tab=None, *cols):
     
     Returns
     -------
-    astropy.table 
+    astropy.table.Table
         Merged table
     
     Notes
@@ -96,7 +98,7 @@ def merge_tables(direc, filext=".fits", filt=None, output_tab=None, *cols):
     **or** .csv format, each with `r_i` rows, merges them into a single table 
     with `sum(r_i) i=1...N` rows.
     
-    Currently does not allow for merging tables with different columns
+    Currently does not allow for merging tables with different columns.
     
     """
 
@@ -158,6 +160,82 @@ def merge_tables(direc, filext=".fits", filt=None, output_tab=None, *cols):
                              "or .fits")
             
     return cand_table
+
+
+### MERGING TABLES WITH DIFFERENT COLUMNS ########################################################
+
+def merge_catalogs(*catalogs, output=None):
+    """Merge catalogs/tables, looking only for the essential columns
+    
+    Arguments
+    ---------
+    *catalogs : str
+        Filenames for as many catalogs (tables of sources; must be .fits or 
+        .csv files) with (at minimum) columns giving the RA, Dec, and a name
+    output : str, optional
+        Filename for output table (default set by function)
+        
+    Returns
+    -------
+    astropy.table.Table
+        Merged table
+
+    Notes
+    -----
+    Valid keys for the RA are: 'ra', 'RA', 'RAJ2000'; valid keys for the 
+    Declination are 'dec', 'Dec', 'DEJ2000'. Must have a `Name` column.
+    
+    """
+    
+    rows = []
+    for c in catalogs:
+        
+        # load in table
+        if ".fits" in c:
+            tbl = Table.read(c, format="ascii")
+        elif ".csv" in c:
+            tbl = Table.read(c, format="ascii.csv")
+        else:
+            raise ValueError("all catalogs must be of filetype .csv or "+
+                             f".fits, did not recognize {c}")
+        
+        # get RAs, DECs
+        cols = tbl.colnames
+        ra_col = [c for c in cols if (("ra" in c) or ("RA" in c))]
+        if "RAJ2000" in ra_col: ra_col = "RAJ2000"
+        else: ra_col = ra_col[0]
+            
+        dec_col = [c for c in cols if (("dec" in c) or ("DEC" in c) or (
+                "DEJ" in c) or ("de" in c))]
+        if "DEJ2000" in dec_col: dec_col = "DEJ2000"
+        else: dec_col = dec_col[0]
+        
+        # if RA, DEC are in sexagesimal coords
+        if 'TNS AT' in cols and ":" in tbl[ra_col][0]:
+            tbl[ra_col] = [float(Angle(str(t[ra_col])+" hours").degree) for 
+               t in tbl]
+            tbl[dec_col] = [float(Angle(str(t[dec_col])+" degrees").degree) for 
+               t in tbl]        
+
+        ras = tbl[ra_col].data.tolist()
+        decs = tbl[dec_col].data.tolist()
+        
+        newtbl = Table(data=[tbl["Name"], ras, decs], 
+                       names=["Name", "ra", "dec"])
+        
+        for row in newtbl: rows.append(row) # add to row list
+
+    final_table = Table(rows=rows, names=["Name", "ra", "dec"])
+
+    if type(output) == type(None):
+        output = "catalogs_merged.fits"
+        final_table.write(output, format="ascii", overwrite=True)
+    elif ".fits" in output:
+        final_table.write(output, format="ascii", overwrite=True)
+    elif ".csv" in output:        
+        final_table.write(output, format="ascii.csv", overwrite=True)
+        
+    return final_table
 
 
 
@@ -302,7 +380,7 @@ def augment_dataset_single(tabfile, tripfile,
         Apply the augmentation factor to only candidates with the label 1 
         (real)? or all candidates (default False)
     output_tab : str, optional
-        Name for output table with augmented set of candidate transient 
+        Name for output table with augmented set of candidate transients 
         (default set by function)
     output_trips : str, optional
         Name for output .npy file with augmented set of triplets (default 
@@ -495,6 +573,327 @@ def augment_SMOTE(tabfile, tripfile, newfrac=0.5, output_trips=None):
         output_trips = tripfile.replace(".npy", 
                             f"_augment_SMOTE_newfrac-{newfrac}-real.npy")
     np.save(output_trips, triplets_res) # write it
+
+
+
+### REPEATERS (FOR TRAINING SETS WITH TRIPLETS ACROSS MULTIPLE EPOCHS) ########
+
+def __get_idx_repeaters(tbl, sep_max=1.0, dt_min=0.1):
+    """Get indices of repeaters in a table
+    
+    Arguments
+    ---------
+    tbl : astropy.table.Table
+        Table of candidate transients
+    sep_max : float, optional
+        *Maximum* allowed angular separation to consider two sources to be 
+        the same, in arcseconds (default 1.0)
+    dt_min : float, optional
+        *Minimum* time separation between potential matches, in days 
+        (default 0.1)
+        
+    Returns
+    -------
+    idx_og : list
+        Indices for any sources which were matched at least once
+    idx_final : list
+        Indices for repeated sources, with respect to their row number in the 
+        original input table
+
+    """
+    
+    tbl["idx"] = [i for i in range(len(tbl))] # temporary idx column 
+    
+    # build skycoord objects out of table of candidates 
+    tbl_coords = SkyCoord(tbl["ra"]*u.deg, tbl["dec"]*u.deg, frame="icrs") 
+    
+    # crossmatch catalog with itself 
+    idx, idx, d2d, d3d = tbl_coords.search_around_sky(tbl_coords, 
+                                                      sep_max*u.arcsec)     
+    idx = idx[d2d>0] # remove indices which matched themselves 
+
+    # verify that the sources are not temporally coincident
+    idx_cop = idx.copy()
+    idx = []
+    for i in range(len(idx_cop)//2): 
+        dt = np.abs(tbl["MJD"][idx_cop[2*i]] - tbl["MJD"][idx_cop[2*i+1]])  
+        if dt > dt_min: # if not temporally coincident 
+            idx.append(idx_cop[2*i])
+            idx.append(idx_cop[2*i+1])
+    idx_og = np.unique(idx.copy()).tolist() # idx for sources matched >=1 times
+    
+    tbl_matched = tbl[idx_og]
+    tbl_matched.sort(["ra","dec","MJD"]) # sort the candidates 
+    idx_sorted = tbl_matched["idx"].data.tolist()
+    
+    # build a new table containing only ONE of each group of matched sources 
+    newtbl = Table(rows=tbl_matched[0]) # first row only
+    coord = SkyCoord(newtbl[0]["ra"]*u.deg, newtbl[0]["dec"]*u.deg, 
+                     frame="icrs")    
+    for i in range(1, len(idx_sorted)): 
+        row = tbl_matched[i]
+        rcoord = SkyCoord(row["ra"]*u.deg, row["dec"]*u.deg, frame="icrs")
+        sep = rcoord.separation(coord)
+        if (sep.arcsecond < sep_max): # if a matched source
+            if row["MJD"] < newtbl[-1]["MJD"]: 
+                newtbl[-1] = row
+            else: 
+                continue
+        else: # if a new source, add to table and continue 
+            newtbl.add_row(row)
+            coord = rcoord
+            
+    idx_final = newtbl["idx"].data.tolist()
+            
+    return idx_og, idx_final
+
+ 
+def repeaters_pick(tabfile, tripfile, #sep_max=1.0, dt_min=0.5,
+                   output_tab=None, output_trips=None):
+    """Pick out sources which are repeated in a given dataset 
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    tripfile : str
+        .npy file containing triplets corresponding to `tabfile`
+    output_tab : str, optional
+        Name for output table with only sources which were repeated (default 
+        set by function)
+    output_trips : str, optional
+        Name for output .npy file with only triplets which were repeated 
+        (default set by function)
+
+    Notes
+    -----
+    Given some table of sources, find sources within 0.001 degrees = 3.6 
+    arcseconds of each other and write a table/corresponding triplet file 
+    including only these repeated sources.
+        
+    E.g., for a table of 1000 candidates where 50 sources were detected 
+    exactly twice, 30 sources detected exactly three times, and 10 sources 
+    detected exactly four times, the final table will contain 
+    50 + 30 + 10 = 90 remaining candidates. 
+
+    """
+    from astropy.table import setdiff, unique
+
+    # load in table
+    if ".fits" in tabfile:
+        tbl = Table.read(tabfile, format="ascii")
+        filext = ".fits"
+    elif ".csv" in tabfile:
+        tbl = Table.read(tabfile, format="ascii.csv")
+        filext = ".csv"
+    else:
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
+
+    # load in triplets
+    triplets = np.load(tripfile, mmap_mode="r")  
+
+#    ## use the __get_idx_repeaters() function
+#    # crossmatch catalog with itself 
+#    idx_og, idx_final = __get_idx_repeaters(tbl, sep_max, dt_min)
+#    
+#    # new table/triplets of ONLY the repeated sources
+#    newtbl = tbl[idx_final]
+#    newtrips = []
+#    for i in idx_final: newtrips.append(triplets[i])
+#    newtrips = np.stack(newtrips)
+#    newtbl.remove_column("idx")
+#    
+#    # informative prints
+#    print(f'\nfound {len(idx_final)} sources for which >=1 other source(s) '+
+#          f'were found within angular separation {sep_max:.2f}" '+
+#          f'and detections were made more than {dt_min:.2f} days apart')
+#    newtbl["ra","dec","MJD"].pprint() # print      
+
+    # temporary idx column 
+    tblc = tbl.copy()
+    tblc["idx"] = [i for i in range(len(tbl))] # temporary idx column 
+
+    # round the ra, dec rows
+    tblc["ra"] = np.round(tblc["ra"], decimals=3)
+    tblc["dec"] = np.round(tblc["dec"], decimals=3)
+
+    # get rows which do NOT repeat 
+    tblc_norep = unique(tblc, keys=["ra","dec"], keep="none")
+
+    # for rows which do repeat, keep only one (the first)
+    tblc_unique = unique(tblc, keys=["ra","dec"], keep="first")
+    nrepeaters = len(tblc_unique) - len(tblc_norep)
+    
+    # table of ONLY the repeaters
+    repeaters = setdiff(tblc_unique, tblc_norep)
+    repeaters.sort(["ra","dec","MJD"])
+    #print("\nrepeaters:\n", flush=True)
+    #repeaters["ra","dec","MJD"].pprint()
+
+    # informative prints
+    print(f'\nfound {nrepeaters} intrinsic source(s) detected across'+
+          ' multiple epochs', flush=True)
+    # print(f'\nfound {len(tblc_norep)} sources which were only detected in a '+
+    #       'single observation epoch')
+
+    # indices of repeaters only 
+    repeaters.sort(["ra","dec","MJD"])
+    idx_sorted = repeaters["idx"].tolist() # sorted
+    
+    # make the table and triplets
+    newtbl = tbl[idx_sorted]
+    newtrips = []
+    for i in idx_sorted: newtrips.append(triplets[i])
+    newtrips = np.stack(newtrips)    
+    
+    # informative prints    
+    print(f'\n--> {len(newtbl)} source(s) written to final table:\n', 
+          flush=True)
+    newtbl["ra","dec","MJD"].pprint() # print 
+
+    # write the table
+    if type(output_tab) == type(None):
+        output_tab = tabfile.replace(filext, f"_repeatpick{filext}")
+    if filext == ".fits":
+        newtbl.write(output_tab, format="ascii", overwrite=True)
+    elif filext == ".csv":
+        newtbl.write(output_tab, format="ascii.csv", overwrite=True)
+        
+    # write the triplets    
+    if type(output_trips) == type(None):
+        output_trips = tripfile.replace(".npy", "_repeatpick.npy")
+    np.save(output_trips, newtrips)
+    
+
+def repeaters_remove(tabfile, tripfile, #sep_max=1.0, dt_min=0.5, 
+                     output_tab=None, output_trips=None):
+    """Pick out sources which are **not** repeated in a given dataset 
+    
+    Arguments
+    ---------
+    tabfile : str
+        Table of candidate transients (must be a .csv or .fits file)
+    tripfile : str
+        .npy file containing triplets corresponding to `tabfile`
+    output_tab : str, optional
+        Name for output table with only sources which were **not** repeated 
+        (default set by function)
+    output_trips : str, optional
+        Name for output .npy file with only triplets which were **not** 
+        repeated (default set by function)
+
+    Notes
+    -----
+    Given some table of sources, find sources within 0.001 degrees = 3.6 
+    arcseconds of each other and write a table/corresponding triplet file 
+    which does not include repeats.
+
+    E.g., for a table of 1000 candidates where 50 sources were detected 
+    exactly twice, 30 sources detected exactly three times, and 10 sources 
+    detected exactly four times, the final table will contain 
+    1000 - (2-1)*50 - (3-1)*30 - (4-1)*10 = 860 remaining candidates.
+
+    """
+
+    from astropy.table import setdiff, unique
+    
+    # load in table
+    if ".fits" in tabfile:
+        tbl = Table.read(tabfile, format="ascii")
+        filext = ".fits"
+    elif ".csv" in tabfile:
+        tbl = Table.read(tabfile, format="ascii.csv")
+        filext = ".csv"
+    else:
+        raise ValueError("tabfile must be of filetype .csv or .fits, did not "+
+                         f"recognize {tabfile}")
+
+    # load in triplets
+    triplets = np.load(tripfile, mmap_mode="r")
+    
+#    # crossmatch catalog with itself 
+#    # get indices of repeated sources 
+#    idx_og, idx_final = __get_idx_repeaters(tbl, sep_max, dt_min)
+#    
+#    # informative prints
+#    print(f'\nfound {len(idx_final)} sources for which >=1 other source(s) '+
+#          f'were found within angular separation {sep_max:.2f}" '+
+#          f'and detections were made more than {dt_min:.2f} days apart')
+#    print(f'\nfound {len(tbl)-len(np.unique(idx_og))} sources which were '+
+#          'only detected in a single observation epoch')
+#    
+#    # get indices of sources which did NOT repeat 
+#    for i in range(len(tbl)):
+#        if not(i in np.unique(idx_og)): idx_final.append(i)
+#
+#    # make the table and triplets
+#    newtbl = tbl[idx_final]
+#    newtbl.sort(["ra","dec","MJD"])
+#    idx_sorted = newtbl["idx"] # idx, sorted
+#    newtrips = []
+#    for i in idx_sorted: newtrips.append(triplets[i])
+#    newtrips = np.stack(newtrips)
+#    newtbl.remove_column("idx")
+#
+#    # informative prints
+#    print(f'\n--> {len(idx_final)} sources written to final table:\n')
+#    newtbl["ra","dec","MJD"].pprint() # print 
+
+    # temporary idx column 
+    tblc = tbl.copy()
+    tblc["idx"] = [i for i in range(len(tbl))] # temporary idx column 
+
+    # round the ra, dec, MJD rows
+    tblc["ra"] = np.round(tblc["ra"], decimals=3)
+    tblc["dec"] = np.round(tblc["dec"], decimals=3)
+
+    # get rows which do NOT repeat 
+    tblc_norep = unique(tblc, keys=["ra","dec"], keep="none")
+
+    # for rows which do repeat, keep only one (the first)
+    tblc_unique = unique(tblc, keys=["ra","dec"], keep="first")
+    nrepeaters = len(tblc_unique) - len(tblc_norep)
+    
+    # table of only the repeaters
+    repeaters = setdiff(tblc, tblc_norep)
+    repeaters.sort(["ra","dec","MJD"])
+    print("\nrepeaters:\n", flush=True)
+    repeaters["ra","dec","MJD"].pprint()
+
+    # informative prints
+    print(f'\nfound {nrepeaters} intrinsic source(s) detected across'+
+          ' multiple epochs', flush=True)
+    print(f'\nfound {len(tblc_norep)} source(s) only detected in a '+
+          'single observation epoch', flush=True)
+
+    # indices of non-repeaters + sources which only repeated once
+    tblc_unique.sort(["ra","dec","MJD"])
+    idx_sorted = tblc_unique["idx"].tolist() # sorted
+    
+    # make the table and triplets
+    newtbl = tbl[idx_sorted]
+    newtrips = []
+    for i in idx_sorted: newtrips.append(triplets[i])
+    newtrips = np.stack(newtrips)    
+    
+    # informative prints    
+    print(f'\n--> {len(newtbl)} source(s) written to final table:\n', 
+          flush=True)
+    newtbl["ra","dec","MJD"].pprint() # print 
+
+    # write the table
+    if type(output_tab) == type(None):
+        output_tab = tabfile.replace(filext, f"_repeatremove{filext}")
+    if filext == ".fits":
+        newtbl.write(output_tab, format="ascii", overwrite=True)
+    elif filext == ".csv":
+        newtbl.write(output_tab, format="ascii.csv", overwrite=True)
+        
+    # write the triplets    
+    if type(output_trips) == type(None):
+        output_trips = tripfile.replace(".npy", "_repeatremove.npy")
+    np.save(output_trips, newtrips)
 
 
 

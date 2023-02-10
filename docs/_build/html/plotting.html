@@ -41,7 +41,6 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="CNN_model_utils.html">CNN_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
@@ -55,8 +54,9 @@
 <li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rb_dataset_utils.html">rb_dataset_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rb_model_utils.html">rb_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="training_data_utils.html">training_data_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
 </ul>
 </li>
@@ -89,18 +89,30 @@
              
   <section id="module-plotting">
 <span id="plotting-module"></span><h1>plotting module<a class="headerlink" href="#module-plotting" title="Permalink to this heading"></a></h1>
-<p>Utility functions for plotting various quantities/arrays/images. <strong>Sections:</strong></p>
+<p>Functions for plotting images, triplets, etc.</p>
+<p>Also contains several functions for plotting machine learning diagnostics.</p>
+<p>See the source code for utility plotting functions called by:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">background</span></code> module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">masking</span></code> module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">imalign</span></code> module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ePSF</span></code> module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">hotpants</span></code> module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">amakihi</span></code> (image differencing) module</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">transient</span></code> module</p></li>
+<li><p><a class="reference internal" href="background.html#module-background" title="background"><code class="xref py py-obj docutils literal notranslate"><span class="pre">background</span></code></a> module</p></li>
+<li><p><a class="reference internal" href="masking.html#module-masking" title="masking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">masking</span></code></a> module</p></li>
+<li><p><a class="reference internal" href="imalign.html#module-imalign" title="imalign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">imalign</span></code></a> module</p></li>
+<li><p><a class="reference internal" href="ePSF.html#module-ePSF" title="ePSF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ePSF</span></code></a> module</p></li>
+<li><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">hotpants</span></code> module</p></li>
+<li><p><a class="reference internal" href="amakihi.html#module-amakihi" title="amakihi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">amakihi</span></code></a> (image differencing) module</p></li>
+<li><p><a class="reference internal" href="transient.html#module-transient" title="transient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transient</span></code></a> module</p></li>
 </ul>
-<p>And several functions for plotting machine learning diagnostics which are not
-associated with any particular module.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.to_agg">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">to_agg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plotting.to_agg" title="Permalink to this definition"></a></dt>
+<dd><p>Switch matplotlib backend to ‘agg’</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.to_Qt4Agg">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">to_Qt4Agg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#plotting.to_Qt4Agg" title="Permalink to this definition"></a></dt>
+<dd><p>Switch matplotlib backend to ‘Qt4Agg’</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="plotting.plot_image">
 <span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">im_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bone'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_large</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_large</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_small</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#fe019a'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_image" title="Permalink to this definition"></a></dt>
@@ -111,7 +123,7 @@ associated with any particular module.</p>
 <li><p><strong>im_file</strong> (<em>str</em>) – Filename for fits image of interest</p></li>
 <li><p><strong>mask_file</strong> (<em>str, optional</em>) – Filename for mask fits image (default None)</p></li>
 <li><p><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to use for the image (default “linear”)</p></li>
-<li><p><strong>cmap</strong> (<em>str, optional</em>) – Colourmap to use for the image (default “bone”)</p></li>
+<li><p><strong>cmap</strong> (<em>str, matplotlib.colors.ListedColormap, optional</em>) – Colourmap to use for the image (default “bone”)</p></li>
 <li><p><strong>label</strong> (<em>str, optional</em>) – Label to apply to the colorbar (default None, in which case will be
 ADU, log(ADU), or asinh(ADU) depending on <cite>scale</cite>)</p></li>
 <li><p><strong>title</strong> (<em>str, optional</em>) – Title for the image (default None)</p></li>
@@ -142,7 +154,7 @@ input image can be the science, reference, difference, or whatever image.</p>
 <li><p><strong>cropmode</strong> (<em>{“truncate”, “extend”}</em>) – Mode to use for <cite>crop_WCS()</cite> (when cropping to select the transient) if
 the crop goes out of bounds (default “truncate”)</p></li>
 <li><p><strong>scale</strong> (<em>{“linear”, “log”, “asinh”}, optional</em>) – Scale to use for the image (default “linear”)</p></li>
-<li><p><strong>cmap</strong> (<em>str, optional</em>) – Colourmap to use for the image (default “bone”)</p></li>
+<li><p><strong>cmap</strong> (<em>str, matplotlib.colors.ListedColormap, optional</em>) – Colourmap to use for the image (default “bone”)</p></li>
 <li><p><strong>crosshairs</strong> (<em>str, optional</em>) – Color for the crosshair(s) (default “#fe019a” –&gt; ~ hot pink)</p></li>
 <li><p><strong>label</strong> (<em>str, optional</em>) – Label to apply to the colorbar (default None, in which case will be
 ADU, log(ADU), or asinh(ADU) depending on <cite>scale</cite>)</p></li>
@@ -208,6 +220,76 @@ science or reference images cannot be assured.</p>
 <li><p>“zoom ref” - postage stamp of the original reference image</p></li>
 <li><p>“zoom diff” - postage stamp of the subtracted image</p></li>
 </ol>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.plot_triplets">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">plot_triplets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tabfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wide</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">SRDlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ticks_axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scalebar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.185</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_from_table</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_peak</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#fe01b1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crosshair_thick</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'bone'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.plot_triplets" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a set of triplets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tripfile</strong> (<em>str</em>) – .npy file containing triplets</p></li>
+<li><p><strong>outdir</strong> (<em>str</em>) – Directory in which to store output plots</p></li>
+<li><p><strong>tabfile</strong> (<em>str, optional</em>) – Table of candidate transients corresponding to <cite>tripfile</cite> (must be a
+.csv or .fits file) (default None)</p></li>
+<li><p><strong>images</strong> (<em>list, optional</em>) – <strong>List</strong> of .fits images from which to extract WCS information for
+plotting, <strong>if</strong> <cite>tabfile</cite> was provided (default None –&gt; use pixel
+coordinates)</p></li>
+<li><p><strong>wide</strong> (<em>bool, optional</em>) – Plot the triplets as 3 columns, 1 row (horizontally wide)? Else, plot
+as 3 rows, 1 column (vertically tall) (default True)</p></li>
+<li><p><strong>SRDlabel</strong> (<em>bool, optional</em>) – Label the science, reference, and difference images with ‘science’,
+‘reference’, ‘difference’? (default False)</p></li>
+<li><p><strong>titles</strong> (<em>list, optional</em>) – <strong>List</strong> of titles to include in corresponding plots; also used for
+setting output filenames (default None)</p></li>
+<li><p><strong>ticks_axes</strong> (<em>bool, optional</em>) – Include ticks, tick labels, and axis labels? (default True)</p></li>
+<li><p><strong>scalebar</strong> (<em>bool, optional</em>) – Include a bar showing the scale? (default True)</p></li>
+<li><p><strong>pixscale</strong> (<em>float, optional</em>) – Pixel scale of the image in arcseconds per pixel; only relevant if
+<cite>scalebar = True</cite> (default 0.185 = pixel scale for MegaCam)</p></li>
+<li><p><strong>crosshair_from_table</strong> (<em>bool, optional</em>) – Label the science, reference, and difference images with a crosshair
+using the location of the source given via <cite>images</cite> and <cite>tabfile</cite>?
+(default False)</p></li>
+<li><p><strong>crosshair_peak</strong> (<em>bool, optional</em>) – Label the science, reference, and difference images with a crosshair
+using the peak of the image? (default False)</p></li>
+<li><p><strong>crosshair_color</strong> (<em>str, optional</em>) – Color for crosshair (default “#fe01b1” = bright pink)</p></li>
+<li><p><strong>crosshair_thick</strong> (<em>float, optional</em>) – Thickness of crosshairs (default 2.5)</p></li>
+<li><p><strong>cmap</strong> (<em>str, matplotlib.colors.ListedColormap, optional</em>) – Colormap to use in plots (default “bone”)</p></li>
+<li><p><strong>fmt</strong> (<em>{“png”, “pdf”}, optional</em>) – Filetype for the plots (default “png”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.histogram_elongation">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">histogram_elongation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.histogram_elongation" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a histogram of the elongations for sources generated by transient
+detection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>title</strong> (<em>str, optional</em>) – Title for output plot (default None)</p></li>
+<li><p><strong>output</strong> (<em>str, optional</em>) – Filename for output figure (default set by function)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="plotting.histogram_area">
+<span class="sig-prename descclassname"><span class="pre">plotting.</span></span><span class="sig-name descname"><span class="pre">histogram_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#plotting.histogram_area" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a histogram of the area for sources generated by transient
+detection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tabfile</strong> (<em>str</em>) – Table of candidate transients (must be a .csv or .fits file)</p></li>
+<li><p><strong>title</strong> (<em>str, optional</em>) – Title for output plot (default None)</p></li>
+<li><p><strong>output</strong> (<em>str, optional</em>) – Filename for output figure (default set by function)</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

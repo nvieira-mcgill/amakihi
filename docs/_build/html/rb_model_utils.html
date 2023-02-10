@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CNN_model_utils module &mdash; amakihi  documentation</title>
+  <title>rb_model_utils module &mdash; amakihi  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -19,8 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="amakihi module" href="amakihi.html" />
-    <link rel="prev" title="amakihi" href="modules.html" /> 
+    <link rel="next" title="templates module" href="templates.html" />
+    <link rel="prev" title="rb_dataset_utils module" href="rb_dataset_utils.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -41,7 +41,6 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">amakihi</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">CNN_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="amakihi.html">amakihi module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astroalign_mod.html">astroalign_mod module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="background.html">background module</a></li>
@@ -55,8 +54,9 @@
 <li class="toctree-l2"><a class="reference internal" href="query_CFIS.html">query_CFIS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_DECaLS.html">query_DECaLS module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="query_PS1.html">query_PS1 module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rb_dataset_utils.html">rb_dataset_utils module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">rb_model_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="templates.html">templates module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="training_data_utils.html">training_data_utils module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="transient.html">transient module</a></li>
 </ul>
 </li>
@@ -77,9 +77,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a></li>
           <li class="breadcrumb-item"><a href="modules.html">amakihi</a></li>
-      <li class="breadcrumb-item active">CNN_model_utils module</li>
+      <li class="breadcrumb-item active">rb_model_utils module</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/CNN_model_utils.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/rb_model_utils.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -87,13 +87,13 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-CNN_model_utils">
-<span id="cnn-model-utils-module"></span><h1>CNN_model_utils module<a class="headerlink" href="#module-CNN_model_utils" title="Permalink to this heading"></a></h1>
-<p>Utility functions for interacting with Keras models: writing, reading, and
-applying to candidate transients.</p>
+  <section id="module-rb_model_utils">
+<span id="rb-model-utils-module"></span><h1>rb_model_utils module<a class="headerlink" href="#module-rb_model_utils" title="Permalink to this heading"></a></h1>
+<p>Utility functions for interacting with (real-bogus) Keras models: writing,
+reading, and applying to candidate transients.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.write_model">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.write_model" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.write_model">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.write_model" title="Permalink to this definition"></a></dt>
 <dd><p>Save a Keras model by writing the architecture to a .json file and
 writing the weights to a .h5 file</p>
 <dl class="field-list simple">
@@ -108,8 +108,8 @@ writing the weights to a .h5 file</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.load_model">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_weights</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.load_model" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.load_model">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_weights</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.load_model" title="Permalink to this definition"></a></dt>
 <dd><p>Load in a Keras model from the architecture (.json file) and weights
 (.h5 file)</p>
 <dl class="field-list simple">
@@ -129,8 +129,8 @@ writing the weights to a .h5 file</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.use_model">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">use_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.use_model" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.use_model">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">use_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.use_model" title="Permalink to this definition"></a></dt>
 <dd><p>Apply some trained model to a set of candidate transients contained in
 a table and array of triplets.</p>
 <dl class="field-list simple">
@@ -156,14 +156,14 @@ provide an array to print results for multiple scores)</p></li>
 </dl>
 <p class="rubric">Notes</p>
 <p>Input triplets must already be normalized
-(<a class="reference internal" href="training_data_utils.html#training_data_utils.triplets_normalize" title="training_data_utils.triplets_normalize"><code class="xref py py-func docutils literal notranslate"><span class="pre">training_data_utils.triplets_normalize()</span></code></a>) and re-arranged
-(<a class="reference internal" href="training_data_utils.html#training_data_utils.triplets_rearrange" title="training_data_utils.triplets_rearrange"><code class="xref py py-func docutils literal notranslate"><span class="pre">training_data_utils.triplets_rearrange()</span></code></a>) to be compatible with
+(<code class="xref py py-func docutils literal notranslate"><span class="pre">training_data_utils.triplets_normalize()</span></code>) and re-arranged
+(<code class="xref py py-func docutils literal notranslate"><span class="pre">training_data_utils.triplets_rearrange()</span></code>) to be compatible with
 braai.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.write_reals">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_reals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.write_reals" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.write_reals">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_reals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.write_reals" title="Permalink to this definition"></a></dt>
 <dd><p>Given a table and triplets which have been labelled by some model
 predictions, write only the sources with scores <strong>ABOVE</strong> <cite>rb_thresh</cite>.</p>
 <dl class="field-list simple">
@@ -183,8 +183,8 @@ by function)</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.write_bogus">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_bogus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.write_bogus" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.write_bogus">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">write_bogus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tabfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tripfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rb_thresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_tab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_trips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.write_bogus" title="Permalink to this definition"></a></dt>
 <dd><p>Given a table and triplets which have been labelled by some model
 predictions, write only the sources with scores <strong>BELOW</strong> <cite>rb_thresh</cite>.</p>
 <dl class="field-list simple">
@@ -204,8 +204,8 @@ by function)</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="CNN_model_utils.vgg6">
-<span class="sig-prename descclassname"><span class="pre">CNN_model_utils.</span></span><span class="sig-name descname"><span class="pre">vgg6</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(63,</span> <span class="pre">63,</span> <span class="pre">3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#CNN_model_utils.vgg6" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="rb_model_utils.vgg6">
+<span class="sig-prename descclassname"><span class="pre">rb_model_utils.</span></span><span class="sig-name descname"><span class="pre">vgg6</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(63,</span> <span class="pre">63,</span> <span class="pre">3)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#rb_model_utils.vgg6" title="Permalink to this definition"></a></dt>
 <dd><p>VGG6 convolutional neural network.</p>
 <p class="rubric">Notes</p>
 <p>Notes taken from braai:</p>
@@ -229,8 +229,8 @@ the output layer.”</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="modules.html" class="btn btn-neutral float-left" title="amakihi" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="amakihi.html" class="btn btn-neutral float-right" title="amakihi module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="rb_dataset_utils.html" class="btn btn-neutral float-left" title="rb_dataset_utils module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="templates.html" class="btn btn-neutral float-right" title="templates module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
