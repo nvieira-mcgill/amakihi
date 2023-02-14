@@ -83,20 +83,21 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-## ADDED BY ME
+## ADDED BY NICK
 # allows correct reading of x1, x2 : int, optional
 napoleon_use_param = False 
 
-## ADDED BY ME
+## ADDED BY NICK
 # sort functions/classes/etc by source code rather than alphabetically
 autodoc_member_order = 'bysource' 
+
 
 # -- Options for HTML output -------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme' ## ADDED BY ME
+html_theme = 'sphinx_rtd_theme' ## ADDED BY NICK
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
