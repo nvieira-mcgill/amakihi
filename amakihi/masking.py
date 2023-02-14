@@ -31,7 +31,7 @@ from photutils import make_source_mask, detect_sources#, source_properties
 from photutils.segmentation import SourceCatalog
 
 # amakihi
-from plotting import __plot_mask
+from .plotting import __plot_mask
 
 # disable annoying warnings
 import warnings

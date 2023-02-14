@@ -19,7 +19,7 @@ from photutils import Background2D, MedianBackground
 from photutils import make_source_mask
 
 # amakihi
-from plotting import __plot_bkg, __plot_bkgsubbed
+from .plotting import __plot_bkg, __plot_bkgsubbed
 
 # disable annoying warnings
 import warnings

@@ -34,7 +34,7 @@ from astropy.coordinates import SkyCoord
 from astropy.table import Table#, Column
 
 # amakihi 
-from crop import crop_WCS
+from .crop import crop_WCS
 
 # plotting
 import matplotlib.pyplot as plt

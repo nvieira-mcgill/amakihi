@@ -37,8 +37,8 @@ from photutils.segmentation import SourceCatalog
 #pyfftw.interfaces.cache.enable()
 
 # amakihi 
-from ePSF import build_ePSF_imsegm, ePSF_FWHM
-from plotting import __plot_hotpants
+from .ePSF import build_ePSF_imsegm, ePSF_FWHM
+from .plotting import __plot_hotpants
 
 # disable annoying warnings
 import warnings

@@ -27,9 +27,9 @@ from photutils import detect_sources#, source_properties
 from photutils.segmentation import SourceCatalog
 
 # amakihi 
-from crop import crop_WCS
-from plotting import (__plot_rejected, __plot_triplet, __plot_distributions, 
-                      plot_transient)
+from .crop import crop_WCS
+from .plotting import (__plot_rejected, __plot_triplet, __plot_distributions, 
+                       plot_transient)
 
 # disable annoying warnings
 import warnings

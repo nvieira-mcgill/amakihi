@@ -34,12 +34,12 @@ from photutils import detect_sources#, source_properties
 from photutils.segmentation import SourceCatalog
 
 # amakihi 
-from background import bkgstd
-from plotting import __plot_sources, __plot_align
+from .background import bkgstd
+from .plotting import __plot_sources, __plot_align
 
 # a modified version of astroalign which allows the user to set the sigma 
 # threshold for source detection, which sometimes needs to be tweaked
-import astroalign_mod as aa
+from . import astroalign_mod as aa
 
 # disable annoying warnings
 import warnings

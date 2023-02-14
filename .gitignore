@@ -5,18 +5,17 @@ __pycache__/
 # Sphinx documentation
 #docs/_build/
 
+# setup
+amakihi.egg-info/
+dist/
+
 # Particular to amakihi
 CADC_LOGIN.md
 loop_imdiff*
 
-
 # token for working on repo
 TOKEN
 
-
 # cookiecutter stuff, will be fixed later
-HISTORY.rst
 Makefile
 requirements_dev.txt
-#setup.cfg
-#setup.py

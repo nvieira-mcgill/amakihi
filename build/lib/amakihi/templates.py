@@ -36,10 +36,10 @@ from astropy.io import fits
 from astropy import wcs
 
 # amakihi modules for querying
-import query_PS1
-import query_DECaLS
-import query_CFIS 
-import query_2MASS
+from . import query_PS1
+from . import query_DECaLS
+from . import query_CFIS 
+from . import query_2MASS
 
 # disable annoying warnings
 import warnings
