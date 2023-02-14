@@ -8,6 +8,7 @@ __pycache__/
 # setup
 amakihi.egg-info/
 dist/
+build/
 
 # Particular to amakihi
 CADC_LOGIN.md
