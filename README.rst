@@ -43,6 +43,8 @@ Installation
 
 Currently, needs to be installed directly from github. May be installable with ``conda`` and/or ``pip`` in the future.
 
+Dependencies must be installed manually for the time being. Dependencies are:
+
 **Essential dependencies:**
 
 - numpy
@@ -69,6 +71,9 @@ Currently, needs to be installed directly from github. May be installable with `
 - hotpants_
 
 
+Once you have the dependencies, to install ``amakihi``, simply run ::
+
+	python setup.py install
 
 Contact
 =======
