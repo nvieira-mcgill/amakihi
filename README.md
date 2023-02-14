@@ -51,11 +51,11 @@ Currently, needs to be installed directly from github. May be installable with `
 
 **Semi-optional dependencies:**
 
-- [``tensorflow``](https://www.tensorflow.org/install) (if using `CNN_model_utils` module)
+- [``tensorflow``](https://www.tensorflow.org/install) (if using `rb_model_utils` module)
 
 **Really optional dependencies:** 
 
-- [``imblearn``](https://imbalanced-learn.org/stable/index.html) (if using `training_data_utils.augment_dataset_SMOTE()`)
+- [``imblearn``](https://imbalanced-learn.org/stable/index.html) (if using `rb_dataset_utils.augment_dataset_SMOTE()`)
 - [``lxml``](https://lxml.de/) (if using `query_CFIS` module)
 - [``astroquery``](https://astroquery.readthedocs.io/en/latest/) (if using `crossmatch` module)
 

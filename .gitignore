@@ -12,3 +12,11 @@ loop_imdiff*
 
 # token for working on repo
 TOKEN
+
+
+# cookiecutter stuff, will be fixed later
+HISTORY.rst
+Makefile
+requirements_dev.txt
+#setup.cfg
+#setup.py
