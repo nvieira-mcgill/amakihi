@@ -54,16 +54,17 @@ Dependencies must be installed manually for the time being. Dependencies are:
 - photutils_
 - `scikit-image`_
 - `scikit-learn`_
+- astroquery_ (for `crossmatch` module)
+- lmxl_ (for `query_CFIS` module)
 
 **Semi-optional dependencies:**
 
-- tensorflow_ (if using `rb_model_utils` module)
+- tensorflow_ (if using `rb_model_utils.write_model()`, `.load_model()`, `.use_model()`, or `.vgg6()`)
 
 **Really optional dependencies:** 
 
 - imblearn_ (if using `rb_dataset_utils.augment_dataset_SMOTE()`)
-- lmxl_ (if using `query_CFIS` module)
-- astroquery_ (if using `crossmatch` module)
+
 
 **Non-Python:**
 
