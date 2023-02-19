@@ -185,7 +185,7 @@ def build_ePSF_imsegm(image_file, mask_file=None, nstars=40,
         std = image_header["BKGSTD"] # header written by bkgsub function
     except KeyError:
         # make crude source mask, get standard deviation of background
-        source_mask = make_source_mask(image_data, snr=3, npixels=5, 
+        source_mask = make_source_mask(image_data, nsigma=3, npixels=5, 
                                        dilate_size=15, mask=mask)
         final_mask = np.logical_or(mask, source_mask)
         std = np.std(np.ma.masked_where(final_mask, image_data))
@@ -194,7 +194,7 @@ def build_ePSF_imsegm(image_file, mask_file=None, nstars=40,
     segm = detect_sources(image_data, thresh_sigma*std, npixels=pixelmin,
                           mask=mask) 
     #cat = source_properties(image_data, segm, mask=mask) # photutils 0.8
-    cat = SourceCatalog(data=image_data, segment_image=segm, 
+    cat = SourceCatalog(data=image_data, segment_img=segm, 
                         mask=mask) # photutils >=1.1
 
     ## get the catalog and coordinate/fluxes for sources, do some filtering

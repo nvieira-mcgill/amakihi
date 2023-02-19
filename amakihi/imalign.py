@@ -78,7 +78,7 @@ def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
                                mask=data_mask)          
     # use the segmentation image to get the source properties 
     #cat = source_properties(data, segm_data, mask=data_mask) # photutils 0.8
-    cat = SourceCatalog(data=data, segment_image=segm_data, 
+    cat = SourceCatalog(data=data, segment_img=segm_data, 
                         mask=data_mask) # photutils >=1.1
     try:
         tbl = cat.to_table()
@@ -842,15 +842,18 @@ def image_align_astrometry(science_file, template_file,
     ## align the images
     ###################
     try: 
+        #print(f"image_align_astrometry(): science_list = {science_list}")
+        #print(f"image_align_astrometry(): template_list = {template_list}")
         print(f"\nAttempting to match {len(science_list)} sources in the "+
               f"science image to {len(template_list)} in the template")                      
         # find the transform using the control points
         tform, __ = aa.find_transform(science_list, template_list)
         # apply the transform
+        print("\nAPPLYING TRANSFORM")
         img_aligned, footprint = aa.apply_transform(tform, science,
                                                     template,
                                                     propagate_mask=True)
-        print("\nSUCCESS\n")
+        print("\nSUCCESS!\n")
     except aa.MaxIterError: # if cannot match images, try flipping 
         print("Max iterations exceeded; flipping the image...")
         xsize = fits.getdata(science_file).shape[1]
@@ -866,7 +869,7 @@ def image_align_astrometry(science_file, template_file,
             img_aligned, footprint = aa.apply_transform(tform, science,
                                                         template,
                                                         propagate_mask=True)
-            print("\nSUCCESS\n")
+            print("\nSUCCESS!\n")
         except aa.MaxIterError: # still too many iterations 
             print("Max iterations exceeded while trying to find "+
                   "acceptable transformation. Exiting.")
@@ -877,12 +880,12 @@ def image_align_astrometry(science_file, template_file,
               "the minimum value (3). Exiting.")
         return
     
-    except Exception: # any other exceptions
-        e = sys.exc_info()
-        print("\nWhile calling astroalign, some error other than "+
-              "MaxIterError or TooFewStarsError was raised: "+
-              f"\n{str(e[0])}\n{str(e[1])}")
-        return
+    # except Exception: # any other exceptions
+    #     e = sys.exc_info()
+    #     print("\nWhile calling astroalign, some error other than "+
+    #           "MaxIterError or TooFewStarsError was raised: "+
+    #           f"\n{str(e[0])}\n{str(e[1])}\n\n")
+    #     return
 
 
     #######################

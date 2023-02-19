@@ -195,14 +195,14 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                           mask=mask)          
     # use the segmentation image to get the source properties 
     #cat = source_properties(data, segm, mask=mask) # photutils 0.8
-    cat = SourceCatalog(data=data, segment_image=segm, 
+    cat = SourceCatalog(data=data, segment_img=segm, 
                         mask=mask) # photutils >=1.1
     
     # do the same with the inverse of the image to look for dipoles
     segm_inv = detect_sources((-1.0)*data, thresh_sigma*std, 
                               npixels=pixelmin, mask=mask)
     #cat_inv = source_properties((-1.0)*data, segm_inv, mask=mask) # photutils 0.8
-    cat_inv = SourceCatalog(data=(-1.0)*data, segment_image=segm_inv, 
+    cat_inv = SourceCatalog(data=(-1.0)*data, segment_img=segm_inv, 
                             mask=mask) # photutils >=1.1
     # get the catalog and coordinates for sources
     try:

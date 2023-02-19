@@ -152,12 +152,12 @@ def get_substamps(science_file, template_file,
             # use crude image segmentation to find sources above SNR=3
             # allows us to ignore sources during background estimation
             if type(mask) == np.ndarray: # use bad pixel mask if one is present 
-                source_mask = make_source_mask(image_data, snr=3, npixels=5, 
+                source_mask = make_source_mask(image_data, nsigma=3, npixels=5, 
                                                dilate_size=15, mask=mask)
                 # combine the bad pixel mask and source mask 
                 final_mask = np.logical_or(mask, source_mask)
             else: 
-                source_mask = make_source_mask(image_data, snr=3, npixels=5, 
+                source_mask = make_source_mask(image_data, nsigma=3, npixels=5, 
                                                dilate_size=15)
                 final_mask = source_mask
             # estimate the background
@@ -178,7 +178,7 @@ def get_substamps(science_file, template_file,
         
         # get the source properties
         #cat = source_properties(image_data, segm, mask=mask) # photutils 0.8
-        cat = SourceCatalog(data=image_data, segment_image=segm, 
+        cat = SourceCatalog(data=image_data, segment_img=segm, 
                             mask=mask) # photutils >=1.1
         try:
             tbl = cat.to_table()
@@ -630,13 +630,13 @@ def hotpants(science_file, template_file,
     #        # use image segmentation to find sources above SNR=3 and mask them 
     #        if sci_mask_file: # load the bad pixel mask if one is present 
     #            sci_bp_mask = fits.getdata(sci_mask_file).astype(bool)
-    #            source_mask = make_source_mask(source_data, snr=3, npixels=5, 
+    #            source_mask = make_source_mask(source_data, nsigma=3, npixels=5, 
     #                                           dilate_size=15, 
     #                                           mask=sci_bp_mask)
     #            # combine the bad pixel mask and source mask 
     #            final_mask = np.logical_or(sci_bp_mask, source_mask)
     #        else: 
-    #            source_mask = make_source_mask(source_data, snr=3, npixels=5, 
+    #            source_mask = make_source_mask(source_data, nsigma=3, npixels=5, 
     #                                           dilate_size=15)
     #            final_mask = source_mask 
     #            
@@ -681,13 +681,13 @@ def hotpants(science_file, template_file,
     #        # use image segmentation to find sources above SNR=3 and mask them 
     #        if tmp_mask_file: # load the bad  
     #            tmp_bp_mask = fits.getdata(tmp_mask_file).astype(bool)
-    #            source_mask = make_source_mask(tmp_data, snr=3, npixels=5, 
+    #            source_mask = make_source_mask(tmp_data, nsigma=3, npixels=5, 
     #                                           dilate_size=15, 
     #                                           mask=tmp_bp_mask)
     #            # combine the bad pixel mask and source mask 
     #            final_mask = np.logical_or(tmp_bp_mask,source_mask)
     #        else: 
-    #            source_mask = make_source_mask(tmp_data, snr=3, npixels=5, 
+    #            source_mask = make_source_mask(tmp_data, nsigma=3, npixels=5, 
     #                                           dilate_size=15)
     #            final_mask = source_mask    
     #            

@@ -38,6 +38,8 @@ Documentation
 
 Detailed documentation for all modules can be found `here <https://amakihi.readthedocs.io/en/latest/>`_.. In the future, example scripts/notebooks will be added.
 
+
+
 Installation
 ============
 
@@ -76,10 +78,13 @@ Once you have the dependencies, to install ``amakihi``, simply run ::
 
 	python setup.py install
 
+
+
 Contact
 =======
 
 nicholas.vieira@mail.mcgill.ca
+
 
 
 Credits

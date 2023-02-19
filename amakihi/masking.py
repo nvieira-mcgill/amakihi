@@ -187,12 +187,12 @@ def saturation_mask(image_file, mask_file=None,
         # source mask, and estimate the background RMS 
         if mask_file: # load a bad pixel mask if one is present 
             bp_mask = fits.getdata(mask_file).astype(bool)
-            source_mask = make_source_mask(data, snr=3, npixels=5, 
+            source_mask = make_source_mask(data, nsigma=3, npixels=5, 
                                        dilate_size=15, mask=bp_mask)
             # combine the bad pixel mask and source mask 
             rough_mask = np.logical_or(bp_mask,source_mask)
         else: 
-            source_mask = make_source_mask(data, snr=3, npixels=5, 
+            source_mask = make_source_mask(data, nsigma=3, npixels=5, 
                                        dilate_size=15)
             rough_mask = source_mask
         
@@ -215,7 +215,7 @@ def saturation_mask(image_file, mask_file=None,
     segm = detect_sources(data, threshold, npixels=sat_area_min)
     labels = segm.labels 
     #cat = source_properties(data, segm) # photutils 0.8
-    cat = SourceCatalog(data=data, segment_image=segm) # photutils >=1.1
+    cat = SourceCatalog(data=data, segment_img=segm) # photutils >=1.1
     
     ## if any sources are found
     if len(cat) != 0:

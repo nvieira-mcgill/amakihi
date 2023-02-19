@@ -242,7 +242,6 @@ def find_transform(source, target, thresh=3.0):
             source_controlp = _np.array(source)[:MAX_CONTROL_POINTS]
         else:
             # Assume it's a 2D image
-            print(source)
             source_controlp = _find_sources(source, 
                                             thresh, 
                                             imtype="source")[:MAX_CONTROL_POINTS]
@@ -335,23 +334,35 @@ def apply_transform(transform, source, target,
         with no pixel information.
     """
     from skimage.transform import warp
+    from skimage import util
     if hasattr(source, 'data') and isinstance(source.data, _np.ndarray):
-        source_data = source.data
+        source_data = util.img_as_float(source.data)
     else:
         source_data = source
     if hasattr(target, 'data') and isinstance(target.data, _np.ndarray):
-        target_data = target.data
+        target_data = util.img_as_float(target.data)
     else:
         target_data = target
 
-    aligned_image = warp(source_data, inverse_map=transform.inverse,
-                         output_shape=target_data.shape, order=3, mode='constant',
-                         cval=_np.median(source_data), clip=False,
+    # fix needed to handle new bug introduced by skimage
+    target_data = target_data.byteswap().newbyteorder()
+    source_data = source_data.byteswap().newbyteorder()
+
+    #print(source_data)
+    #print(source_data.type)
+    aligned_image = warp(source_data, 
+                         inverse_map=transform.inverse,
+                         output_shape=target_data.shape, 
+                         order=3, 
+                         mode='constant',
+                         cval=_np.median(source_data), 
+                         clip=False,
                          preserve_range=True)
     footprint = warp(_np.zeros(source_data.shape, dtype='float32'),
-                                      inverse_map=transform.inverse,
-                                      output_shape=target_data.shape,
-                                      cval=1.0)
+                     inverse_map=transform.inverse,
+                     output_shape=target_data.shape,
+                     cval=1.0)
+    
     footprint = footprint > 0.4
 
     if hasattr(source, 'mask') and propagate_mask:

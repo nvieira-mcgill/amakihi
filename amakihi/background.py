@@ -92,7 +92,8 @@ def bkgsub(im_file, mask_file=None,
         nansmask = np.isnan(image_data) # mask out nans
         bp_mask = np.logical_or(nansmask, zeromask)
     # make a crude source mask
-    source_mask = make_source_mask(image_data, snr=3, npixels=5, 
+    source_mask = make_source_mask(image_data, nsigma=3, 
+                                   npixels=5, 
                                    dilate_size=15, mask=bp_mask)
     # combine the bad pixel mask and source mask for background subtraction
     # make the final mask
@@ -173,7 +174,8 @@ def bkgstd(im_data, mask):
     
     # use crude image segmentation to find sources above SNR=3, build a 
     # source mask, and estimate the background RMS 
-    source_mask = make_source_mask(im_data, snr=3, npixels=5, 
+    source_mask = make_source_mask(im_data, nsigma=3, 
+                                   npixels=5, 
                                    dilate_size=15, mask=mask)
     # combine the bad pixel mask and source mask 
     rough_mask = np.logical_or(mask, source_mask)
