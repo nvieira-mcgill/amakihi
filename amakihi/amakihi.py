@@ -186,11 +186,11 @@ def get_substamps(science_file, template_file,
             print("SourceCatalog contains no sources. Exiting.")
             return
         
-        # restrict elongation and area to obtain only unsaturated stars 
-        tbl_mask = (tbl["elongation"] <= etamax)
-        tbl = tbl[tbl_mask]
-        tbl_mask = tbl["area"].value <= areamax
-        tbl = tbl[tbl_mask]
+        # restrict elongation and area to obtain only unsaturated stars
+        #tbl_mask = (tbl["elongation"] <= etamax)
+        #tbl = tbl[tbl_mask]
+        #tbl_mask = tbl["area"].value <= areamax
+        #tbl = tbl[tbl_mask]
         obj_props.append(tbl)
 
     ## get RA, Dec of sources after this restriction
