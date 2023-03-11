@@ -128,14 +128,15 @@ def bkgsub(im_file, mask_file=None,
     
     ## plotting (optional)
     if plot_bkg: # plot the background, if desired
-        output_bkg = f"background_{scale_bkg}.png"
+        output_bkg = im_file.replace(".fits", f"background_{scale_bkg}.png")
         __plot_bkg(im_header=fits.getheader(im_file), 
                    bkg_img_masked=bkg_img_masked, 
                    scale=scale_bkg, 
                    output=output_bkg)
             
     if plot_bkgsubbed: # plot the background-subtracted image, if desired
-        output_bkgsubbed = f"background_subbed_{scale_bkgsubbed}.png"        
+        output_bkgsubbed = im_file.replace(".fits", 
+                                f"background_subbed_{scale_bkgsubbed}.png")
         __plot_bkgsubbed(im_header=fits.getheader(im_file), 
                          bkgsub_img_masked=bkgsub_img_masked, 
                          scale=scale_bkgsubbed,

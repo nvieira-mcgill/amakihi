@@ -801,6 +801,9 @@ def hotpants(science_file, template_file,
     # if file successfully produced and non-empty
     outfile = re.sub(".*/", "", output) # for a file /a/b/c, extract the "c"
     topdir = output[:-len(outfile)] # extract the "/a/b/"
+    print(f"\namakihi.hotpants(): output = {output}", flush=True)
+    print(f"amakihi.hotpants(): outfile = {outfile}", flush=True)
+    print(f"amakihi.hotpants(): topdir = {topdir}", flush=True)
     if (outfile in os.listdir(topdir)) and (os.stat(output).st_size!=0):
         sub = fits.getdata(output) # load it in 
         sub_header = fits.getheader(output)
