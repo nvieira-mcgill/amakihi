@@ -379,7 +379,7 @@ def hotpants(science_file, template_file,
              bgo=0, ko=1, 
              output=None, mask_write=False, conv_write=False, 
              kern_write=False, noise_write=False, noise_scale_write=False,
-             maskout=None, convout=None, kerout=None, noiseout=None, 
+             maskout=None, convout=None, kernout=None, noiseout=None, 
              noisescaleout=None,
              v=1, log=None,
              plot=True, plotname=None, scale="linear", 
@@ -564,9 +564,9 @@ def hotpants(science_file, template_file,
             convout = science_file.replace(".fits", "_conv.fits")        
         hp_options = f"{hp_options} -oci {convout}" # output convolved image       
     if kern_write:
-        if not(kerout):
-            kerout = science_file.replace(".fits", "_kernel.fits")
-        hp_options = f"{hp_options} -oki {kerout}" # output kernel image
+        if not(kernout):
+            kernout = science_file.replace(".fits", "_kernel.fits")
+        hp_options = f"{hp_options} -oki {kernout}" # output kernel image
     if noise_write:
         if not(noiseout):
             noiseout = science_file.replace(".fits", "_noise.fits")
@@ -778,6 +778,15 @@ def hotpants(science_file, template_file,
 
     ######################### CALL HOTPANTS  ##################################
 
+    # output filenames
+    outfile = re.sub(".*/", "", output) # for a file /a/b/c, extract the "c"
+    topdir = output[:-len(outfile)] # extract the "/a/b/"
+    if topdir == "": # if using current directory without full filepath
+        topdir = "./"
+    print(f"\namakihi.hotpants(): output = {output}", flush=True)
+    print(f"amakihi.hotpants(): outfile = {outfile}", flush=True)
+    print(f"amakihi.hotpants(): topdir = {topdir}", flush=True)
+
     # build the command
     hp_cmd = f"hotpants {hp_options}"
     
@@ -794,16 +803,12 @@ def hotpants(science_file, template_file,
             print(f"{hp_stderr}")
                           
     # if an error code is returned by hotpants, exit
-    except CalledProcessError: # if an error code is returned, exit 
-        print("\n\n\nError, exiting")
+    except CalledProcessError as cpe: # if an error code is returned, exit 
+        print(f"\n\n\nCalledProcessError: {cpe}"+
+              "\n--> exiting")
         return 
     
     # if file successfully produced and non-empty
-    outfile = re.sub(".*/", "", output) # for a file /a/b/c, extract the "c"
-    topdir = output[:-len(outfile)] # extract the "/a/b/"
-    print(f"\namakihi.hotpants(): output = {output}", flush=True)
-    print(f"amakihi.hotpants(): outfile = {outfile}", flush=True)
-    print(f"amakihi.hotpants(): topdir = {topdir}", flush=True)
     if (outfile in os.listdir(topdir)) and (os.stat(output).st_size!=0):
         sub = fits.getdata(output) # load it in 
         sub_header = fits.getheader(output)
