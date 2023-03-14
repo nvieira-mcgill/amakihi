@@ -355,7 +355,8 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     ## get rid of "id" column and empty columns: 
     # (sky_centroid, sky_centroid_icrs, segment_flux_err, background_sum, 
     # background_sum_err, background_mean, background_at_centroid) 
-    tbl.remove_column("id")
+    try: tbl.remove_column("id")
+    except KeyError: pass
     colnames = tbl.colnames
     colnames = [c for c in colnames.copy() if not(tbl[c][0] == 'None')]
     tbl = tbl[colnames]
