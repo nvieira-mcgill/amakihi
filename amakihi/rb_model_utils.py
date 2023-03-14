@@ -120,8 +120,8 @@ def use_model(tabfile, tripfile, input_json, input_weights,
     Notes
     -----
     Input triplets must already be normalized 
-    (:func:`training_data_utils.triplets_normalize`) and re-arranged 
-    (:func:`training_data_utils.triplets_rearrange`) to be compatible with 
+    (:func:`rb_dataset_utils.triplets_normalize`) and re-arranged 
+    (:func:`rb_dataset_utils.triplets_rearrange`) to be compatible with 
     braai.
 
     """

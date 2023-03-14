@@ -186,7 +186,7 @@ def plot_image(im_file, mask_file=None,
 
 
 def plot_transient_stamp(im_file, target, size=200.0, cropmode="truncate", 
-                         scale="asinh", cmap="bone", crosshairs="#fe019a",
+                         scale="asinh", cmap="bone", crosshair="#fe019a",
                          label=None, title=None, 
                          output=None, 
                          toi=None):
@@ -208,7 +208,7 @@ def plot_transient_stamp(im_file, target, size=200.0, cropmode="truncate",
         Scale to use for the image (default "linear")
     cmap : str, matplotlib.colors.ListedColormap, optional
         Colourmap to use for the image (default "bone")
-    crosshairs : str, optional
+    crosshair : str, optional
         Color for the crosshair(s) (default "#fe019a" --> ~ hot pink)
     label : str, optional
         Label to apply to the colorbar (default None, in which case will be 
@@ -291,10 +291,10 @@ def plot_transient_stamp(im_file, target, size=200.0, cropmode="truncate",
     # crosshair
     plt.gca().plot([ra-10.0/3600.0, ra-5.0/3600.0], [dec,dec], 
            transform=plt.gca().get_transform('icrs'), linewidth=2, 
-           color=crosshairs, marker="")
+           color=crosshair, marker="")
     plt.gca().plot([ra, ra], [dec-10.0/3600.0, dec-5.0/3600.0], 
            transform=plt.gca().get_transform('icrs'),  linewidth=2, 
-           color=crosshairs, marker="")
+           color=crosshair, marker="")
     
     # textbox indicating the RA, Dec of the candidate transient source 
     textstr = r"$\alpha = $"+"%.5f\n"%ra+r"$\delta = $"+"%.5f"%dec
@@ -473,7 +473,7 @@ def plot_transient(sub_file, og_file, ref_file, tbl,
             plot_transient_stamp(im_file=og_file, 
                                  target=[targets_sci[0][n], targets_sci[1][n]], 
                                  size=stampsize, scale=og_scale, 
-                                 cmap="viridis", crosshairs=crosshair_og, 
+                                 cmap="viridis", crosshair=crosshair_og, 
                                  title=title_og, 
                                  output=zoom_og_output, 
                                  toi=toi)
