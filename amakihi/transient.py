@@ -57,7 +57,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                      plot_rejections=False,
                      plots=["zoom og", "zoom ref", "zoom diff"], 
                      pixcoords=False,
-                     sub_scale=None, og_scale=None, stampsize=200.0, 
+                     sub_scale="asinh", og_scale="asinh", stampsize=200.0, 
                      crosshair_og="#fe019a", crosshair_sub="#5d06e9",
                      title_append=None, plotdir=None):
     """
