@@ -48,6 +48,14 @@ warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 
 ###############################################################################
+### USED EVERYWHERE ###########################################################
+
+from photutils.segmentation.catalog import DEFAULT_COLUMNS
+
+REQ_COLUMNS = DEFAULT_COLUMNS + ["elongation"]
+
+
+###############################################################################
 ### UTILITIES #################################################################
 
 def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
@@ -81,7 +89,7 @@ def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
     cat = SourceCatalog(data=data, segment_img=segm_data, 
                         mask=data_mask) # photutils >=1.1
     try:
-        tbl = cat.to_table()
+        tbl = cat.to_table(columns=REQ_COLUMNS)
     except ValueError:
         print(f"{im_type} image contains no sources. Exiting.")
         return        
@@ -97,7 +105,7 @@ def __control_points(data, data_thresh, data_std, data_pixmin, data_mask,
             (s["yedge_min"]>exclu*data.shape[0]) for s in tbl]
     tbl = tbl[keep]        
     # pick at most <nsources> sources below the <per_upper> flux percentile
-    tbl["sum/area"] = tbl["source_sum"].data/tbl["area"].data
+    tbl["sum/area"] = tbl["segment_flux"].data/tbl["area"].data
     tbl.sort("sum/area") # sort by flux
     tbl.reverse() # biggest to smallest
     start = int((1-per)*len(tbl))
@@ -462,7 +470,7 @@ def image_align_imsegm(science_file, template_file,
         # use the segmentation image to get the source properties 
         cat_science = source_properties(science_new, segm_science, mask=mask)
         try:
-            scitbl = cat_science.to_table()
+            scitbl = cat_science.to_table(columns=REQ_COLUMNS)
         except ValueError:
             print("science image contains no sources. Exiting.")
             return        
@@ -479,7 +487,7 @@ def image_align_imsegm(science_file, template_file,
             (s["yedge_min"]>sciexclu*science_new.shape[0]) for s in scitbl]
         scitbl = scitbl[keep]        
         # pick at most <nsources> sources below <per_upper>
-        scitbl["sum/area"] = scitbl["source_sum"].data/scitbl["area"].data
+        scitbl["sum/area"] = scitbl["segment_flux"].data/scitbl["area"].data
         scitbl.sort("sum/area") # sort by flux
         scitbl.reverse() # biggest to smallest
         start = int((1-sciper)*len(scitbl))

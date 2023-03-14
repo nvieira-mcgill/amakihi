@@ -36,6 +36,14 @@ import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
+
+###############################################################################
+### USED EVERYWHERE ###########################################################
+
+from photutils.segmentation.catalog import DEFAULT_COLUMNS
+
+REQ_COLUMNS = DEFAULT_COLUMNS + ["elongation"]
+
 ###############################################################################
 #### TRANSIENT DETECTION ######################################################   
 
@@ -206,7 +214,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
                             mask=mask) # photutils >=1.1
     # get the catalog and coordinates for sources
     try:
-        tbl = cat.to_table()
+        tbl = cat.to_table(columns=REQ_COLUMNS)
     except ValueError:
         print("SourceCatalog contains no sources. Exiting.")
         return
@@ -214,7 +222,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     tbl["ra"], tbl["dec"] = w.all_pix2world(tbl["xcentroid"], 
                                             tbl["ycentroid"], 1)    
     # save a copy of the original, unvetted table
-    tbl["source_sum/area"] = tbl["source_sum"]/tbl["area"] # flux per pixel
+    tbl["segment_flux/area"] = tbl["segment_flux"]/tbl["area"] # flux per pixel
     tbl_novetting = tbl.copy()
         
     ### INFORMATIVE PLOTS #####################################################
@@ -230,10 +238,10 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
     if dipole_width:
         idx_rem = [] # indices to remove
         try:
-            inv = cat_inv.to_table()
+            inv = cat_inv.to_table(columns=REQ_COLUMNS)
             inv["ra"], inv["dec"] = w.all_pix2world(inv["xcentroid"], 
                                                     inv["ycentroid"], 1)
-            inv["source_sum/area"] = inv["source_sum"]/inv["area"] # flux/pixel
+            inv["segment_flux/area"] = inv["segment_flux"]/inv["area"] # flux/pixel
             coords = SkyCoord(tbl["ra"]*u.deg, tbl["dec"]*u.deg, frame="icrs")
             inv_coords = SkyCoord(inv["ra"]*u.deg, inv["dec"]*u.deg, 
                                   frame="icrs")        
@@ -247,7 +255,7 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
             for n in range(len(idx)):
                 i, j = idx[n], idx_inv[n]
                 
-                ratio = tbl[i]["source_sum/area"]/inv[j]["source_sum/area"]
+                ratio = tbl[i]["segment_flux/area"]/inv[j]["segment_flux/area"]
                 if ((1.0/dipole_fratio) <= ratio <= dipole_fratio): 
                     idx_rem.append(i)
             
@@ -339,13 +347,13 @@ def transient_detect(sub_file, og_file, ref_file, mask_file=None,
  
     ### PREPARE CANDIDATE TABLE ###############################################       
     ## sort by flux per pixel and print out number of sources found
-    tbl["source_sum/area"] = tbl["source_sum"]/tbl["area"]
-    tbl.sort("source_sum/area")  
+    tbl["segment_flux/area"] = tbl["segment_flux"]/tbl["area"]
+    tbl.sort("segment_flux/area")  
     tbl.reverse()
     print(f"\n{len(tbl)} candidate(s) found and passed vetting.")
     
     ## get rid of "id" column and empty columns: 
-    # (sky_centroid, sky_centroid_icrs, source_sum_err, background_sum, 
+    # (sky_centroid, sky_centroid_icrs, segment_flux_err, background_sum, 
     # background_sum_err, background_mean, background_at_centroid) 
     tbl.remove_column("id")
     colnames = tbl.colnames

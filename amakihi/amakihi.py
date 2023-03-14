@@ -45,6 +45,14 @@ import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
+
+###############################################################################
+### USED EVERYWHERE ###########################################################
+
+from photutils.segmentation.catalog import DEFAULT_COLUMNS
+
+REQ_COLUMNS = DEFAULT_COLUMNS + ["elongation"]
+
 ###############################################################################
 #### IMAGE DIFFERENCING WITH HOTPANTS #########################################
 
@@ -181,16 +189,16 @@ def get_substamps(science_file, template_file,
         cat = SourceCatalog(data=image_data, segment_img=segm, 
                             mask=mask) # photutils >=1.1
         try:
-            tbl = cat.to_table()
+            tbl = cat.to_table(columns=REQ_COLUMNS)
         except ValueError:
             print("SourceCatalog contains no sources. Exiting.")
             return
         
         # restrict elongation and area to obtain only unsaturated stars
-        #tbl_mask = (tbl["elongation"] <= etamax)
-        #tbl = tbl[tbl_mask]
-        #tbl_mask = tbl["area"].value <= areamax
-        #tbl = tbl[tbl_mask]
+        tbl_mask = (tbl["elongation"] <= etamax)
+        tbl = tbl[tbl_mask]
+        tbl_mask = tbl["area"].value <= areamax
+        tbl = tbl[tbl_mask]
         obj_props.append(tbl)
 
     ## get RA, Dec of sources after this restriction

@@ -36,6 +36,14 @@ import warnings
 from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
+
+###############################################################################
+### USED EVERYWHERE ###########################################################
+
+from photutils.segmentation.catalog import DEFAULT_COLUMNS
+
+REQ_COLUMNS = DEFAULT_COLUMNS + ["elongation"]
+
 ###############################################################################
 #### EFFECTIVE POINT-SPREAD FUNCTION ##########################################
 
@@ -199,7 +207,7 @@ def build_ePSF_imsegm(image_file, mask_file=None, nstars=40,
 
     ## get the catalog and coordinate/fluxes for sources, do some filtering
     try:
-        tbl = cat.to_table()
+        tbl = cat.to_table(columns=REQ_COLUMNS)
     except ValueError:
         print("SourceCatalog contains no sources. Exiting.")
         return
@@ -211,7 +219,7 @@ def build_ePSF_imsegm(image_file, mask_file=None, nstars=40,
     sources = Table() # build a table 
     sources['x'] = tbl['xcentroid'] # for EPSFBuilder 
     sources['y'] = tbl['ycentroid']
-    sources['flux'] = tbl['source_sum'].data/tbl["area"].data   
+    sources['flux'] = tbl['segment_flux'].data/tbl["area"].data   
     sources.sort("flux")
     sources.reverse()    
     # restrict number of stars (if requested)

@@ -39,6 +39,14 @@ from astropy.wcs import FITSFixedWarning
 warnings.simplefilter('ignore', category=FITSFixedWarning)
 
 ###############################################################################
+### USED EVERYWHERE ###########################################################
+
+from photutils.segmentation.catalog import DEFAULT_COLUMNS
+
+REQ_COLUMNS = DEFAULT_COLUMNS + ["elongation"]
+
+
+###############################################################################
 #### MASK BUILDING ############################################################
     
 def box_mask(image_file, pixx, pixy, mask_file=None, plot=False, 
@@ -220,7 +228,7 @@ def saturation_mask(image_file, mask_file=None,
     ## if any sources are found
     if len(cat) != 0:
         # catalogue of sources as a table  
-        tbl = cat.to_table()   
+        tbl = cat.to_table(columns=REQ_COLUMNS)   
         mask = tbl["max_value"] >= sat_ADU # must be above this ADU
         sat_labels = labels[mask]
         tbl = tbl[mask] 
