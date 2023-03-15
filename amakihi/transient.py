@@ -503,7 +503,9 @@ def transient_triplets(sub_file, og_file, ref_file, tbl, pixcoords=False,
         triplets.append(trip)
         
         if plot: # plot this triplet, if desired
-            if plotdir[-1] == "/":
+            if type(plotdir) == type(None):
+                raise ValueError("Must provide plotdir if plot == True")
+            if plotdir[-1] == "/": 
                 plotdir = plotdir[-1]
                 
             __plot_triplet(og_file=og_file, 
