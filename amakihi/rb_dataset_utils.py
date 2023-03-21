@@ -970,7 +970,8 @@ def triplets_rearrange(tripfile, output_trips=None):
     
     """
     
-    triplets = np.load(tripfile, mmap_mode="r")
+    triplets = np.load(tripfile, mmap_mode="r",
+                       allow_pickel=True)
     new_triplets = []
     
     # (N, 3, size, size) --> (N, size, size, 3)    
