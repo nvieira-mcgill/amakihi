@@ -138,7 +138,8 @@ def use_model(tabfile, tripfile, input_json, input_weights,
                          f"recognize {tabfile}")
     
     # load in triplets    
-    triplets = np.load(tripfile, mmap_mode="r")
+    triplets = np.load(tripfile, mmap_mode="r",
+                       allow_pickle=True)
     if not(len(tbl) == len(triplets)):
         raise ValueError("Length of table with candidate transients "+
                          "does not match number of input triplets")
@@ -214,7 +215,8 @@ def __apply_threshold(tabfile, tripfile, rb_thresh, real=True):
                          f"recognize {tabfile}")
 
     # load in triplets    
-    triplets = np.load(tripfile, mmap_mode="r")
+    triplets = np.load(tripfile, mmap_mode="r",
+                       allow_pickle=True)
     if not(len(tbl) == len(triplets)):
         raise ValueError("Length of table with candidate transients "+
                          "does not match number of input triplets")
