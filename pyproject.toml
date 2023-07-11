@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "amakihi"
+version = "0.1.0"
+description = "End-to-end image differencing and transient detection software"
+authors = ["Nicholas Vieira <nicholas.vieira@mail.mcgill.ca>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.23"
+matplotlib = "^3.7"
+scipy = "^1.9"
+astropy = "^5.2"
+photutils = "^1.1"
+scikit-image = "^0.19"
+scikit-learn = "^1.1"
+astroquery = "^0.4.6"
+lxml = "^4.9.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
