@@ -1,0 +1,27 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Create release
+        id: release-please
+        uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: python
+          package-name: amakihi
+      -
+        name: Publish to PyPI
+        if: ${{ steps.release-please.outputs.release_created }}
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          poetry config pypi-token.pypi $PYPI_TOKEN
+          poetry publish --build --verbose
