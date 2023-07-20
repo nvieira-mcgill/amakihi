@@ -1,0 +1,63 @@
+name: Continuous Integration
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.8']
+    steps:
+    -
+      name: Setup code repository
+      uses: actions/checkout@v2
+    -
+      name: Install Pre-Commit
+      run: |
+        pipx install pre-commit
+    -
+      name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    -
+      name: Execute pre-commit
+      run: |
+        pre-commit run --all-files
+
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.8']
+    steps:
+    -
+      name: Setup code repository
+      uses: actions/checkout@v2
+    -
+      name: Install poetry & docker-compose
+      run: |
+        pipx install poetry
+    -
+      name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'poetry'
+    -
+      name: Install Amakihi
+      run: |
+        poetry install
+    -
+      name: Execute Tests
+      run: |
+        poetry run pytest --cov . --cov-report=lcov -s -v

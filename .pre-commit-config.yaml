@@ -1,0 +1,96 @@
+repos:
+- hooks:
+  - args:
+    - --multi-line=3
+    - --trailing-comma
+    - --force-grid-wrap=0
+    - --use-parentheses
+    - --line-width=88
+    id: isort
+  repo: https://github.com/pycqa/isort
+  rev: 5.12.0
+- hooks:
+  - args:
+    - --max-line-length=89
+    - --max-complexity=15
+    id: flake8
+  repo: https://github.com/pycqa/flake8
+  rev: 6.0.0
+- hooks:
+  - args:
+    - --py36-plus
+    id: pyupgrade
+  repo: https://github.com/asottile/pyupgrade
+  rev: v3.9.0
+- hooks:
+  - id: black
+  repo: https://github.com/psf/black
+  rev: 23.7.0
+- hooks:
+  - additional_dependencies:
+    - types-attrs
+    - types-requests
+    - types-setuptools
+    - types-PyYAML
+    args:
+    - --ignore-missing-imports
+    - --no-implicit-optional
+    id: mypy
+  repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.4.1
+- hooks:
+  - args:
+    - --convention=numpy
+    - --add-ignore=D104
+    id: pydocstyle
+  repo: https://github.com/pycqa/pydocstyle
+  rev: 6.3.0
+- hooks:
+  - id: blacken-docs
+  repo: https://github.com/asottile/blacken-docs
+  rev: 1.15.0
+- hooks:
+  - exclude: ^docs/*
+    id: trailing-whitespace
+  - exclude: ^docs/*
+    id: end-of-file-fixer
+  - id: debug-statements
+  - id: check-case-conflict
+  - id: check-json
+  - args:
+    - --unsafe
+    id: check-yaml
+  - id: mixed-line-ending
+  - id: check-toml
+  - id: pretty-format-json
+  - id: check-docstring-first
+  - id: check-symlinks
+  - id: detect-private-key
+  repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+- hooks:
+  - args:
+    - -iii
+    - -lll
+    id: bandit
+  repo: https://github.com/PyCQA/bandit
+  rev: 1.7.5
+- hooks:
+  - additional_dependencies:
+    - radon
+    args:
+    - cc
+    - --min=C
+    - --total-average
+    entry: radon
+    id: radon
+    language: python
+    name: radon
+    verbose: true
+  repo: local
+- hooks:
+  - id: commitizen
+    stages:
+    - commit-msg
+  repo: https://github.com/commitizen-tools/commitizen
+  rev: 3.5.3
