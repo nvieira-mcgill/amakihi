@@ -26,7 +26,7 @@ astropy = "^5.2"
 photutils = "^1.1"
 scikit-image = "^0.19"
 scikit-learn = "^1.1"
-astroquery = "^0.4.6"
+astroquery = "^0.4"
 lxml = "^4.9.3"
 
 
@@ -35,6 +35,7 @@ mypy = "^1.4"
 pytest = "^7.4"
 pre-commit = "^3.3"
 pytest-cov = "^4.1.0"
+commitizen = "^3.5.3"
 
 [build-system]
 requires = ["poetry-core"]
