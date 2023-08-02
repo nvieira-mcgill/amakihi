@@ -2005,8 +2005,8 @@ def plot_confusion_matrix(label_true, label_pred,
     # set ticks and tick labels
     ax.set_xticks(np.arange(cm.shape[1])) # no. of ticks = no. of labels
     ax.set_yticks(np.arange(cm.shape[0]))
-    ax.set_xticklabels(classes, {"fontsize":14}) # ["bogus", "real"]
-    ax.set_yticklabels(classes, {"fontsize":14})
+    ax.set_xticklabels(labels=classes, fontdict={"fontsize":14}) # ["bogus", "real"]
+    ax.set_yticklabels(labels=classes, fontdict={"fontsize":14})
     ax.set_xlabel("Prediction", fontsize=16) 
     ax.set_ylabel("Truth", fontsize=16)
     ax.axhline(0.5, color="black", lw=2) # lines for clarity

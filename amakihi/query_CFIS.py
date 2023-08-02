@@ -28,9 +28,10 @@ def geturl_CFIS(ra, dec, size=1600, bands="ur"):
     -------
     list
         List of URL(s) to download the relevant fits files
-        
+        https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/unions/tilecut.pl?ra=213.009364&dec=53.419436&size=128&filter=r
     Notes
-    -----    
+    -----
+    https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/unions/tilecut.pl?ra=213.009364&dec=53.419436&size=128&filter=r    
     See: https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/community/cfis/csky.html
     """
     
@@ -40,6 +41,7 @@ def geturl_CFIS(ra, dec, size=1600, bands="ur"):
     url = "http://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/cadcbin/community/"
     url = f"{url}cfis/mcut.pl?&ra={ra}&dec={dec}&tiles=true"
     url = f"{url}{bands_upd}&cutout={size}"
+    print(url)
     
     r = requests.get(url)
     webpage = html.fromstring(r.content)
